@@ -1,0 +1,21 @@
+Version 1.2
+-----------
+
+The change from 1.1 is only w.r.t weighted graphs. The weight of
+the self-loop that is added to each node before clustering is now
+set to be the maximum of the weights of the node to any of its
+neighbors (earlier it was hard-coded to be 1). 
+
+Also, mergeClusters and the tools directory are new additions.
+
+Version 1.1
+-----------
+
+This version incorporates the ideas explained in our BCB '10
+paper.  
+
+ Venu Satuluri, Srinivasan Parthasarathy and Dugyu Ucar. "Markov
+ Clustering of Protein Interaction Networks with Improved
+ Balance and Scalablity". Proceedings of ACM BCB 2010, Niagara
+ Falls.
+ 

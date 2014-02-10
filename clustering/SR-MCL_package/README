@@ -1,0 +1,120 @@
+Compilation:
+-----------
+
+- A simple 'make' should do in Unix-like environments. It creates
+  the executables 'mlrmcl' and 'ncut' in the top-level
+  directory.
+
+- 'make realclean' removes all libraries, executables and object
+  files.
+
+
+
+General Usage and Options:
+-------------------------
+
+- Executing a program without arguments will print its usage.
+
+- The options may be specified in any order (similar to how it
+  works for general unix utilities).
+
+Usage and Options for mlrmcl:
+----------------------------
+
+- The only required argument for srmcl and mlrmcl is the graph file. The
+  format for this file is described below in the Format section.
+
+- The output file can be specified using the -o option. This is
+  optional. The file that the output is written to is printed in
+  the stdout output of the program.
+
+- The balance (i.e. the variance in output cluster sizes) can be
+  controlled using the '-b' option. The default value of 0.5
+  should be good enough in most cases. If you find that the
+  output clustering is too balanced, you can try lower values for
+  b (until 0), or if it is too imbalanced, you can try higher
+  values for b such as 0.75 or 1.
+
+- The inflation parameter is specified using the '-i option' and 
+  can also be used to control the granularity of the clustering.
+  (In the case when no coarsening is performed, i.e. for R-MCL,
+  it is the only way to control the number of clusters.) Higher
+  values of 'i' lead to more clusters, and the clustering also
+  converges faster. The default is 2.0.
+
+- The penalty ratio (beta in the paper) can be specified using the '-q option'
+  and the number of times SR-MCL executing R-MCL can be specified using the '-t option'.
+  These two options should be tuned together. 
+  Larger penalty ratio should be with smaller t. Generally, the default values 
+  are good for most of graphs.
+
+- The quality threshold (omega in the paper) can be specified using the '-w option'.
+  The default value of the quality threshold is 0, i.e. no cluster is removed.
+  The quality function in the code is density*sqrt(size), so once the quality threshold
+  is larger than 0, the post-processing step will remove clusters based on density*sqrt(size).
+
+- The redundacy threshold (p in the paper) can be specified using the '-p option'.
+  The default value is 0.6. 
+  A smaller value will result in clusters with clusters with small overlap;
+  A larger value will result in highly overlapped clusters.
+
+
+Input format:
+------------
+
+- The input format is the same as that for Metis and Graclus. A
+  pdf document explaining this format is available at
+  http://glaros.dtc.umn.edu/gkhome/fetch/sw/metis/manual.pdf
+  This pdf is also present inside the Metis distribution. For
+  convenience, we have also included a copy of this manual under
+  the name metis.4.0.manual.pdf.
+
+Output format:
+-------------
+
+- The output format is similar to the output for Metis and
+  Graclus. Each line contains the cluster index to which the
+  node of the corresponding line number has been assigned. (For
+  example, if line 20 is '4', that means that the node 20 has
+  been assigned to the cluster 4.) 
+  The only difference is that a node might be assigned into multiple clusters,
+  so each line might have multiple numbers.
+
+Examples:
+---------
+- The 'graphs' folder has 6 files. Three are the real graphs on which we performed our experiments.
+  The other three are the toy examples.
+
+Gold Standard:
+---------
+- The gold standard is the GO annotations with information content larger than 2.
+  The file is ./gold_standard/sgd_systemName_GO
+  in which each line indicates the protein name, the GO term number, and the GO category (0:BP 1:MF 2:CC)
+
+
+References:
+----------
+- Yu-Keng Shih and Srinivasan Parthasarathy, Identifying functional 
+  modules in interaction networks via overlapping Markov clustering, 
+  ECCB 2012. Also appear in Bioinformatics, Vol 28(18), i473-i479, Sept 2012.
+
+- Venu Satuluri and Srinivasan Parthasarathy. "Scalable Graph
+  Clustering using Stochastic Flows: Applications to Community
+  Discovery." Proceedings of ACM SIGKDD 2009, Paris.
+
+- Venu Satuluri, Srinivasan Parthasarathy and Dugyu Ucar. "Markov
+  Clustering of Protein Interaction Networks with Improved
+  Balance and Scalablity". Proceedings of ACM BCB 2010, Niagara
+  Falls.
+
+Acknowledgments:
+---------------
+We are very grateful to the authors of Metis and Graclus for releasing
+the source of their softwares, as this has enabled me to
+implement my own software much faster than would have been
+possible otherwise.
+
+
+
+If you have any question, please contact Yu-Keng Shih: shihy@cse.ohio-state.edu or Prof. Srinivasan Parthasarathy: srini@cse.ohio-state.edu
+
