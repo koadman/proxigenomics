@@ -19,7 +19,6 @@ def drawDelta(minLength,maxLength):
     """Draws from a distribution only accepting values between min and max."""
     # as this relates to a circular chromosome, the min and max could be considered one value.
     # could do this modulo length of chromosome.
-    
     geometricProbability = 1.0e-4
     
     delta = numpy.random.geometric(p=geometricProbability,size=1)
@@ -58,14 +57,14 @@ def writeReads(handle, sequences, outputFormat, dummyQ=False):
     SeqIO.write(sequences, handle, outputFormat)
 
 class Part:
-    def __init__(self, seq, pos1, pos2, fwd, repIdx):
+    def __init__(self, seq, pos1, pos2, fwd, replicon):
         self.seq = seq
         self.pos1 = pos1
         self.pos2 = pos2
         self.fwd = fwd
-        self.repIdx = repIdx
+        self.replicon = replicon
     def __repr__(self):
-        return repr((self.seq,self.pos1,self.pos2,self.fwd,self.repIdx))
+        return repr((self.seq,self.pos1,self.pos2,self.fwd,self.replicon))
     
 class Cell:
     'Represents a cell in the community'
@@ -73,13 +72,63 @@ class Cell:
         self.name = name
         self.abundance = float(abundance)
         self.repliconRegistry = {}
+        self.indexToName = {}
+        self.cdf = None
+        self.pdf = None
     def __repr__(self):
         return repr((self.name,self.abundance))
     def __str__(self):
         return self.name
+
+    def initProbabilities(self):
+        """Initialize the probabilities for replicon selection from within a cell. 
+        Afterwards, produce a CDF which will be used for random sampling.
+        """
+        # Number of replicons in cell
+        Nrep = len(self.repliconRegistry)
+        
+        # Uniform probability initially
+        prob = numpy.array([1.0 / Nrep] * Nrep)
+        
+        i = 0
+        for repA in self.repliconRegistry.values():
+            self.indexToName[i] = repA.name
+            prob[i] = prob[i] * repA.length()
+            i += 1
+        
+        # Normalize
+        tp = sum(prob)
+        self.pdf = numpy.divide(prob,tp)
+        
+        #Initialize the cumulative distribution function for the community replicons
+        self.cdf = numpy.hstack((0, numpy.cumsum(self.pdf)))
+        print "PDF",self.pdf
+        print "CDF",self.cdf
+    
     def registerReplicon(self,replicon):
         self.repliconRegistry[replicon.name] = replicon
         
+    def repliconNumber(self):
+        return len(self.repliconRegistry)
+    
+    def selectReplicon(self,x):
+        'Return the index of a replicon by sampling CDF at given value x'
+        idx = numpy.searchsorted(self.cdf, x) - 1
+        if (idx < 0): #edge case when sample value is exactly zero.
+            return 0
+        return idx
+
+    def pickInterReplicon(self,skipThis):
+        if self.repliconNumber() == 1:
+            raise RuntimeError('cannot pick another in single replicon cell')
+
+        rep = skipThis
+        while (rep is skipThis):
+            ri = self.selectReplicon(numpy.random.uniform())
+            rep = self.repliconRegistry.get(self.indexToName[ri])
+            
+        return rep
+
 class Replicon:
     'Represents a replicon which holds a reference to its containing cell'
     def __init__(self, name, parentCell, sequence):
@@ -98,6 +147,9 @@ class Replicon:
     
     def length(self):
         return len(self.sequence)
+    
+    def isAlone(self):
+        return self.parentCell.repliconNumber() == 1
     
     def subSeq(self, pos1, pos2, fwd):
         """Create a subsequence from replicon where positions are strand relative.
@@ -157,6 +209,21 @@ class Replicon:
 
         if d2[1] < d1[1]: return cs[d2[0]]
         else: return cs[d1[0]]
+        
+    def constrainedUpstreamLocation(self, firstLocation):
+        """Return a location (position and strand) on this replicon where the position is
+        constrained to follow a prescribed distribution relative to the position of the
+        first location.
+        
+        return location
+        """
+        delta = drawDelta(500, self.length()-500)
+        # TODO The edge cases might have off-by-one errors, does it matter?'
+        loc = firstLocation + delta
+        if loc > self.length()-1:
+            loc -= self.length()
+            
+        return loc
 
 class Community:
     """Represents the community, maintaining a registry of cells and replicons.
@@ -194,7 +261,11 @@ class Community:
             parentCell = self.registerCell(cellName,cellAbundance)
             self.registerReplicon(repliconName, parentCell, sequences.get(repliconName))
         hTable.close()
+        # init community wide probs
         self.__initProbabilities()
+        # init individual cell probs
+        for cell in self.cellRegistry.values():
+            cell.initProbabilities()
 
     def registerReplicon(self, name, parentCell, sequence):
         'Add a new cell to the community cell registry'
@@ -221,10 +292,6 @@ class Community:
         for ca in self.cellRegistry.values():
             ab += ca.abundance
         self.totalRawAbundance = ab
-    
-    def getReplicon(self,name):
-        'Return a replicon instance by name from the registry'
-        return self.__getitem__(name)
     
     def getRepliconLength(self,name):
         'Return the length in basepairs of a replicon by name from the registry'
@@ -262,17 +329,16 @@ class Community:
         if skipIndex == None:
             return self.selectReplicon(numpy.random.uniform())
         else:
-            self.pickRepliconSameCell(skipIndex)
             ri = skipIndex
             while (ri == skipIndex):
                 ri = self.selectReplicon(numpy.random.uniform())
             return ri
     
-    def isSameReplicon(self):
+    def isIntraRepliconEvent(self):
         """Choose if the mate is intra or inter replicon associated. This is a simple
         binary paritioning with a chosen threshold frequency.
         """
-        return numpy.random.uniform() < self.interRepliconProbability
+        return numpy.random.uniform() > self.interRepliconProbability
     
     def isForwardStrand(self):
         'temporary hack, always using forward for now as I am getting confused'
@@ -322,36 +388,33 @@ class Community:
         return self.cdf
 
 def makeUnconstrainedPartA():
-    repIdx = comm.pickReplicon()
-    rep = comm.getRepliconByIndex(repIdx)
+    rep = comm.getRepliconByIndex(comm.pickReplicon())
     pos6c = rep.randomCutSite('6cut')
     fwd = comm.isForwardStrand()
     pos4c = rep.nearestCutSiteAbove('4cut',pos6c)
-    seq = rep.subSeq(pos6c,pos4c,fwd)
-    return Part(seq, pos6c, pos4c, fwd, repIdx)
+    seq = rep.subSeq(pos6c,pos4c, True)
+    return Part(seq, pos6c, pos4c, True, rep)
 
-def makeUnconstrainedPartB(otherRepIndex=None):
-    repIdx = comm.pickReplicon(otherRepIndex)
-    rep = comm.getRepliconByIndex(repIdx)
+def makeUnconstrainedPartB(partA):
+    rep = partA.replicon.parentCell.pickInterReplicon(partA.replicon)
     pos6c = rep.randomCutSite('6cut')
     fwd = comm.isForwardStrand() # delete this
     pos4c = rep.nearestCutSiteBelow('4cut',pos6c)
-    seq = rep.subSeq(pos4c,pos6c,fwd)
-    return Part(seq, pos4c, pos6c, fwd, repIdx)
+    seq = rep.subSeq(pos4c,pos6c, True)
+    return Part(seq, pos4c, pos6c, True, rep)
 
-def makeConstrainedPartB(repIndex, firstLoc, forward):
-    (loc, fwd) = comm.constrainedReadLocation(repIndex, firstLoc, forward)
-    rep = comm.getRepliconByIndex(repIndex)
-    pos6c = rep.nearestCutSiteByDistance('6cut',loc)
-    pos4c = rep.nearestCutSiteBelow('4cut',pos6c)
-    seq = rep.subSeq(pos4c,pos6c,fwd)
-    return Part(seq,pos4c,pos6c,fwd,repIndex)
+def makeConstrainedPartB(partA):
+    loc = partA.replicon.constrainedUpstreamLocation(partA.pos1)
+    pos6c = partA.replicon.nearestCutSiteByDistance('6cut',loc)
+    pos4c = partA.replicon.nearestCutSiteBelow('4cut',pos6c)
+    seq = partA.replicon.subSeq(pos4c,pos6c,True)
+    return Part(seq, pos4c, pos6c, True, partA.replicon)
 
 #
 # Main 
 #
 if len(sys.argv) != 7:
-    print('Usage: [n-frags] [read-len] [intra-prob] [table] [fasta] [output]')
+    print('Usage: [n-frags] [read-len] [inter-prob] [table] [fasta] [output]')
     sys.exit(1)
 
 # total number of reads to create
@@ -379,17 +442,17 @@ while (fragCount < maxFragments):
     # 2) pick a 6cutter site at random on replicon
     # 3) flip a coin for strand
     partA = makeUnconstrainedPartA()
-    
+
     # Create PartB
     # Steps
     # 1) choose if intra or inter replicon
     # 2) if intER create partB as above
     # 3) if intRA select from geometric
     partB = None
-    if comm.isSameReplicon():
-        partB = makeConstrainedPartB(partA.repIdx, partA.pos1, partA.fwd)
+    if partA.replicon.isAlone() or comm.isIntraRepliconEvent():
+        partB = makeConstrainedPartB(partA)
     else:
-        partB = makeUnconstrainedPartB(partA.repIdx)
+        partB = makeUnconstrainedPartB(partA)
         
     # Join parts
     # PartA + PartB
