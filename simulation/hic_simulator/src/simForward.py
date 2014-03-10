@@ -5,6 +5,9 @@ from collections import OrderedDict
 import numpy
 import sys
 
+# Global
+geometricProbability = 1.0e-4 # this should disappear eventually
+
 # restriction enzymes used in reaction
 cut4 = Restriction.NlaIII
 cut6 = Restriction.ClaI
@@ -19,7 +22,6 @@ def drawDelta(minLength,maxLength):
     """Draws from a distribution only accepting values between min and max."""
     # as this relates to a circular chromosome, the min and max could be considered one value.
     # could do this modulo length of chromosome.
-    geometricProbability = 1.0e-4
     
     delta = numpy.random.geometric(p=geometricProbability,size=1)
     while (delta < minLength and delta > maxLength):
@@ -57,6 +59,8 @@ def writeReads(handle, sequences, outputFormat, dummyQ=False):
     SeqIO.write(sequences, handle, outputFormat)
 
 class Part:
+    """Represents an unligated fragment from one replicon.
+    """
     def __init__(self, seq, pos1, pos2, fwd, replicon):
         self.seq = seq
         self.pos1 = pos1
@@ -65,7 +69,7 @@ class Part:
         self.replicon = replicon
     def __repr__(self):
         return repr((self.seq,self.pos1,self.pos2,self.fwd,self.replicon))
-    
+
 class Cell:
     'Represents a cell in the community'
     def __init__(self, name, abundance):
@@ -90,6 +94,7 @@ class Cell:
         # Uniform probability initially
         prob = numpy.array([1.0 / Nrep] * Nrep)
         
+        # Scale prob by replicon length
         i = 0
         for repA in self.repliconRegistry.values():
             self.indexToName[i] = repA.name
@@ -97,31 +102,30 @@ class Cell:
             i += 1
         
         # Normalize
-        tp = sum(prob)
-        self.pdf = numpy.divide(prob,tp)
+        totalProb = sum(prob)
+        self.pdf = numpy.divide(prob,totalProb)
         
-        #Initialize the cumulative distribution function for the community replicons
+        #Initialize the cumulative distribution
         self.cdf = numpy.hstack((0, numpy.cumsum(self.pdf)))
-        print "PDF",self.pdf
-        print "CDF",self.cdf
     
     def registerReplicon(self,replicon):
         self.repliconRegistry[replicon.name] = replicon
         
-    def repliconNumber(self):
+    def numberReplicons(self):
         return len(self.repliconRegistry)
     
     def selectReplicon(self,x):
-        'Return the index of a replicon by sampling CDF at given value x'
+        'From a cell, return the index of a replicon by sampling CDF at given value x'
         idx = numpy.searchsorted(self.cdf, x) - 1
         if (idx < 0): #edge case when sample value is exactly zero.
             return 0
         return idx
 
     def pickInterReplicon(self,skipThis):
-        if self.repliconNumber() == 1:
+        if self.numberReplicons() == 1:
             raise RuntimeError('cannot pick another in single replicon cell')
 
+        # Keep trying until we pick a different rep.
         rep = skipThis
         while (rep is skipThis):
             ri = self.selectReplicon(numpy.random.uniform())
@@ -149,7 +153,7 @@ class Replicon:
         return len(self.sequence)
     
     def isAlone(self):
-        return self.parentCell.repliconNumber() == 1
+        return self.parentCell.numberReplicons() == 1
     
     def subSeq(self, pos1, pos2, fwd):
         """Create a subsequence from replicon where positions are strand relative.
@@ -210,7 +214,7 @@ class Replicon:
         if d2[1] < d1[1]: return cs[d2[0]]
         else: return cs[d1[0]]
         
-    def constrainedUpstreamLocation(self, firstLocation):
+    def constrainedUpstreamLocation(self, origin):
         """Return a location (position and strand) on this replicon where the position is
         constrained to follow a prescribed distribution relative to the position of the
         first location.
@@ -219,13 +223,14 @@ class Replicon:
         """
         delta = drawDelta(500, self.length()-500)
         # TODO The edge cases might have off-by-one errors, does it matter?'
-        loc = firstLocation + delta
+        loc = origin + delta
         if loc > self.length()-1:
             loc -= self.length()
             
         return loc
 
 class Community:
+    
     """Represents the community, maintaining a registry of cells and replicons.
     
     Both cells and replicons are expected to be uniquely named across the commmunity. This constraint comes
@@ -246,6 +251,8 @@ class Community:
         self.interRepliconProbability = interRepliconProbability 
         # Read in the sequences
         sequences = SeqIO.to_dict(SeqIO.parse(open(seqFileName), 'fasta', Alphabet.generic_dna))
+        
+        # Read table
         hTable = open(tableFileName,'r')
         for line in hTable:
             line = line.rstrip().lstrip()
@@ -261,6 +268,7 @@ class Community:
             parentCell = self.registerCell(cellName,cellAbundance)
             self.registerReplicon(repliconName, parentCell, sequences.get(repliconName))
         hTable.close()
+        
         # init community wide probs
         self.__initProbabilities()
         # init individual cell probs
@@ -293,10 +301,6 @@ class Community:
             ab += ca.abundance
         self.totalRawAbundance = ab
     
-    def getRepliconLength(self,name):
-        'Return the length in basepairs of a replicon by name from the registry'
-        return self.repliconRegistry[name].length()
-    
     def __initProbabilities(self):
         """Initialize the probabilities for replicon selection, given the abundances, etc.
         Normalization is always applied. Afterwards, produce a CDF which will be used for
@@ -315,7 +319,7 @@ class Community:
         self.cdf = numpy.hstack((0, numpy.cumsum(self.pdf)))
     
     def selectReplicon(self,x):
-        'Return the index of a replicon by sampling CDF at given value x'
+        'From the entire community, return the index of a replicon by sampling CDF at given value x'
         idx = numpy.searchsorted(self.cdf, x) - 1
         if (idx < 0): #edge case when sample value is exactly zero.
             return 0
@@ -340,10 +344,6 @@ class Community:
         """
         return numpy.random.uniform() > self.interRepliconProbability
     
-    def isForwardStrand(self):
-        'temporary hack, always using forward for now as I am getting confused'
-        return True
-    
     def getRepliconByIndex(self, index):
         return self.repliconRegistry.get(self.indexToName[index])
     
@@ -357,7 +357,7 @@ class Community:
         Returns tuple (pos=int, strand=bool)
         """
         replicon = self.getRepliconByIndex(repliconIndex)
-        return (int(numpy.random.uniform() * replicon.length()), self.isForwardStrand())
+        return (int(numpy.random.uniform() * replicon.length()), True)
 
     def constrainedReadLocation(self, repliconIndex, firstLocation, forward):
         """Return a location (position and strand) on a replicon where the position is
@@ -381,16 +381,9 @@ class Community:
                 loc = replicon.length() - loc
         return (loc, forward)
     
-    def getPDF(self):
-        return self.pdf
-    
-    def getCDF(self):
-        return self.cdf
-
 def makeUnconstrainedPartA():
     rep = comm.getRepliconByIndex(comm.pickReplicon())
     pos6c = rep.randomCutSite('6cut')
-    fwd = comm.isForwardStrand()
     pos4c = rep.nearestCutSiteAbove('4cut',pos6c)
     seq = rep.subSeq(pos6c,pos4c, True)
     return Part(seq, pos6c, pos4c, True, rep)
@@ -398,7 +391,6 @@ def makeUnconstrainedPartA():
 def makeUnconstrainedPartB(partA):
     rep = partA.replicon.parentCell.pickInterReplicon(partA.replicon)
     pos6c = rep.randomCutSite('6cut')
-    fwd = comm.isForwardStrand() # delete this
     pos4c = rep.nearestCutSiteBelow('4cut',pos6c)
     seq = rep.subSeq(pos4c,pos6c, True)
     return Part(seq, pos4c, pos6c, True, rep)
