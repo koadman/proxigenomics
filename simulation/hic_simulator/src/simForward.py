@@ -4,6 +4,7 @@ from Bio import SeqIO
 from Bio.Restriction import *
 from Bio.Seq import Seq
 from collections import OrderedDict
+from optparse import OptionParser
 import numpy
 import re
 import sys
@@ -424,30 +425,47 @@ def makeConstrainedPartB(partA):
     seq = partA.replicon.subSeq(pos4c,pos6c,True)
     return Part(seq, pos4c, pos6c, True, partA.replicon)
 
+
 #
-# Main 
+# Commandline interface
 #
-if len(sys.argv) != 7:
-    print('Usage: [n-frags] [read-len] [inter-prob] [table] [fasta] [output]')
-    sys.exit(1)
+parser = OptionParser()
+parser.add_option('-n','--number-fragments',dest='numberFragments',help='Number of Hi-C fragments to generate reads',metavar='INT',type='int')
+parser.add_option('-l','--read-length',dest='readLength',help='Length of reads from Hi-C fragments',metavar='INT',type='int')
+parser.add_option('-p','--interrep-probability',dest='interProb',help='Probability that a fragment spans two replicons',metavar='FLOAT',type='float')
+parser.add_option('-t','--community-profile-table',dest='commTable',help='Community profile table',metavar='FILE')
+parser.add_option('-s','--genome-sequences',dest='genomeSequences',help='Genome sequences for the community',metavar='FILE')
+parser.add_option('-o','--output',dest='outputFile',help='Output Hi-C reads file',metavar='FILE')
+(options, args) = parser.parse_args()
+if options.numberFragments is None:
+    parser.error('Number of fragments not specified')
+if options.readLength is None:
+    parser.error('Read length not specified')
+if options.interProb is None:
+    parser.error('Inter-replicon probability not specified')
+if options.commTable is None:
+    parser.error('Community profile table not specified')
+if options.genomeSequences is None:
+    parser.error('Genome sequences file not specified')
+if options.outputFile is None:
+    parser.error('Output file not specified')
 
-# total number of reads to create
-maxFragments = int(sys.argv[1])
 
-# length of reads
-readLength = int(sys.argv[2])
-
+#
+# Main routine
+#
+    
 # Initialize community object
 print "Initializing community"
-comm = Community(float(sys.argv[3]),sys.argv[4],sys.argv[5])
+comm = Community(options.interProb, options.commTable, options.genomeSequences)
 
 # Open output file for writing reads
-hOutput = open(sys.argv[6],'wb')
+hOutput = open(options.outputFile, 'wb')
 
 print "Creating reads"
 skipCount = 0
 fragCount = 0
-while (fragCount < maxFragments):
+while (fragCount < options.numberFragments):
     # Fragment creation
     
     # Create PartA
@@ -476,11 +494,11 @@ while (fragCount < maxFragments):
         skipCount += 1
         continue
     
-    read1 = makeRead(fragment, True, readLength)
+    read1 = makeRead(fragment, True, options.readLength)
     read1.id = "frg" + str(fragCount) + "fwd"
     read1.description = partA.seq.id + " " + partA.seq.description
 
-    read2 = makeRead(fragment, False, readLength)
+    read2 = makeRead(fragment, False, options.readLength)
     read2.id = "frg" + str(fragCount) + "rev"
     read2.description = partB.seq.id + " " + partB.seq.description
     
