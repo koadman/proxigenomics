@@ -1,16 +1,23 @@
 #!/usr/bin/env python
-from Bio import SeqIO
 from Bio import Alphabet
+from Bio import SeqIO
 from Bio.Restriction import *
+from Bio.Seq import Seq
 from collections import OrderedDict
 import numpy
-import sys
 import re
-from Bio.Seq import Seq
+import sys
+
+#
+# Globals
+#
 
 # restriction enzymes used in reaction
-cut4 = Restriction.NlaIII
-cut6 = Restriction.ClaI
+GLOBAL_CUT4 = Restriction.NlaIII
+GLOBAL_CUT6 = Restriction.ClaI
+
+# parameter value for geometric distribution
+GLOBAL_GEOM_PROB = 1.0e-5
 
 def findRestrictionSites(enzyme, seq):
     """For supplied enzyme, find all restriction sites in a given sequence
@@ -35,11 +42,10 @@ def drawDelta(minLength,maxLength):
     """Draws from a distribution only accepting values between min and max."""
     # as this relates to a circular chromosome, the min and max could be considered one value.
     # could do this modulo length of chromosome.
-    geometricProbability = 1.0e-5
     
-    delta = numpy.random.geometric(p=geometricProbability,size=1)
+    delta = numpy.random.geometric(p=GLOBAL_GEOM_PROB,size=1)
     while (delta < minLength or delta > maxLength):
-        delta = numpy.random.geometric(p=geometricProbability,size=1)
+        delta = numpy.random.geometric(p=GLOBAL_GEOM_PROB,size=1)
     return int(delta)
 
 def makeRead(seq, fwdRead, length):
@@ -155,8 +161,8 @@ class Replicon:
         self.sequence = sequence
         self.cutSites = {}
 	self.cutSites['515F'] = numpy.array(findPrimingSites("GTGCCAGC[AC]GCCGCGGTAA",sequence.seq))
-        self.cutSites['4cut'] = numpy.array(findRestrictionSites(cut4, sequence.seq))
-        self.cutSites['6cut'] = numpy.array(findRestrictionSites(cut6, sequence.seq))
+        self.cutSites['4cut'] = numpy.array(findRestrictionSites(GLOBAL_CUT4, sequence.seq))
+        self.cutSites['6cut'] = numpy.array(findRestrictionSites(GLOBAL_CUT6, sequence.seq))
     
     def __repr__(self):
         return repr((self.name, self.parentCell, self.sequence))
@@ -400,7 +406,6 @@ def makeUnconstrainedPartA():
     rep = comm.getRepliconByIndex(comm.pickReplicon())
     pos6c = rep.randomCutSite('6cut')
 #    pos6c = rep.randomCutSite('515F')
-    fwd = comm.isForwardStrand()
     pos4c = rep.nearestCutSiteAbove('4cut',pos6c)
     seq = rep.subSeq(pos6c,pos4c, True)
     return Part(seq, pos6c, pos4c, True, rep)
@@ -466,10 +471,8 @@ while (fragCount < maxFragments):
     # Join parts
     # PartA + PartB
     fragment = partA.seq + partB.seq
-    if len(fragment) < 200: # fudge minimum length of total fragment
-        skipCount += 1
-        continue
-    if len(fragment) > 1000: # fudge maximum length of total fragment
+    if len(fragment) < 200 or len(fragment) > 1000:
+        # only accept fragments within a size range
         skipCount += 1
         continue
     
