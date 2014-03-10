@@ -1,9 +1,12 @@
+#!/usr/bin/env python
 from Bio import SeqIO
 from Bio import Alphabet
 from Bio.Restriction import *
 from collections import OrderedDict
 import numpy
 import sys
+import re
+from Bio.Seq import Seq
 
 # restriction enzymes used in reaction
 cut4 = Restriction.NlaIII
@@ -15,14 +18,27 @@ def findRestrictionSites(enzyme, seq):
     """
     return enzyme.search(seq,linear=False)
 
+def findPrimingSites(oligo, seq):
+    """For supplied priming sequence, find positions of all matches in a given sequence
+    returns list of sites.
+    """
+    array = []
+    for m in re.finditer(oligo, seq.tostring()):
+	array.append(m.end())
+    rc_oligo = Seq(oligo)
+    rc_oligo.reverse_complement()
+    for m in re.finditer(rc_oligo.tostring(), seq.tostring()):
+	array.append(m.end())    
+    return array
+
 def drawDelta(minLength,maxLength):
     """Draws from a distribution only accepting values between min and max."""
     # as this relates to a circular chromosome, the min and max could be considered one value.
     # could do this modulo length of chromosome.
-    geometricProbability = 1.0e-4
+    geometricProbability = 1.0e-5
     
     delta = numpy.random.geometric(p=geometricProbability,size=1)
-    while (delta < minLength and delta > maxLength):
+    while (delta < minLength or delta > maxLength):
         delta = numpy.random.geometric(p=geometricProbability,size=1)
     return int(delta)
 
@@ -136,6 +152,7 @@ class Replicon:
         self.parentCell = parentCell
         self.sequence = sequence
         self.cutSites = {}
+	self.cutSites['515F'] = numpy.array(findPrimingSites("GTGCCAGC[AC]GCCGCGGTAA",sequence.seq))
         self.cutSites['4cut'] = numpy.array(findRestrictionSites(cut4, sequence.seq))
         self.cutSites['6cut'] = numpy.array(findRestrictionSites(cut6, sequence.seq))
     
@@ -390,6 +407,7 @@ class Community:
 def makeUnconstrainedPartA():
     rep = comm.getRepliconByIndex(comm.pickReplicon())
     pos6c = rep.randomCutSite('6cut')
+#    pos6c = rep.randomCutSite('515F')
     fwd = comm.isForwardStrand()
     pos4c = rep.nearestCutSiteAbove('4cut',pos6c)
     seq = rep.subSeq(pos6c,pos4c, True)
@@ -460,6 +478,9 @@ while (fragCount < maxFragments):
     if len(fragment) < 200: # fudge minimum length of total fragment
         skipCount += 1
         continue
+    if len(fragment) > 1000: # fudge maximum length of total fragment
+        skipCount += 1
+        continue
     
     read1 = makeRead(fragment, True, readLength)
     read1.id = "frg" + str(fragCount) + "fwd"
@@ -476,4 +497,4 @@ while (fragCount < maxFragments):
 # Close output file before exit
 hOutput.close()
 
-print "Ignored " + str(skipCount) + " fragments due to short length"
+print "Ignored " + str(skipCount) + " fragments due to length restrictions"
