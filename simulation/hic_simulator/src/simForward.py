@@ -1,17 +1,25 @@
 #!/usr/bin/env python
-from Bio import SeqIO
 from Bio import Alphabet
+from Bio import SeqIO
 from Bio.Restriction import *
-from collections import OrderedDict
-import numpy
-import sys
-import re
 from Bio.Seq import Seq
+from collections import OrderedDict
+from optparse import OptionParser
+import numpy
+import re
+import sys
+
+#
+# Globals
+#
 
 # restriction enzymes used in reaction
-cut4 = Restriction.NlaIII
-cut6_1 = Restriction.SalI
-cut6_2 = Restriction.ClaI
+GLOBAL_CUT4 = Restriction.NlaIII
+GLOBAL_CUT6_1 = Restriction.ClaI
+GLOBAL_CUT6_2 = Restriction.SalI
+
+# parameter value for geometric distribution
+GLOBAL_GEOM_PROB = 1.0e-5
 
 def findRestrictionSites(enzyme, seq):
     """For supplied enzyme, find all restriction sites in a given sequence
@@ -36,11 +44,10 @@ def drawDelta(minLength,maxLength):
     """Draws from a distribution only accepting values between min and max."""
     # as this relates to a circular chromosome, the min and max could be considered one value.
     # could do this modulo length of chromosome.
-    geometricProbability = 1.0e-5
     
-    delta = numpy.random.geometric(p=geometricProbability,size=1)
+    delta = numpy.random.geometric(p=GLOBAL_GEOM_PROB,size=1)
     while (delta < minLength or delta > maxLength):
-        delta = numpy.random.geometric(p=geometricProbability,size=1)
+        delta = numpy.random.geometric(p=GLOBAL_GEOM_PROB,size=1)
     return int(delta)
 
 def makeRead(seq, fwdRead, length):
@@ -74,6 +81,8 @@ def writeReads(handle, sequences, outputFormat, dummyQ=False):
     SeqIO.write(sequences, handle, outputFormat)
 
 class Part:
+    """Represents an unligated fragment from one replicon.
+    """
     def __init__(self, seq, pos1, pos2, fwd, replicon):
         self.seq = seq
         self.pos1 = pos1
@@ -82,7 +91,7 @@ class Part:
         self.replicon = replicon
     def __repr__(self):
         return repr((self.seq,self.pos1,self.pos2,self.fwd,self.replicon))
-    
+
 class Cell:
     'Represents a cell in the community'
     def __init__(self, name, abundance):
@@ -107,6 +116,7 @@ class Cell:
         # Uniform probability initially
         prob = numpy.array([1.0 / Nrep] * Nrep)
         
+        # Scale prob by replicon length
         i = 0
         for repA in self.repliconRegistry.values():
             self.indexToName[i] = repA.name
@@ -114,31 +124,30 @@ class Cell:
             i += 1
         
         # Normalize
-        tp = sum(prob)
-        self.pdf = numpy.divide(prob,tp)
+        totalProb = sum(prob)
+        self.pdf = numpy.divide(prob,totalProb)
         
-        #Initialize the cumulative distribution function for the community replicons
+        #Initialize the cumulative distribution
         self.cdf = numpy.hstack((0, numpy.cumsum(self.pdf)))
-        print "PDF",self.pdf
-        print "CDF",self.cdf
     
     def registerReplicon(self,replicon):
         self.repliconRegistry[replicon.name] = replicon
         
-    def repliconNumber(self):
+    def numberReplicons(self):
         return len(self.repliconRegistry)
     
     def selectReplicon(self,x):
-        'Return the index of a replicon by sampling CDF at given value x'
+        'From a cell, return the index of a replicon by sampling CDF at given value x'
         idx = numpy.searchsorted(self.cdf, x) - 1
         if (idx < 0): #edge case when sample value is exactly zero.
             return 0
         return idx
 
     def pickInterReplicon(self,skipThis):
-        if self.repliconNumber() == 1:
+        if self.numberReplicons() == 1:
             raise RuntimeError('cannot pick another in single replicon cell')
 
+        # Keep trying until we pick a different rep.
         rep = skipThis
         while (rep is skipThis):
             ri = self.selectReplicon(numpy.random.uniform())
@@ -154,9 +163,9 @@ class Replicon:
         self.sequence = sequence
         self.cutSites = {}
 	self.cutSites['515F'] = numpy.array(findPrimingSites("GTGCCAGC[AC]GCCGCGGTAA",sequence.seq))
-        self.cutSites['4cut'] = numpy.array(findRestrictionSites(cut4, sequence.seq))
-        self.cutSites['6cut_1'] = numpy.array(findRestrictionSites(cut6_1, sequence.seq))
-        self.cutSites['6cut_2'] = numpy.array(findRestrictionSites(cut6_2, sequence.seq))
+        self.cutSites['4cut'] = numpy.array(findRestrictionSites(GLOBAL_CUT4, sequence.seq))
+        self.cutSites['6cut_1'] = numpy.array(findRestrictionSites(GLOBAL_CUT6_1, sequence.seq))
+        self.cutSites['6cut_2'] = numpy.array(findRestrictionSites(GLOBAL_CUT6_2, sequence.seq))
     
     def __repr__(self):
         return repr((self.name, self.parentCell, self.sequence))
@@ -168,7 +177,7 @@ class Replicon:
         return len(self.sequence)
     
     def isAlone(self):
-        return self.parentCell.repliconNumber() == 1
+        return self.parentCell.numberReplicons() == 1
     
     def subSeq(self, pos1, pos2, fwd):
         """Create a subsequence from replicon where positions are strand relative.
@@ -229,7 +238,7 @@ class Replicon:
         if d2[1] < d1[1]: return cs[d2[0]]
         else: return cs[d1[0]]
         
-    def constrainedUpstreamLocation(self, firstLocation):
+    def constrainedUpstreamLocation(self, origin):
         """Return a location (position and strand) on this replicon where the position is
         constrained to follow a prescribed distribution relative to the position of the
         first location.
@@ -238,13 +247,14 @@ class Replicon:
         """
         delta = drawDelta(3, self.length()-3)
         # TODO The edge cases might have off-by-one errors, does it matter?'
-        loc = firstLocation + delta
+        loc = origin + delta
         if loc > self.length()-1:
             loc -= self.length()
             
         return loc
 
 class Community:
+    
     """Represents the community, maintaining a registry of cells and replicons.
     
     Both cells and replicons are expected to be uniquely named across the commmunity. This constraint comes
@@ -265,6 +275,8 @@ class Community:
         self.interRepliconProbability = interRepliconProbability 
         # Read in the sequences
         sequences = SeqIO.to_dict(SeqIO.parse(open(seqFileName), 'fasta', Alphabet.generic_dna))
+        
+        # Read table
         hTable = open(tableFileName,'r')
         for line in hTable:
             line = line.rstrip().lstrip()
@@ -280,6 +292,7 @@ class Community:
             parentCell = self.registerCell(cellName,cellAbundance)
             self.registerReplicon(repliconName, parentCell, sequences.get(repliconName))
         hTable.close()
+        
         # init community wide probs
         self.__initProbabilities()
         # init individual cell probs
@@ -312,10 +325,6 @@ class Community:
             ab += ca.abundance
         self.totalRawAbundance = ab
     
-    def getRepliconLength(self,name):
-        'Return the length in basepairs of a replicon by name from the registry'
-        return self.repliconRegistry[name].length()
-    
     def __initProbabilities(self):
         """Initialize the probabilities for replicon selection, given the abundances, etc.
         Normalization is always applied. Afterwards, produce a CDF which will be used for
@@ -334,7 +343,7 @@ class Community:
         self.cdf = numpy.hstack((0, numpy.cumsum(self.pdf)))
     
     def selectReplicon(self,x):
-        'Return the index of a replicon by sampling CDF at given value x'
+        'From the entire community, return the index of a replicon by sampling CDF at given value x'
         idx = numpy.searchsorted(self.cdf, x) - 1
         if (idx < 0): #edge case when sample value is exactly zero.
             return 0
@@ -359,10 +368,6 @@ class Community:
         """
         return numpy.random.uniform() > self.interRepliconProbability
     
-    def isForwardStrand(self):
-        'temporary hack, always using forward for now as I am getting confused'
-        return True
-    
     def getRepliconByIndex(self, index):
         return self.repliconRegistry.get(self.indexToName[index])
     
@@ -376,7 +381,7 @@ class Community:
         Returns tuple (pos=int, strand=bool)
         """
         replicon = self.getRepliconByIndex(repliconIndex)
-        return (int(numpy.random.uniform() * replicon.length()), self.isForwardStrand())
+        return (int(numpy.random.uniform() * replicon.length()), True)
 
     def constrainedReadLocation(self, repliconIndex, firstLocation, forward):
         """Return a location (position and strand) on a replicon where the position is
@@ -400,17 +405,10 @@ class Community:
                 loc = replicon.length() - loc
         return (loc, forward)
     
-    def getPDF(self):
-        return self.pdf
-    
-    def getCDF(self):
-        return self.cdf
-
 def makeUnconstrainedPartA():
     rep = comm.getRepliconByIndex(comm.pickReplicon())
     pos6c = rep.randomCutSite('6cut_1')
 #    pos6c = rep.randomCutSite('515F')
-    fwd = comm.isForwardStrand()
     pos4c = rep.nearestCutSiteAbove('4cut',pos6c)
     seq = rep.subSeq(pos6c,pos4c, True)
     return Part(seq, pos6c, pos4c, True, rep)
@@ -418,7 +416,6 @@ def makeUnconstrainedPartA():
 def makeUnconstrainedPartB(partA):
     rep = partA.replicon.parentCell.pickInterReplicon(partA.replicon)
     pos6c = rep.randomCutSite('6cut_2')
-    fwd = comm.isForwardStrand() # delete this
     pos4c = rep.nearestCutSiteBelow('4cut',pos6c)
     seq = rep.subSeq(pos4c,pos6c, True)
     return Part(seq, pos4c, pos6c, True, rep)
@@ -430,31 +427,48 @@ def makeConstrainedPartB(partA):
     seq = partA.replicon.subSeq(pos4c,pos6c,True)
     return Part(seq, pos4c, pos6c, True, partA.replicon)
 
+
 #
-# Main 
+# Commandline interface
 #
-if len(sys.argv) != 7:
-    print('Usage: [n-frags] [read-len] [inter-prob] [table] [fasta] [output]')
-    sys.exit(1)
+parser = OptionParser()
+parser.add_option('-n','--number-fragments',dest='numberFragments',help='Number of Hi-C fragments to generate reads',metavar='INT',type='int')
+parser.add_option('-l','--read-length',dest='readLength',help='Length of reads from Hi-C fragments',metavar='INT',type='int')
+parser.add_option('-p','--interrep-probability',dest='interProb',help='Probability that a fragment spans two replicons',metavar='FLOAT',type='float')
+parser.add_option('-t','--community-profile-table',dest='commTable',help='Community profile table',metavar='FILE')
+parser.add_option('-s','--genome-sequences',dest='genomeSequences',help='Genome sequences for the community',metavar='FILE')
+parser.add_option('-o','--output',dest='outputFile',help='Output Hi-C reads file',metavar='FILE')
+(options, args) = parser.parse_args()
+if options.numberFragments is None:
+    parser.error('Number of fragments not specified')
+if options.readLength is None:
+    parser.error('Read length not specified')
+if options.interProb is None:
+    parser.error('Inter-replicon probability not specified')
+if options.commTable is None:
+    parser.error('Community profile table not specified')
+if options.genomeSequences is None:
+    parser.error('Genome sequences file not specified')
+if options.outputFile is None:
+    parser.error('Output file not specified')
 
-# total number of reads to create
-maxFragments = int(sys.argv[1])
 
-# length of reads
-readLength = int(sys.argv[2])
-
+#
+# Main routine
+#
+    
 # Initialize community object
 print "Initializing community"
-comm = Community(float(sys.argv[3]),sys.argv[4],sys.argv[5])
+comm = Community(options.interProb, options.commTable, options.genomeSequences)
 
 # Open output file for writing reads
-hOutput = open(sys.argv[6],'wb')
+hOutput = open(options.outputFile, 'wb')
 
 print "Creating reads"
 skipCount = 0
 overlapCount = 0
 fragCount = 0
-while (fragCount < maxFragments):
+while (fragCount < options.numberFragments):
     # Fragment creation
     
     # Create PartA
@@ -478,10 +492,8 @@ while (fragCount < maxFragments):
     # Join parts
     # PartA + PartB
     fragment = partA.seq + partB.seq
-    if len(fragment) < 200: # fudge minimum length of total fragment
-        skipCount += 1
-        continue
-    if len(fragment) > 1000: # fudge maximum length of total fragment
+    if len(fragment) < 200 or len(fragment) > 1000:
+        # only accept fragments within a size range
         skipCount += 1
         continue
 
@@ -492,11 +504,11 @@ while (fragCount < maxFragments):
         overlapCount += 1
         continue
 
-    read1 = makeRead(fragment, True, readLength)
+    read1 = makeRead(fragment, True, options.readLength)
     read1.id = "frg" + str(fragCount) + "fwd"
     read1.description = partA.seq.id + " " + partA.seq.description
 
-    read2 = makeRead(fragment, False, readLength)
+    read2 = makeRead(fragment, False, options.readLength)
     read2.id = "frg" + str(fragCount) + "rev"
     read2.description = partB.seq.id + " " + partB.seq.description
     
