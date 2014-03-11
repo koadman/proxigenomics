@@ -10,7 +10,8 @@ from Bio.Seq import Seq
 
 # restriction enzymes used in reaction
 cut4 = Restriction.NlaIII
-cut6 = Restriction.ClaI
+cut6_1 = Restriction.SalI
+cut6_2 = Restriction.ClaI
 
 def findRestrictionSites(enzyme, seq):
     """For supplied enzyme, find all restriction sites in a given sequence
@@ -154,7 +155,8 @@ class Replicon:
         self.cutSites = {}
 	self.cutSites['515F'] = numpy.array(findPrimingSites("GTGCCAGC[AC]GCCGCGGTAA",sequence.seq))
         self.cutSites['4cut'] = numpy.array(findRestrictionSites(cut4, sequence.seq))
-        self.cutSites['6cut'] = numpy.array(findRestrictionSites(cut6, sequence.seq))
+        self.cutSites['6cut_1'] = numpy.array(findRestrictionSites(cut6_1, sequence.seq))
+        self.cutSites['6cut_2'] = numpy.array(findRestrictionSites(cut6_2, sequence.seq))
     
     def __repr__(self):
         return repr((self.name, self.parentCell, self.sequence))
@@ -234,7 +236,7 @@ class Replicon:
         
         return location
         """
-        delta = drawDelta(500, self.length()-500)
+        delta = drawDelta(3, self.length()-3)
         # TODO The edge cases might have off-by-one errors, does it matter?'
         loc = firstLocation + delta
         if loc > self.length()-1:
@@ -406,7 +408,7 @@ class Community:
 
 def makeUnconstrainedPartA():
     rep = comm.getRepliconByIndex(comm.pickReplicon())
-    pos6c = rep.randomCutSite('6cut')
+    pos6c = rep.randomCutSite('6cut_1')
 #    pos6c = rep.randomCutSite('515F')
     fwd = comm.isForwardStrand()
     pos4c = rep.nearestCutSiteAbove('4cut',pos6c)
@@ -415,7 +417,7 @@ def makeUnconstrainedPartA():
 
 def makeUnconstrainedPartB(partA):
     rep = partA.replicon.parentCell.pickInterReplicon(partA.replicon)
-    pos6c = rep.randomCutSite('6cut')
+    pos6c = rep.randomCutSite('6cut_2')
     fwd = comm.isForwardStrand() # delete this
     pos4c = rep.nearestCutSiteBelow('4cut',pos6c)
     seq = rep.subSeq(pos4c,pos6c, True)
@@ -423,7 +425,7 @@ def makeUnconstrainedPartB(partA):
 
 def makeConstrainedPartB(partA):
     loc = partA.replicon.constrainedUpstreamLocation(partA.pos1)
-    pos6c = partA.replicon.nearestCutSiteByDistance('6cut',loc)
+    pos6c = partA.replicon.nearestCutSiteByDistance('6cut_2',loc)
     pos4c = partA.replicon.nearestCutSiteBelow('4cut',pos6c)
     seq = partA.replicon.subSeq(pos4c,pos6c,True)
     return Part(seq, pos4c, pos6c, True, partA.replicon)
@@ -450,6 +452,7 @@ hOutput = open(sys.argv[6],'wb')
 
 print "Creating reads"
 skipCount = 0
+overlapCount = 0
 fragCount = 0
 while (fragCount < maxFragments):
     # Fragment creation
@@ -481,7 +484,14 @@ while (fragCount < maxFragments):
     if len(fragment) > 1000: # fudge maximum length of total fragment
         skipCount += 1
         continue
-    
+
+    if (partB.pos1 < partA.pos2 and partA.pos2 < partB.pos2):
+        overlapCount += 1
+        continue
+    if (partA.pos1 < partB.pos2 and partB.pos2 < partA.pos2):
+        overlapCount += 1
+        continue
+
     read1 = makeRead(fragment, True, readLength)
     read1.id = "frg" + str(fragCount) + "fwd"
     read1.description = partA.seq.id + " " + partA.seq.description
@@ -498,3 +508,4 @@ while (fragCount < maxFragments):
 hOutput.close()
 
 print "Ignored " + str(skipCount) + " fragments due to length restrictions"
+print "Ignored " + str(overlapCount) + " fragments due to overlap"
