@@ -8,6 +8,7 @@ from optparse import OptionParser
 import numpy
 import re
 import sys
+import time
 
 #
 # Globals
@@ -19,6 +20,10 @@ GLOBAL_CUT6 = Restriction.ClaI
 
 # parameter value for geometric distribution
 GLOBAL_GEOM_PROB = 1.0e-5
+
+# Random State from which to draw numbers
+# this is initialized at start time
+randomState = None
 
 def findRestrictionSites(enzyme, seq):
     """For supplied enzyme, find all restriction sites in a given sequence
@@ -44,9 +49,9 @@ def drawDelta(minLength,maxLength):
     # as this relates to a circular chromosome, the min and max could be considered one value.
     # could do this modulo length of chromosome.
     
-    delta = numpy.random.geometric(p=GLOBAL_GEOM_PROB,size=1)
+    delta = randomState.geometric(p=GLOBAL_GEOM_PROB,size=1)
     while (delta < minLength or delta > maxLength):
-        delta = numpy.random.geometric(p=GLOBAL_GEOM_PROB,size=1)
+        delta = randomState.geometric(p=GLOBAL_GEOM_PROB,size=1)
     return int(delta)
 
 def makeRead(seq, fwdRead, length):
@@ -149,7 +154,7 @@ class Cell:
         # Keep trying until we pick a different rep.
         rep = skipThis
         while (rep is skipThis):
-            ri = self.selectReplicon(numpy.random.uniform())
+            ri = self.selectReplicon(randomState.uniform())
             rep = self.repliconRegistry.get(self.indexToName[ri])
             
         return rep
@@ -195,7 +200,7 @@ class Replicon:
     def randomCutSite(self, cutType):
         'Return a uniformly random cut-site'
         cs = self.cutSites[cutType]
-        idx = numpy.random.randint(low=0,high=len(cs))
+        idx = randomState.randint(low=0,high=len(cs))
         return cs[idx]
     
     def nearestCutSiteAbove(self, cutType, pos):
@@ -353,18 +358,18 @@ class Community:
         
         return the index"""
         if skipIndex == None:
-            return self.selectReplicon(numpy.random.uniform())
+            return self.selectReplicon(randomState.uniform())
         else:
             ri = skipIndex
             while (ri == skipIndex):
-                ri = self.selectReplicon(numpy.random.uniform())
+                ri = self.selectReplicon(randomState.uniform())
             return ri
     
     def isIntraRepliconEvent(self):
         """Choose if the mate is intra or inter replicon associated. This is a simple
         binary paritioning with a chosen threshold frequency.
         """
-        return numpy.random.uniform() > self.interRepliconProbability
+        return randomState.uniform() > self.interRepliconProbability
     
     def getRepliconByIndex(self, index):
         return self.repliconRegistry.get(self.indexToName[index])
@@ -379,7 +384,7 @@ class Community:
         Returns tuple (pos=int, strand=bool)
         """
         replicon = self.getRepliconByIndex(repliconIndex)
-        return (int(numpy.random.uniform() * replicon.length()), True)
+        return (int(randomState.uniform() * replicon.length()), True)
 
     def constrainedReadLocation(self, repliconIndex, firstLocation, forward):
         """Return a location (position and strand) on a replicon where the position is
@@ -435,6 +440,7 @@ parser.add_option('-l','--read-length',dest='readLength',help='Length of reads f
 parser.add_option('-p','--interrep-probability',dest='interProb',help='Probability that a fragment spans two replicons',metavar='FLOAT',type='float')
 parser.add_option('-t','--community-profile-table',dest='commTable',help='Community profile table',metavar='FILE')
 parser.add_option('-s','--genome-sequences',dest='genomeSequences',help='Genome sequences for the community',metavar='FILE')
+parser.add_option('-r','--random-seed',dest='randomSeed',help="Random seed for initialising number generator",metavar='INT',type='int')
 parser.add_option('-o','--output',dest='outputFile',help='Output Hi-C reads file',metavar='FILE')
 (options, args) = parser.parse_args()
 if options.numberFragments is None:
@@ -447,14 +453,17 @@ if options.commTable is None:
     parser.error('Community profile table not specified')
 if options.genomeSequences is None:
     parser.error('Genome sequences file not specified')
+if options.randomSeed is None:
+    options.randomSeed = int(time.time())
 if options.outputFile is None:
     parser.error('Output file not specified')
-
 
 #
 # Main routine
 #
-    
+
+randomState = numpy.random.RandomState(options.randomSeed)
+   
 # Initialize community object
 print "Initializing community"
 comm = Community(options.interProb, options.commTable, options.genomeSequences)
