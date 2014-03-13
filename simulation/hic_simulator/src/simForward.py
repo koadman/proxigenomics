@@ -16,7 +16,8 @@ import time
 
 # restriction enzymes used in reaction
 GLOBAL_CUT4 = Restriction.NlaIII
-GLOBAL_CUT6 = Restriction.ClaI
+GLOBAL_CUT6_1 = Restriction.ClaI
+GLOBAL_CUT6_2 = Restriction.SalI
 
 # parameter value for geometric distribution
 GLOBAL_GEOM_PROB = 1.0e-5
@@ -168,7 +169,8 @@ class Replicon:
         self.cutSites = {}
 	self.cutSites['515F'] = numpy.array(findPrimingSites("GTGCCAGC[AC]GCCGCGGTAA",sequence.seq))
         self.cutSites['4cut'] = numpy.array(findRestrictionSites(GLOBAL_CUT4, sequence.seq))
-        self.cutSites['6cut'] = numpy.array(findRestrictionSites(GLOBAL_CUT6, sequence.seq))
+        self.cutSites['6cut_1'] = numpy.array(findRestrictionSites(GLOBAL_CUT6_1, sequence.seq))
+        self.cutSites['6cut_2'] = numpy.array(findRestrictionSites(GLOBAL_CUT6_2, sequence.seq))
     
     def __repr__(self):
         return repr((self.name, self.parentCell, self.sequence))
@@ -248,7 +250,7 @@ class Replicon:
         
         return location
         """
-        delta = drawDelta(500, self.length()-500)
+        delta = drawDelta(3, self.length()-3)
         # TODO The edge cases might have off-by-one errors, does it matter?'
         loc = origin + delta
         if loc > self.length()-1:
@@ -410,7 +412,7 @@ class Community:
     
 def makeUnconstrainedPartA():
     rep = comm.getRepliconByIndex(comm.pickReplicon())
-    pos6c = rep.randomCutSite('6cut')
+    pos6c = rep.randomCutSite('6cut_1')
 #    pos6c = rep.randomCutSite('515F')
     pos4c = rep.nearestCutSiteAbove('4cut',pos6c)
     seq = rep.subSeq(pos6c,pos4c, True)
@@ -418,14 +420,14 @@ def makeUnconstrainedPartA():
 
 def makeUnconstrainedPartB(partA):
     rep = partA.replicon.parentCell.pickInterReplicon(partA.replicon)
-    pos6c = rep.randomCutSite('6cut')
+    pos6c = rep.randomCutSite('6cut_2')
     pos4c = rep.nearestCutSiteBelow('4cut',pos6c)
     seq = rep.subSeq(pos4c,pos6c, True)
     return Part(seq, pos4c, pos6c, True, rep)
 
 def makeConstrainedPartB(partA):
     loc = partA.replicon.constrainedUpstreamLocation(partA.pos1)
-    pos6c = partA.replicon.nearestCutSiteByDistance('6cut',loc)
+    pos6c = partA.replicon.nearestCutSiteByDistance('6cut_2',loc)
     pos4c = partA.replicon.nearestCutSiteBelow('4cut',pos6c)
     seq = partA.replicon.subSeq(pos4c,pos6c,True)
     return Part(seq, pos4c, pos6c, True, partA.replicon)
@@ -473,6 +475,7 @@ hOutput = open(options.outputFile, 'wb')
 
 print "Creating reads"
 skipCount = 0
+overlapCount = 0
 fragCount = 0
 while (fragCount < options.numberFragments):
     # Fragment creation
@@ -502,7 +505,14 @@ while (fragCount < options.numberFragments):
         # only accept fragments within a size range
         skipCount += 1
         continue
-    
+
+    if (partB.pos1 < partA.pos2 and partA.pos2 < partB.pos2):
+        overlapCount += 1
+        continue
+    if (partA.pos1 < partB.pos2 and partB.pos2 < partA.pos2):
+        overlapCount += 1
+        continue
+
     read1 = makeRead(fragment, True, options.readLength)
     read1.id = "frg" + str(fragCount) + "fwd"
     read1.description = partA.seq.id + " " + partA.seq.description
@@ -519,3 +529,4 @@ while (fragCount < options.numberFragments):
 hOutput.close()
 
 print "Ignored " + str(skipCount) + " fragments due to length restrictions"
+print "Ignored " + str(overlapCount) + " fragments due to overlap"
