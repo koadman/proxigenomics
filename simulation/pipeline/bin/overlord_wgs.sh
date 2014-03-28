@@ -16,4 +16,6 @@ OPTIONS="-j 20"
 $RUN $OPTIONS -d $1 --template "$PWD/bin/pbsrun_ART.sh {seed} {wgs_insert_length} {wgs_insert_sd} {wgs_read_length} {wgs_xfold} {community}/{refseq} {wgs_base}"
 
 # Make assemblies
-$RUN $OPTIONS -d $1 --template "$PWD/bin/a5submit.sh -mw {wgs_base}1.fq {wgs_base}2.fq {wgs_base}"
+#$RUN $OPTIONS -d $1 --template "$PWD/bin/a5submit.sh -mw {wgs_base}1.fq {wgs_base}2.fq {wgs_base}"
+$RUN $OPTIONS -d $1 --template "$PWD/bin/pbsrun_MINIA.sh 49 3 12000000 {wgs_base}1.fq {wgs_base}2.fq {wgs_base}"
+

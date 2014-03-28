@@ -10,25 +10,25 @@
 
 PYTHON=python
 #PYTHON=$HOME/python/bin/python
-SAMTOEDGES="$PYTHON /panfs/panspermia/120274/work/hi-c/sim/samToEdges.py"
+SAMTOEDGES="$PYTHON /panfs/panspermia/120274/work/hi-c/sim/bin/samToEdges.py"
 
 if [ -z "$PBS_ENVIRONMENT" ] # SUBMIT MODE
 then
 	
-	if [ $# -ne 2 ]
+	if [ $# -ne 4 ]
 	then
-		echo "Usage: [hic2scf] [wgs2scf]"
+		echo "Usage: [hic2ctg.sam] [wgs2ctg.bam] [edge out] [node out]"
 		exit 1
 	fi
 
 	echo "Submitting run"
-	qsub -W block=true -v HIC2SCF=$1,WGS2SCF=$2 $0
+	qsub -W block=true -v HIC2CTG=$1,WGS2CTG=$2,EDGES=$3,NODES=$4 $0
 
 else # EXECUTION MODE
 	echo "Running"
 	cd $PBS_O_WORKDIR
 	
-	$SAMTOEDGES ${HIC2SCF}.sam ${WGS2SCF}.idxstats edges.csv nodes.csv
+	$SAMTOEDGES ${HIC2CTG} ${WGS2CTG%.bam}.idxstats $EDGES $NODES
 	
 	# Need weighted edges or more columns in above
 	# Need node.csv

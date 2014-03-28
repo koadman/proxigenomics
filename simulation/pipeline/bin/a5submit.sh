@@ -37,17 +37,20 @@ then
 	# Regular CLI mode #
 	####################
 	
-	while getopts ":mtw" opt
+	while getopts ":mtwf" opt
 	do
 		case $opt in
 			m)
 				METAGENOME="--metagenome"
 				;;
 			t)
-				TIMESTAMP=true
+				TIMESTAMP="true"
 				;;
 			w)
 				WAITOPT="-W block=true"
+				;;
+			f)
+				OVERWRITE="true"
 				;;
 			\?)
 				echo "Invalid option: -$OPTARG"
@@ -75,6 +78,7 @@ then
 		echo " -m    enable metagenome behaviour in A5 (optional)"
 		echo " -t    append a timestamp to the output folder (optional)"
 		echo " -w    block on submission, wait for assembly to finish (optional)"
+		echo " -f    force overwriting of output folder contents (optional)"
 		echo ""
 		echo " READS1     first input reads file (paired reads)"
 		echo " READS2     second input reads file (paired reads)"
@@ -140,7 +144,7 @@ else
 	cd $PBS_O_WORKDIR
 
 	# Create an output directory to contain the results
-	if [ "$TIMESTAMP" = true ]
+	if [ "$TIMESTAMP" == "true" ]
 	then
 		OUTDIR=${OUTBASE}"_"`date +%Y%m%d.%S`
 	else
@@ -149,7 +153,7 @@ else
 	fi
 	
 	# Preserve pre-existing directories
-	if [ -e $OUTDIR ]
+	if [ "$OVERWRITE" != "true" ] && [ -e $OUTDIR ]
 	then
 		echo "${OUTDIR}: output containing folder already exists"
 		exit 1

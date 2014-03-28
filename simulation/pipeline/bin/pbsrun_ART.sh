@@ -18,6 +18,8 @@ then
 		exit 1
 	fi
 	echo "Submitting run"
+
+	echo "qsub -W block=true -v SEED=$1,INSERT_LEN=$2,INSERT_SD=$3,READ_LEN=$4,X_FOLD=$5,REF_SEQ=$6,OUT_BASE=$7 $0"
 	qsub -W block=true -v SEED=$1,INSERT_LEN=$2,INSERT_SD=$3,READ_LEN=$4,X_FOLD=$5,REF_SEQ=$6,OUT_BASE=$7 $0
 
 else # EXECUTION MODE

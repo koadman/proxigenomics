@@ -1,14 +1,18 @@
+#!/usr/bin/env python
 import pandas as pd
 import sys
 import os
 
-if len(sys.argv) != 3:
-	print 'Usage: [min length] [run folder]'
+if len(sys.argv) != 4:
+	print 'Usage: [min length] [edges csv] [nodes csv]'
 	sys.exit(1)
 
+# Minimum sequence length
 minLength = int(sys.argv[1])
-nodes = pd.read_csv(os.path.join(sys.argv[2],'nodes.csv'),sep=' ')
-edges = pd.read_csv(os.path.join(sys.argv[2],'edges.csv'),sep=' ')
+
+# Load edge and node tables
+edges = pd.read_csv(sys.argv[2],sep=' ')
+nodes = pd.read_csv(sys.argv[3],sep=' ')
 
 # Filter out edges that aren't in 'keepers'
 keepers = nodes[nodes.LENGTH > minLength]

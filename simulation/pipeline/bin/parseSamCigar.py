@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 from Bio import SeqIO
 import re
 import sys
@@ -16,13 +17,15 @@ class Alignment:
     def addbases(self,bases):
         self.bases += bases
 
-if len(sys.argv) != 4:
-	print 'Usage: [min length] [query fasta] [sam file]'
+if len(sys.argv) != 5:
+	print 'Usage: [min length] [query fasta] [sam file] [outfile]'
 	sys.exit(1)
 
+# Set minimum sequence length and calculate the length of all input fasta sequence
 minLength = int(sys.argv[1])
 seqLength = {rec.id: len(rec) for rec in SeqIO.parse(sys.argv[2],'fasta')}
 
+# Parse the SAM file for alignment lengths
 taxons = {}
 i=0
 hin = open(sys.argv[3],'r')
@@ -40,12 +43,6 @@ for l in hin:
     txal.addbases(countAligned(fields[5]))
 hin.close()
 
-def tostring(d):
-    s = ''
-    for k,v in d.iteritems():
-        s += '{k} {v} '.format(k=str(k), v=str(v))
-    return s
-
 #
 # We need to decide on assignment.
 #
@@ -61,14 +58,15 @@ def tostring(d):
 # will then be considered the true source.
 best = {}
 for t,s in taxons.iteritems():
-    for sn,aln in s.iteritems():
+	for sn,aln in s.iteritems():
 		bi = best.get(sn)
 		if bi is None or aln.bases > bi['aln'].bases:
 			best[sn] = {'tx': t, 'aln': aln, 'slen': seqLength[sn]}
 
+hOut = open(sys.argv[4],'w')
 # Write out the list of winners, with additional columns for validation
 for k,v in best.iteritems():
 	if v['aln'].bases > minLength:
-		print '{seq_name} {tax_name} {cov:.4}'.format(
-			seq_name=k, tax_name=v['tx'], cov=float(v['aln'].bases)/float(v['slen']))
-	
+		hOut.write('{seq_name} {tax_name} {cov:.4}\n'.format(
+			seq_name=k, tax_name=v['tx'], cov=float(v['aln'].bases)/float(v['slen'])))
+hOut.close()
