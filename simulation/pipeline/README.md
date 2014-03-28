@@ -24,8 +24,6 @@ The stages can be run as follows, where the -j option controls concurrency.
 
 As a hierarchy of dependences exists, the total pool of tasks are not independent and limits the degree of parallelism obtainable at any point in the simulation.
 
-Output
-
 ####Parameter defintion
 Parameter sweeps are currently modified within the SConstruct files. Modifying nests high in the tree can result in a large cascading recalculation.
 
