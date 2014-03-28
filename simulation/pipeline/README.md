@@ -1,15 +1,53 @@
-First commit of pipeline and ancillaries.
+###Pipeline for simulating Hi-c experiments.
 
-This may not work out of the box since I had a number of paths relative
-to my home directory and have also moved the code to a subdir.
+A user supplies an organised set(s) of reference genomes and community definition(s) as a table of sequence to cell mappings with relative abundance measures.
+
+These are taken by the pipeline and a sweep of experimental conditions are explored. This happens in three stages.
+
+####Stages
+1) Generation of WGS data
+2) Generation of HiC data
+3) WGS and HiC are brought together, subsequently clustered and validated.
+
+The pipeline is built on top of Nestly and utilises the SCons wrapper. This make-like tool permits the definition of dependencies and manages the need for intermediate recalculation internally.
+
+Generation of WGS and HiC data has been separated out to avoid its duplication within the workflow.
+
+The stages can be run as follows, where the -j option controls concurrency.
+
+####Running pipeline
+1) scons -j N -f SConstruct_wgs.py
+2) scons -j N -f SConstruct_hic.py
+3) scons -j N -f SConstruct_map.py
+
+As a hierarchy of dependences exists, the total pool of tasks are not independent and limits the degree of parallelism obtainable at any point in the simulation.
+
+Output
+
+####Parameter defintion
+Parameter sweeps are currently modified within the SConstruct files. Modifying nests high in the tree can result in a large cascading recalculation.
+
+####Reference genomes
+The filesystem is used to organise each community, much like how the output results are produced by Nestly.
+
+Each individual community is placed in a folder beneath "references", where both a mulit-fasta and table are required.
+
+Eg. For 2 communities both using a simple uniform distribution.
+
+```
+|references
+|
+|---community1
+|   |---genomes.fasta
+|   |---uniform.table
+|
+|---community2
+    |---genomes.fasta
+    |---uniform.table
+```
 
 
-##Nestly pipeline
 
-1) run `hic_nestly.py` to prepare the sweep folder.
-2) run overlord.sh to compute all the tasks defined in the sweep folder.
 
-The current sweep defintion will create around 80GB of data.
 
-Matt DeMaere
-
+Matt.
