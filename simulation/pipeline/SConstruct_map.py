@@ -110,7 +110,7 @@ def make_mclinput(outdir,c):
 	c['mcl_files'].append(target)
 	return env.Command(target,source,action)
 
-wrap.add('mcl_inflation',[1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 1.9, 2.0])
+wrap.add('mcl_inflation',numpy.linspace(1.1,2.0,19))
 
 @wrap.add_target('do_mcl')
 def do_mcl(outdir, c):
@@ -133,5 +133,12 @@ def do_score(outdir, c):
 	target = os.path.join(outdir,'f1')
 	action = 'cd {od} && /panfs/panspermia/120274/work/hi-c/sim/bin/f1score.py $SOURCE.file $TARGET.file'.format(c,od=outdir)
 	return env.Command(target,source,action)
-		
+
+@wrap.add_target('do_vmeasure')
+def do_vmeasure(outdir, c):
+	source = os.path.join(outdir,'mcl.joined.truth')
+	target = os.path.join(outdir,'vmeasure')
+	action = 'cd {od} && /panfs/panspermia/120274/work/hi-c/sim/bin/vmeasure.py $SOURCE.file $TARGET.file'.format(c,od=outdir)
+	return env.Command(target,source,action)
+
 wrap.add_controls(Environment())
