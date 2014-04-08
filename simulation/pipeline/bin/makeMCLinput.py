@@ -3,8 +3,8 @@ import pandas as pd
 import sys
 import os
 
-if len(sys.argv) != 4:
-	print 'Usage: [min length] [edges csv] [nodes csv]'
+if len(sys.argv) != 5:
+	print 'Usage: [min length] [edges csv] [nodes csv] [output]'
 	sys.exit(1)
 
 # Minimum sequence length
@@ -19,5 +19,4 @@ keepers = nodes[nodes.LENGTH > minLength]
 filtered = edges[(edges.TARGET.isin(keepers.ID) & edges.SOURCE.isin(keepers.ID))]
 
 # Write mcl input files
-filtered.to_csv('mclIn.weighted', cols=['SOURCE','TARGET','WEIGHT'], sep=' ', index=False, header=False)
-filtered.to_csv('mclIn.unweighted', cols=['SOURCE','TARGET','RAWWEIGHT'], sep=' ', index=False, header=False)
+filtered.to_csv(sys.argv[4], cols=['SOURCE','TARGET','RAWWEIGHT'], sep=' ', index=False, header=False)

@@ -2,8 +2,8 @@
 
 import sys
 
-if len(sys.argv) != 4:
-    print "Usage: [truth table] [clustering] [output]"
+if len(sys.argv) != 5:
+    print "Usage: [truth table] [node map] [clustering] [output]"
     sys.exit(1)
 
 # Read in the truth table
@@ -19,17 +19,31 @@ hIn.close()
 
 print "Truth table contains {0} assignments".format(len(set(truth.values())))
 
+# Read node # to name mapping file
+hIn = open(sys.argv[2], 'r')
+node = {}
+for line in hIn:
+	tok = line.rstrip().split()
+	if len(tok) != 2:
+		raise IOError('Invalid number of fields on line {0}'.format(line))
+	node[int(tok[0])] = tok[1]
+
 # Read in the clustering
-hIn = open(sys.argv[2],'r')
+hIn = open(sys.argv[3],'r')
 cluster = {}
 for i,line in enumerate(hIn):
-    cluster[i+1] = line.rstrip().split()
+	clid = int(line.rstrip())+1
+	cl = cluster.get(clid)
+	if cl is None:
+		cl = []
+		cluster[clid] = cl
+	cl.append(node[i+1])
 hIn.close()
 
 print "Cluster table contains {0} assignments".format(len(cluster))
 
 # Write out joined result
-hOut = open(sys.argv[3],'w')
+hOut = open(sys.argv[4],'w')
 hOut.write("ctg truth predict\n")
 for cl in sorted(cluster.keys()):
     for member in sorted(cluster[cl]):
