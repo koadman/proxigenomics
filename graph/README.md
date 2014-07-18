@@ -1,2 +1,2 @@
-Graph Creating from Hi-C Data
+Graph Creation from Hi-C Data
 
