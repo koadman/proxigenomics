@@ -32,7 +32,7 @@ class SplitNode(object):
 
     # 1-based coords, end inclusive
     def __init__(self, contig, start, end=None):
-        self.scf = contig
+        self.contig = contig
         self.start = start
         if end is None:
             self.end = start
@@ -43,15 +43,15 @@ class SplitNode(object):
         return repr(self)
 
     def __repr__(self):
-        return '{0}:{1}:{2}'.format(self.scf, self.start, self.end)
+        return '{0}:{1}:{2}'.format(self.contig, self.start, self.end)
 
     def __hash__(self):
-        return hash((self.scf, self.start, self.end))
+        return hash((self.contig, self.start, self.end))
 
     def __eq__(self, other):
         if type(other) is not type(self):
             return NotImplemented
-        return other.scf == self.scf and other.start == self.start and other.end == self.end
+        return other.contig == self.contig and other.start == self.start and other.end == self.end
 
     def __ne__(self, other):
         return not self.__eq__(other)
@@ -60,7 +60,7 @@ class SplitNode(object):
 class VariantSplitNode(SplitNode):
 
     def __init__(self, contig, pos, base):
-        super(VariantSplitNode,self).__init__(contig, pos)
+        super(VariantSplitNode, self).__init__(contig, pos)
         self.base = base
 
     def __str__(self):
@@ -92,7 +92,7 @@ split_graph = nx.Graph()
 for ctgNode, ctgData in ctg_graph.nodes_iter(data=True):
 
     # build the list of snps in a single contig (with assocatiated data)
-    snp_list = [(n, dat) for n, dat in snp_graph.nodes_iter(data=True) if n.scf == ctgNode]
+    snp_list = [(n, dat) for n, dat in snp_graph.nodes_iter(data=True) if n.contig == ctgNode]
 
     if len(snp_list) <= 0:
         continue
@@ -105,9 +105,9 @@ for ctgNode, ctgData in ctg_graph.nodes_iter(data=True):
     for s in snp_list:
 
         # each SNP produces 3 fragments
-        frgA = SplitNode(ctgNode, x0, s[0].pos-1)
-        frgRef = VariantSplitNode(ctgNode, s[0].pos, s[1]['ref'])
-        frgVar = VariantSplitNode(ctgNode, s[0].pos, s[1]['var'])
+        frgA = SplitNode(ctgNode, x0, s[0].position-1)
+        frgRef = VariantSplitNode(ctgNode, s[0].position, s[1]['ref'])
+        frgVar = VariantSplitNode(ctgNode, s[0].position, s[1]['var'])
 
         # 1 segment becomes 3
         split_graph.add_node(frgA)
@@ -124,7 +124,7 @@ for ctgNode, ctgData in ctg_graph.nodes_iter(data=True):
             split_graph.add_edge(prevFrg[1], frgA)
 
         prevFrg = [frgRef, frgVar]
-        x0 = s[0].pos + 1
+        x0 = s[0].position + 1
 
     # last segment corner-case
     if x0 < ctgData['length']:

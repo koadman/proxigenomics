@@ -25,7 +25,6 @@ print "Created {0} nodes".format(g.number_of_nodes())
 fragmentRegistry = RegisteredObjectFactory(Fragment)
 
 print 'Scanning R1 for placements'
-#fragments = {}
 for ar in samR1.fetch():
 
     # only consider primary alignments
@@ -40,8 +39,6 @@ for ar in samR1.fetch():
     frg.read1 = ReadPlacement(scfName, ar.qstart)
     frg.read1.mapq = ar.mapq
 
-
-#print '{0} potential linkages'.format(len(fragments))
 print '{0} potential linkages'.format(len(fragmentRegistry))
 
 print 'Scanning R2 for placements'
@@ -72,6 +69,7 @@ def prob_to_phredq(prob, maxq=None):
     if maxq and qual > maxq:
         return maxq
     return qual
+
 
 print 'Adding edges to graph (ignoring self-loops)'
 edges = 0

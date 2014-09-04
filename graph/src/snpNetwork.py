@@ -10,17 +10,6 @@ import logging
 logging.basicConfig(filename='snpNetwork.log',level=logging.DEBUG)
 
 #
-# Obtain a fragment from the registry. If not found
-# register it by fragment name.
-#
-# def registerFragment(frgName):
-#     frg = frgRegistry.get(frgName)
-#     if frg is None:
-#         frg = Fragment(frgName)
-#         frgRegistry[frgName] = frg
-#     return frg
-
-#
 # Read base and quality
 #
 def readBaseAndQuality(alignedRead, pos):

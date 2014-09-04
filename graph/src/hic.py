@@ -67,23 +67,6 @@ class Fragment:
     def isInterContig(self):
         return self.isPaired() and self.read1.contig != self.read2.contig
 
-#class Contig:
-#    def __init__(self, name, length):
-#        self.name = name
-#        self.length = length
-#    def __hash__(self):
-#        return hash(self.name)
-#    def __eq__(self, other):
-#        if type(other) is not type(self):
-#            return NotImplemented
-#        return other.name == self.name
-#    def __ne__(self, other):
-#        return not self.__eq__(other)
-#    def __str__(self):
-#        return repr(self)
-#    def __repr__(self):
-#        return self.name
-
 #
 # A SNP site, defined by contig and position
 #
@@ -104,14 +87,6 @@ class SNP:
     @property
     def position(self):
         return self.vcfRecord.POS
-
-    #@property
-    #def reference(self):
-    #    return str(self.vcfRecord.REF).upper()
-
-    #@property
-    #def variant(self):
-    #    return str(self.vcfRecord.ALT[0]).upper()
 
     @property
     def quality(self):
