@@ -137,7 +137,7 @@ for n, sg in enumerate(nx.connected_component_subgraphs(split_graph, copy=True))
         else:
             flows = np.vstack((flows, fr))
 
-    # to get a sensibly formatted matrix, use Pandas method
+    # to get a sensibly formatted matrix, use Pandas
     df = pd.DataFrame(flows, columns=header, index=header)
     df.to_csv('sg{0}.txt'.format(n), sep=' ', float_format='%.4f')
 

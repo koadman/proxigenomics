@@ -1,3 +1,14 @@
+import vcf
+
+#
+# Simple method to count the number of records in a
+# VCF file. This is useful for providing progress on
+# very large runs.
+#
+def count_vcf_records(fname):
+    return len([rec for rec in vcf.Reader(filename=fname)])
+
+
 #
 # Represents the placement of a read within an
 # assembly or mapping.
@@ -7,6 +18,7 @@ class ReadPlacement:
         self.contig = contig
         self.position = position
         self.snpSet = set()
+        self.snpInstances = {}
 
     def __hash__(self):
         return hash((self.contig, self.position))
@@ -20,7 +32,7 @@ class ReadPlacement:
         return not self.__eq__(other)
 
     def __str__(self):
-        return 'SCF_NAME:{0} SCF_START:{1} SNP_SET:{2}'.format(self.contig, self.position, str(self.snpSet))
+        return 'SCF_NAME:{0} SCF_START:{1} SNP_INST:{2}'.format(self.contig, self.position, str(self.snpInstances))
 
     def __repr__(self):
         return self.contig + '-' + str(self.position)
@@ -29,6 +41,12 @@ class ReadPlacement:
         if snp in self.snpSet:
             raise Exception('SNP:{0} already exists for READ:{1}'.format(str(snp), str(self)))
         self.snpSet.add(snp)
+
+    def addSnpInstance(self, snp, base):
+        if snp in self.snpInstances:
+            raise Exception('SNP:{0} already exists as in instance base:{1} for READ:{2}'.format(
+                str(snp), self.snpInstances[snp], str(self)))
+        self.snpInstances[snp] = base
 
     def snpCount(self):
         return len(self.snpSet)
@@ -91,6 +109,17 @@ class SNP:
     @property
     def quality(self):
         return float(self.vcfRecord.QUAL)
+
+    @property
+    def ref_id(self):
+        return '{0}:{1}'.format(self, self.reference)
+
+    @property
+    def var_id(self):
+        return '{0}:{1}'.format(self, self.variant)
+
+    def get_split_ids(self):
+        return [self.ref_id, self.var_id]
 
     def __eq__(self, other):
         if type(other) is not type(self):
@@ -167,6 +196,13 @@ class RegisteredObjectFactory:
         else:
             self.registry[obj] = obj
         return obj
+
+    #
+    # Get the object or raise exception
+    #
+    def getObject(self, **kwargs):
+        obj = self.clazz(**kwargs)
+        return self.registry[obj]
 
     def elements(self):
         return self.registry.values()
