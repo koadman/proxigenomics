@@ -9,7 +9,7 @@ import vcf
 import sys
 
 # log config
-logging.basicConfig(filename='snpNetwork.log', level=logging.DEBUG)
+logging.basicConfig(filename='split-network.log', level=logging.DEBUG)
 
 
 #
