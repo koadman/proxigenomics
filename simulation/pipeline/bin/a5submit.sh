@@ -22,6 +22,7 @@
 # This might need to be set!
 A5EXE=$ITHREE_GIT/software/a5_miseq_linux/bin/a5_pipeline.pl
 
+
 #
 # Check if invocation was via PBS queue.
 # 
@@ -36,15 +37,15 @@ then
 	####################
 	# Regular CLI mode #
 	####################
-	
-	while getopts ":mtwf" opt
+
+    # defaults
+    TAG=a5
+
+	while getopts ":mt:wf" opt
 	do
 		case $opt in
 			m)
 				METAGENOME="--metagenome"
-				;;
-			t)
-				TIMESTAMP="true"
 				;;
 			w)
 				WAITOPT="-W block=true"
@@ -52,6 +53,9 @@ then
 			f)
 				OVERWRITE="true"
 				;;
+			t)
+		        TAG=$OPTARG
+		        ;;
 			\?)
 				echo "Invalid option: -$OPTARG"
 				;;
@@ -67,23 +71,23 @@ then
 		echo ""
 		echo "Single set of paired Reads"
 		echo "" 
-		echo " Usage: [-m] <READS1> <READS2> <OUTPUT_TAG>"
+		echo " Usage: [-m] <READS1> <READS2> <OUTPUT_PATH>"
 		echo ""
 		echo "Using a libfile"
 		echo ""
-		echo " Usage: [-m] <LIBFILE> <OUTPUT_TAG>"
+		echo " Usage: [-m] <LIBFILE> <OUTPUT_PATH>"
 		echo ""
 		echo "Arguments"
 		echo ""
 		echo " -m    enable metagenome behaviour in A5 (optional)"
-		echo " -t    append a timestamp to the output folder (optional)"
 		echo " -w    block on submission, wait for assembly to finish (optional)"
 		echo " -f    force overwriting of output folder contents (optional)"
+		echo " -t    prefix tag for output file names"
 		echo ""
 		echo " READS1     first input reads file (paired reads)"
 		echo " READS2     second input reads file (paired reads)"
 		echo " LIBFILEA5  library file for multiple read-sets"
-		echo " OUTPUT_TAG prefix tag used in output file names (this is not a path)"
+		echo " OUTPUT_PATH containing output folder"
 		echo ""
 		exit 1
 	fi
@@ -106,15 +110,8 @@ then
 			exit 1
 		fi
 	
-		TESTBASE=`basename $3`
-		if [ ${#3} -ne ${#TESTBASE} ]
-		then
-			echo "$3 should not be a path, please remove any slashes (/)"
-			exit 1
-		fi
-
 		# Queue submission
-		qsub $WAITOPT -N A5job -v TIMESTAMP=$TIMESTAMP,OPTIONS=$METAGENOME,READ1=$R1,READ2=$R2,OUTBASE=$3 $0
+		qsub $WAITOPT -N A5job -v TAG=$TAG,OVERWRITE=$OVERWRITE,OPTIONS=$METAGENOME,READ1=$R1,READ2=$R2,OUTDIR=$3 $0
 		
 	# Set up paths for libfile submission
 	else
@@ -133,7 +130,7 @@ then
 		fi
 
 		# Queue submission
-		qsub $WAITOPT -N A5job -v TIMESTAMP=$TIMESTAMP,OPTIONS=$METAGENOME,LIBFILE=$LIBFILE,OUTBASE=$2 $0
+		qsub $WAITOPT -N A5job -v TAG=$TAG,OVERWRITE=$OVERWRITE,OPTIONS=$METAGENOME,LIBFILE=$LIBFILE,OUTDIR=$2 $0
 	fi
 else
 	##############
@@ -143,15 +140,6 @@ else
 	# Change to the working directory where the job was submitted to the queue
 	cd $PBS_O_WORKDIR
 
-	# Create an output directory to contain the results
-	if [ "$TIMESTAMP" == "true" ]
-	then
-		OUTDIR=${OUTBASE}"_"`date +%Y%m%d.%S`
-	else
-		
-		OUTDIR=${OUTBASE}
-	fi
-	
 	# Preserve pre-existing directories
 	if [ "$OVERWRITE" != "true" ] && [ -e $OUTDIR ]
 	then
@@ -165,9 +153,9 @@ else
 	if [ -z "$LIBFILE" ]
 	then
 		# Read-set invocation
-		$A5EXE $OPTIONS $READ1 $READ2 $OUTBASE
+		$A5EXE $OPTIONS $READ1 $READ2 $TAG
 	else
 		# Libfile invocation
-		$A5EXE $OPTIONS $LIBFILE $OUTBASE
+		$A5EXE $OPTIONS $LIBFILE $TAG
 	fi
 fi
