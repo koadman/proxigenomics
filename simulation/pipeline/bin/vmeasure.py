@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+
 import numpy
 import pandas
 from math import log

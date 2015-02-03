@@ -8,9 +8,7 @@
 #PBS -l select=1:ncpus=1:mem=32gb
 #PBS -N GRAPHJOB
 
-PYTHON=python
-#PYTHON=$HOME/python/bin/python
-SAMTOEDGES="$PYTHON /panfs/panspermia/120274/work/hi-c/sim/bin/samToEdges.py"
+SAMTOEDGES=bin/samToEdges.py
 
 if [ -z "$PBS_ENVIRONMENT" ] # SUBMIT MODE
 then

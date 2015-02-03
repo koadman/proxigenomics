@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 #
 # Convert a SAM file to edge CSV file suitable for importing into Gephi
 #

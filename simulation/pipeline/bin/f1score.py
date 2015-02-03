@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+
 from munkres import Munkres, make_cost_matrix
 from numpy import diag, average
 from numpy.random import randint
