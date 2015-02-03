@@ -555,6 +555,5 @@ with open(options.output_file, 'wb') as h_output:
 
         frag_count += 1
 
-
 print "Ignored " + str(skip_count) + " fragments due to length restrictions"
 print "Ignored " + str(overlap_count) + " fragments due to overlap"
