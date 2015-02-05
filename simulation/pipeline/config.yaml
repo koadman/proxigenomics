@@ -1,0 +1,26 @@
+seed: 2136841
+
+community: {
+    folder: references,
+    table: uniform.table,
+    seq: genomes.fasta
+}
+
+wgs_base: wgs
+wgs_folder: wgs_data
+wgs_asmdir: asm
+wgs_xfold: [1, 2, 5]
+wgs_read_length: 150
+wgs_insert_length: 450
+wgs_insert_sd: 100
+
+hic_base: hic
+hic_folder: hic_data
+hic_inter_prob: 0.9
+hic_read_length: 150
+hic_n_frag: [1000, 2000, 5000]
+
+map_folder: map_data
+hic2ctg: hic2ctg.sam
+ctg2ref: ctg2ref.sam
+wgs2ctg: wgs2ctg.sam

@@ -12,11 +12,12 @@ if [ -z "$PBS_ENVIRONMENT" ] # SUBMIT MODE
 then
 
 	echo "Submitting run"
-	qsub -W block=true $0
+	qsub -W block=true -v FILEPATH=$1 $0
 
 else # EXECUTION MODE
 	echo "Running"
 	cd $PBS_O_WORKDIR
+	cd $FILEPATH
 	
 	# For all sams, make sorted index bams and then some stat files
 	for sf in `find -maxdepth 1 -name '*.sam'`
