@@ -7,8 +7,11 @@
 # how complicated it was becoming.
 #
 
+
 #PBS -q smallq
 #PBS -l select=1:ncpus=2:mem=32gb
+#PBS -e logs/
+#PBS -o logs/
 #PBS -N MAPJOB
 
 BWAEXE=$HOME/bin/bwa-0.7.6a/bwa

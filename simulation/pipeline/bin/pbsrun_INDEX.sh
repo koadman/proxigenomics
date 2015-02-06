@@ -4,8 +4,11 @@
 # create BWA index
 #
 
+
 #PBS -q smallq
 #PBS -l select=1:ncpus=2:mem=32gb
+#PBS -e logs/
+#PBS -o logs/
 #PBS -N INDEXJOB
 
 BWAEXE=$HOME/bin/bwa-0.7.6a/bwa
