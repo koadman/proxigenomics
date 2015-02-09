@@ -1,4 +1,5 @@
 seed: 2136841
+truth_table: truth.txt
 
 community: {
     folder: references,
@@ -9,7 +10,7 @@ community: {
 wgs_base: wgs
 wgs_folder: wgs_data
 wgs_asmdir: asm
-wgs_xfold: [1, 2, 5]
+wgs_xfold: [5, 10]
 wgs_read_length: 150
 wgs_insert_length: 450
 wgs_insert_sd: 100
@@ -18,7 +19,7 @@ hic_base: hic
 hic_folder: hic_data
 hic_inter_prob: 0.9
 hic_read_length: 150
-hic_n_frag: [1000, 2000, 5000]
+hic_n_frag: [10000, 20000, 50000]
 
 map_folder: map_data
 hic2ctg: hic2ctg.sam

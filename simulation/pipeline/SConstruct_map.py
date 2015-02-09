@@ -25,7 +25,7 @@ def get_wgs_fasta(c):
             '{0}.contigs.fasta'.format(config['wgs_base']))
 
 
-def prepend_path(path, fnames):
+def prepend_paths(path, fnames):
     return [os.path.join(path, fn) for fn in fnames]
 
 
@@ -45,7 +45,7 @@ wrap.add('wgs_xfold', config['wgs_xfold'])
 
 wrap.add_aggregate('sam_files', list)
 wrap.add_aggregate('graph_files', list)
-wrap.add_aggregate('mcl_files', list)
+wrap.add_aggregate('cl_input', list)
 wrap.add_aggregate('truth', list)
 
 
@@ -134,14 +134,14 @@ def make_graph(outdir, c):
     hic_sam = pick_sam(config['hic2ctg'], c)
     wgs_bam = [os.path.splitext(fn)[0] + ".bam" for fn in c['sam_files'] if fn.endswith(config['wgs2ctg'])]
     source = hic_sam + wgs_bam
-    target = prepend_path(outdir, ['edges.csv', 'nodes.csv'])
+    target = prepend_paths(outdir, ['edges.csv', 'nodes.csv'])
     c['graph_files'].append(target)
     action = 'bin/pbsrun_GRAPH.sh $SOURCES.abspath $TARGETS.abspath'
     return env.Command(target, source, action)
 
 
 wrap.add('cluster_method', ['mcl'])
-wrap.add('score_min_length', [1000])
+wrap.add('score_min_length', [500, 1000])
 
 
 @wrap.add_target('make_truth')
@@ -154,31 +154,35 @@ def make_truth(outdir, c):
     return env.Command(target, source, action)
 
 
-@wrap.add_target('make_mclinput')
-def make_mclinput(outdir, c):
+@wrap.add_target('make_cluster_input')
+def make_cluster_input(outdir, c):
     source = c['graph_files']
-    target = prepend_path(outdir, ['mclIn.weighted'])
+    target = prepend_paths(outdir, ['mclIn.weighted'])
     action = 'bin/makeMCLinput.py {0[score_min_length]} $SOURCES.abspath $TARGET.abspath'.format(c)
-    c['mcl_files'].append(target)
+    c['cl_input'].append(target)
     return env.Command(target, source, action)
 
 
-wrap.add('mcl_inflation', numpy.linspace(1.1, 2.0, 2))
+wrap.add('mcl_inflation', numpy.linspace(1.1, 2.0, 9))
 
 
 @wrap.add_target('do_mcl')
 def do_mcl(outdir, c):
-    # figure out how to run over both weighted/unweighted
-    source = c['mcl_files'][0][0]
-    target = prepend_path(outdir, ['mclout'])
+    # TODO run over both weighted/unweighted
+    source = c['cl_input'][0][0]
+    target = prepend_paths(outdir, ['cl_out'])
     action = 'bin/pbsrun_MCL.sh {0[mcl_inflation]} $SOURCE.abspath $TARGET.abspath'.format(c)
     return env.Command(target, source, action)
 
 
 @wrap.add_target('do_score')
 def do_score(outdir, c):
-    source = c['truth'] + prepend_path(outdir, ['mclout'])
-    target = ['{0}.{1}'.format(source[1], suffix) for suffix in ['joined','f1','vm']]
+    cl_out = os.path.join(outdir, 'cl_out')
+    ttable = os.path.join(outdir, '../truth.txt')
+    # this target consumes truth table and clustering output
+    source = [ttable, cl_out]
+    # this target creates 3 output files
+    target = ['{0}.{1}'.format(cl_out, suffix) for suffix in ['joined', 'f1', 'vm']]
     action = 'bin/pbsrun_SCORE.sh $SOURCES.abspath'
     return env.Command(target, source, action)
 
