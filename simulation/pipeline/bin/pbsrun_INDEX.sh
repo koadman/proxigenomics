@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #
-# create BWA index
+# Create homology search indexes
 #
 
 
@@ -11,7 +11,8 @@
 #PBS -o logs/
 #PBS -N INDEXJOB
 
-BWAEXE=$HOME/bin/bwa-0.7.6a/bwa
+BWA=$HOME/bin/bwa-0.7.6a/bwa
+LASTDB=$HOME/bin/lastdb
 
 if [ -z "$PBS_ENVIRONMENT" ] # SUBMIT MODE
 then
@@ -28,5 +29,6 @@ else # EXECUTION MODE
 	cd $PBS_O_WORKDIR
 
 	# create indexes
-	$BWAEXE index $FASTA
+	$BWA index $FASTA
+	$LASTDB $FASTA $FASTA
 fi

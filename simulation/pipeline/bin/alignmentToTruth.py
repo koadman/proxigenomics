@@ -297,6 +297,9 @@ if __name__ == '__main__':
     elif args.afmt == 'psl':
         align_repo = parse_psl(args.alignment_file[0])
 
+    if args.ofmt == 'flat':
+        print 'Soft results always enabled for flat output format'
+
     print 'Read {0} alignments'.format(len(align_repo))
 
     #
