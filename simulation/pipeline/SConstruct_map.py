@@ -43,8 +43,6 @@ wrap.add('hic_n_frag', config['hic_n_frag'])
 wrap.add('wgs_xfold', config['wgs_xfold'])
 
 wrap.add_aggregate('align_files', list)
-wrap.add_aggregate('last_files', list)
-wrap.add_aggregate('')
 wrap.add_aggregate('graph_files', list)
 wrap.add_aggregate('cl_input', list)
 wrap.add_aggregate('truth', list)
@@ -164,7 +162,7 @@ def make_truth(outdir, c):
 def make_cluster_input(outdir, c):
     source = c['graph_files']
     target = prepend_paths(outdir, ['mclIn.weighted'])
-    action = 'bin/makeMCLinput.py {0[score_min_length]} $SOURCES.abspath $TARGET.abspath'.format(c)
+    action = 'bin/makeMCLinput.py {1[ctg_minlen]} $SOURCES.abspath $TARGET.abspath'.format(c, config)
     c['cl_input'].append(target)
     return env.Command(target, source, action)
 
