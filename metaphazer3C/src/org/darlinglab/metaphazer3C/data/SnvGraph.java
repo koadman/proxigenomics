@@ -2,7 +2,8 @@ package org.darlinglab.metaphazer3C.data;
 
 /**
  * an undirected graph where nodes are variant sites and edges link nodes that were observed together
- * in a sequence read or read pair
+ * in a sequence read or read pair.
+ * This data structure is built with SnvGraphBuilder and from then on should be immutable
  * @author koadman
  *
  */
@@ -13,7 +14,7 @@ public class SnvGraph {
 		public class Node{
 			public int site;
 			public float[] freqs;
-			Edge[] edges; // all edges (undirected)
+			public Edge[] edges; // all edges (undirected)
 			public Node(){
 				freqs = new float[ALPHABET_SIZE];
 			}

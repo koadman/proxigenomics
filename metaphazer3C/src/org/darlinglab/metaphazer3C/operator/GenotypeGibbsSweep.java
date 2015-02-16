@@ -19,15 +19,16 @@ public class GenotypeGibbsSweep {
 	}
 
 	public void move(Genotype g){
-		for(int i=0; i < g.states.length; i++){
+		for(int i=0; i < snvs.nodes.length; i++){
 			// Gibbs sample a new state for site i
 			// calculate likelihood for each nucleotide
 			double[] state_ll = new double[SnvGraph.ALPHABET_SIZE];
 			for(int a=0; a<SnvGraph.ALPHABET_SIZE; a++){
-				g.states[i] = a;
+				g.setState(i, a);
 				state_ll[a] = gml.getLikelihood();
 			}
 			// now sample one
+			
 		}
 	}
 	
