@@ -1,5 +1,5 @@
 seed: 2136841
-truth_table: truth.txt
+truth_table: truth.yaml
 
 community: {
     folder: references,
@@ -28,6 +28,12 @@ ctg_minid: 95.0
 ctg_minlen: 1000
 
 map_folder: map_data
+
+cluster: {
+    input: cl_input
+    output: cl_output
+}
+
 hic2ctg: hic2ctg.sam
 ctg2ref: ctg2ref.psl
 wgs2ctg: wgs2ctg.sam
