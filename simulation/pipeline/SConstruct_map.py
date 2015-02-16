@@ -1,7 +1,5 @@
 from nestly import Nest, stripext
 from nestly.scons import SConsWrap, name_targets
-import fnmatch
-import glob
 import os
 import os.path
 import numpy
@@ -12,8 +10,8 @@ import appconfig
 #
 
 
-def pick_sam(fname, c):
-    return [fn for fn in c['sam_files'] if fn.endswith(fname)]
+def pick_alignment(fname, c):
+    return [fn for fn in c['align_files'] if fn.endswith(fname)]
 
 
 def get_wgs_fasta(c):
@@ -36,6 +34,7 @@ nest = Nest()
 wrap = SConsWrap(nest, config['map_folder'])
 env = Environment(ENV=os.environ)
 
+
 commPaths = appconfig.get_communities(config)
 wrap.add('community', commPaths, label_func=os.path.basename)
 
@@ -43,7 +42,9 @@ wrap.add('hic_table', [config['community']['table']], label_func=stripext)
 wrap.add('hic_n_frag', config['hic_n_frag'])
 wrap.add('wgs_xfold', config['wgs_xfold'])
 
-wrap.add_aggregate('sam_files', list)
+wrap.add_aggregate('align_files', list)
+wrap.add_aggregate('last_files', list)
+wrap.add_aggregate('')
 wrap.add_aggregate('graph_files', list)
 wrap.add_aggregate('cl_input', list)
 wrap.add_aggregate('truth', list)
@@ -68,7 +69,7 @@ def map_hic2ctg(outdir, c):
 
     action = 'bin/pbsrun_MAP.sh $SOURCES.abspath $TARGET.abspath'
 
-    c['sam_files'].append(target)
+    c['align_files'].append(target)
 
     return env.Command(target, source, action)
 
@@ -89,9 +90,9 @@ def map_ctg2ref(outdir, c):
 
     source = [subject, query]
 
-    action = 'bin/pbsrun_MAP.sh $SOURCES.abspath $TARGET.abspath'
+    action = 'bin/pbsrun_LAST.sh $SOURCES.abspath $TARGET.abspath'
 
-    c['sam_files'].append(target)
+    c['align_files'].append(target)
 
     return env.Command(target, source, action)
 
@@ -116,23 +117,23 @@ def map_wgs2ctg(outdir, c):
     source = [subject] + query
     action = 'bin/pbsrun_MAP2.sh $SOURCES.abspath $TARGET.abspath'
 
-    c['sam_files'].append(target)
+    c['align_files'].append(target)
 
     return env.Command(target, source, action)
 
 
 @wrap.add_target('make_sam2bam')
 def make_bam(outdir, c):
-    target = [os.path.splitext(dn)[0] + ".bam" for dn in c['sam_files']]
-    source = c['sam_files']
+    target = [os.path.splitext(dn)[0] + ".bam" for dn in c['align_files']]
+    source = c['align_files']
     action = 'bin/pbsrun_SAMTOOLS.sh {0}'.format(outdir)
     return env.Command(target, source, action)
 
 
 @wrap.add_target('make_graph')
 def make_graph(outdir, c):
-    hic_sam = pick_sam(config['hic2ctg'], c)
-    wgs_bam = [os.path.splitext(fn)[0] + ".bam" for fn in c['sam_files'] if fn.endswith(config['wgs2ctg'])]
+    hic_sam = pick_alignment(config['hic2ctg'], c)
+    wgs_bam = [os.path.splitext(fn)[0] + ".bam" for fn in c['align_files'] if fn.endswith(config['wgs2ctg'])]
     source = hic_sam + wgs_bam
     target = prepend_paths(outdir, ['edges.csv', 'nodes.csv'])
     c['graph_files'].append(target)
@@ -141,16 +142,21 @@ def make_graph(outdir, c):
 
 
 wrap.add('cluster_method', ['mcl'])
-wrap.add('score_min_length', [500, 1000])
+#wrap.add('score_min_length', [500, 1000])
 
 
 @wrap.add_target('make_truth')
 def make_truth(outdir, c):
-    seq = get_wgs_fasta(c)
-    source = [seq] + pick_sam(config['ctg2ref'], c)
+    source = pick_alignment(config['ctg2ref'], c)
     target = os.path.join(outdir, config['truth_table'])
     c['truth'].append(target)
-    action = 'bin/parseSamCigar.py {0[score_min_length]} $SOURCES.abspath $TARGET.abspath'.format(c)
+    action = 'bin/alignmentToTruth.py --soft ' \
+             '--afmt {1[ctg_afmt]} ' \
+             '--ofmt {1[ctg_ofmt]} ' \
+             '--minlen {1[ctg_minlen]} ' \
+             '--mincov {1[ctg_mincov]} ' \
+             '--minid {1[ctg_minid]} ' \
+             '$SOURCES.abspath $TARGET.abspath'.format(c, config)
     return env.Command(target, source, action)
 
 
