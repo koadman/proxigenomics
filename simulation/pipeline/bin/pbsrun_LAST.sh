@@ -12,7 +12,7 @@
 #PBS -N LASTJOB
 
 LASTAL=$HOME/bin/lastal
-MAFCONV=$HOME/bin/maf-convert
+MAFCONV=$HOME/bin/maf-convert.py
 
 if [ -z "$PBS_ENVIRONMENT" ] # SUBMIT MODE
 then

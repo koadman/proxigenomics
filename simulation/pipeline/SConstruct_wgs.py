@@ -46,7 +46,10 @@ def assemble_wgs(work_dir, c):
     return 'ctg', env.Command(target, source, action)
 
 
-index_suffixes = ['.amb', '.ann', '.bwt', '.pac', '.sa']
+# BWA and LAST index related file suffixes
+index_suffixes = ['.amb', '.ann', '.bwt', '.pac', '.sa', '.bck',
+                  '.des', '.prj', '.sds', '.ssp', '.suf', '.tis']
+
 @wrap.add_target('index_ctg')
 def index_ctg(outdir, c):
     source = str(c['assemble_wgs']['ctg'])
