@@ -2,9 +2,8 @@
 
 from munkres import Munkres, make_cost_matrix
 from numpy import diag, average
-from pandas import read_csv, crosstab
+import truthtable as tt
 import sys
-
 
 def cost_matrix(contingency_table):
     """Hungarian method assumes the goal of minimum cost, while our goal with a
@@ -112,23 +111,27 @@ def add_padding_columns(dataFrame):
         i += 1
 
 
-if len(sys.argv) != 3:
-    print 'Usage: [prediction table] [output]'
+if len(sys.argv) != 4:
+    print 'Usage: [truth] [prediction] [output]'
     exit(1)
 
-with open(sys.argv[2], 'w') as h_out:
+truth = tt.read_truth(sys.argv[1])
+pred = tt.read_mcl(sys.argv[2])
 
-    d = read_csv(sys.argv[1], sep=' ')
-    if len(d) == 0:
-        h_out.write('NA NA NA\n')
-        sys.exit(0)
+ct = tt.crosstab(truth.hard(), pred.hard())
 
-    ct = crosstab(d['truth'], d['predict'])
+print 'Contigency table [rows=truth, cols=prediction]'
+print ct
 
-    if over_clustered(ct):
-        add_padding_columns(ct)
+if over_clustered(ct):
+    add_padding_columns(ct)
+    print 'Squaring table with dummy classes'
+    print ct
 
-    mct = match_labels(ct)
+mct = match_labels(ct)
+print 'Aligned contigency table'
+print mct
 
+with open(sys.argv[3], 'w') as h_out:
     h_out.write("{f1:.4} {recall:.4} {prec:.4}\n".format(
         f1=f1_score_macro(mct), recall=recall_macro(mct), prec=precision_macro(mct)))

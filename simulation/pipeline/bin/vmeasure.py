@@ -1,10 +1,9 @@
 #!/usr/bin/env python
 
 from math import log
+import truthtable as tt
 import sys
-
 import numpy
-import pandas
 
 
 def entropy(ct):
@@ -52,16 +51,19 @@ def v_measure(ct):
     return {'homogeneity': homogen, 'completeness': complet, 'v_measure': v_measure}
 
 
-if len(sys.argv) != 3:
-    print 'Usage [prediction table] [output]'
+if len(sys.argv) != 4:
+    print 'Usage [truth] [prediction] [output]'
     sys.exit(1)
 
-with open(sys.argv[2], 'w') as h_out:
-    d = pandas.read_csv(sys.argv[1], sep=' ')
-    if len(d) == 0:
-        h_out.write('NA NA NA\n')
-        sys.exit(0)
+truth = tt.read_truth(sys.argv[1])
+pred = tt.read_mcl(sys.argv[2])
 
-    ct = pandas.crosstab(d['truth'], d['predict'])
+ct = tt.crosstab(truth.hard(), pred.hard())
+
+print 'Contigency table [rows=truth, cols=prediction]'
+print ct
+
+with open(sys.argv[3], 'w') as h_out:
     h_out.write('{0[homogeneity]:.4} {0[completeness]:.4} {0[v_measure]:.4}\n'.format(v_measure(ct)))
+
 

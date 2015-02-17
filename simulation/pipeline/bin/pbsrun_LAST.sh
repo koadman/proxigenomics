@@ -18,7 +18,7 @@ if [ -z "$PBS_ENVIRONMENT" ] # SUBMIT MODE
 then
 	if [ $# -ne 3 ]
 	then
-		echo "Usage: <subject> <query> <output>"
+		echo "Usage: <subject> <query> <output_base>"
 		exit 1
 	fi
 	echo "Submitting run"
@@ -29,5 +29,5 @@ else # EXECUTION MODE
 	cd $PBS_O_WORKDIR
 
 	# align
-	$LASTAL -f 0 $SUBJECT $QUERY | $MAFCONV psl > $OUTPUT
+	$LASTAL $SUBJECT $QUERY | $MAFCONV psl > $OUTPUT
 fi

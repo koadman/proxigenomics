@@ -4,7 +4,7 @@ from collections import OrderedDict
 
 import re
 import argparse
-import yaml
+import truthtable as tt
 
 
 # CIGAR matcher for aligning regions
@@ -73,14 +73,15 @@ class Alignment:
         return float(self.align_length) / float(self.query_length)
 
 
-def ordereddict_rep(dumper, data):
-    return dumper.represent_mapping(u'tag:yaml.org,2002:map', data.items(), flow_style=False)
+#def ordereddict_rep(dumper, data):
+#    return dumper.represent_mapping(u'tag:yaml.org,2002:map', data.items(), flow_style=False)
 
 
-def write_output(fmt, minlen, mincov, minid, alignment_list, file_name):
+def write_output(simple, fmt, minlen, mincov, minid, alignment_list, file_name):
     """
     Write result to file in a particular format.
 
+    :param simple: use simple hard tt
     :param fmt: format type
     :param minlen: minimum query length
     :param mincov: minimum alignment coverage
@@ -91,10 +92,10 @@ def write_output(fmt, minlen, mincov, minid, alignment_list, file_name):
     if fmt == 'flat':
         write_alignments(minlen, mincov, minid, alignment_list, file_name)
     elif fmt == 'yaml':
-        write_truth(minlen, mincov, minid, alignment_list, file_name)
+        write_truth(simple, minlen, mincov, alignment_list, file_name)
 
 
-def write_truth(minlen, mincov, minid, alignment_list, file_name):
+def write_truth(simple, minlen, mincov, alignment_list, file_name):
     """
     Write YAML format truth table, where all relations between queries and subjects
     are included on a single line.
@@ -111,24 +112,19 @@ def write_truth(minlen, mincov, minid, alignment_list, file_name):
     :param alignment_list: alignment list
     :param file_name: output file name
     """
+    truth = tt.TruthTable()
+    for aln in alignment_list:
+        if aln.align_length > minlen and aln.coverage > mincov:
+            t = truth.get(aln.query_name)
+            if t is None:
+                t = {}
+                truth[aln.query_name] = t
+            t[aln.ref_name] = aln.align_length
 
-    yaml.add_representer(OrderedDict, ordereddict_rep)
-
-    with open(file_name, 'w') as h_out:
-        truth = OrderedDict()
-        for aln in alignment_list:
-            if aln.align_length > minlen and aln.coverage > mincov:
-                t = truth.get(aln.query_name)
-                if t is None:
-                    truth[aln.query_name] = [aln.ref_name]
-                else:
-                    t.append(aln.ref_name)
-
-        # Sort lsit elements for tidiness/legibility
-        for t in truth.values():
-            t.sort()
-
-        yaml.dump(truth, h_out)
+    if simple:
+        truth.write_hard(file_name)
+    else:
+        truth.write(file_name)
 
 
 def write_alignments(minlen, mincov, minid, alignment_list, file_name):
@@ -262,8 +258,8 @@ def parse_psl(psl_file):
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='Determine the location of query sequences on the reference')
-    parser.add_argument('--soft', default=False, action='store_true',
-                        help='Allow soft query assignment')
+    parser.add_argument('--simple', default=False, action='store_true',
+                        help='Record simple truth table')
     parser.add_argument('--minid', type=float, required=False, default=95.0,
                         help='Minimum percentage identity for alignment')
     parser.add_argument('--minlen', type=int, required=False, default=1000,
@@ -312,12 +308,13 @@ if __name__ == '__main__':
     # is quite arbitrary.
     #
 
-    if args.soft:
+    if not args.simple:
         '''
         Write out all assignments of queries to references.
         '''
         print 'Writing {0} soft (overlapping) assignments of queries to references'.format(len(align_repo.values()))
-        write_output(args.ofmt, args.minlen, args.mincov, args.minid, align_repo.values(), args.output_file[0])
+        write_output(args.simple, args.ofmt, args.minlen, args.mincov,
+                     args.minid, align_repo.values(), args.output_file[0])
 
     else:
         '''
@@ -332,4 +329,5 @@ if __name__ == '__main__':
                 winners[aln.query_name] = aln
 
         print 'Reduced to {0} winning hard assignments'.format(len(winners))
-        write_output(args.ofmt, args.minlen, args.mincov, args.minid, winners.values(), args.output_file[0])
+        write_output(args.simple, args.ofmt, args.minlen, args.mincov,
+                     args.minid, winners.values(), args.output_file[0])

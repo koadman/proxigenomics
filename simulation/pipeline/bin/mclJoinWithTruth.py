@@ -1,22 +1,18 @@
 #!/usr/bin/env python
 
 import sys
+import yaml
 
 if len(sys.argv) != 4:
     print "Usage: [truth table] [clustering] [output]"
     sys.exit(1)
 
 # Read in the truth table
+truth = None
 with open(sys.argv[1], 'r') as h_in:
-    truth = {}
-    for line in h_in:
-        tok = line.split()
-        if len(tok) != 3:
-            print "Invalid line in truth table, expecting three fields [{0}]".format(line)
-            sys.exit(1)
-        truth[tok[0]] = tok[1]
+    truth = yaml.load(h_in)
 
-print "Truth table contains {0} assignments".format(len(set(truth.values())))
+print "Truth table contains {0} objects assigned to {1} classes".format(len(truth), len(set(truth.values())))
 
 # Read in the clustering
 with open(sys.argv[2], 'r') as h_in:

@@ -22,8 +22,10 @@ def get_wgs_fasta(c):
             str(c['wgs_xfold']), config['wgs_asmdir'],
             '{0}.contigs.fasta'.format(config['wgs_base']))
 
-
+import types
 def prepend_paths(path, fnames):
+    if isinstance(fnames, types.StringTypes):
+        fnames = [fnames]
     return [os.path.join(path, fn) for fn in fnames]
 
 
@@ -34,24 +36,37 @@ nest = Nest()
 wrap = SConsWrap(nest, config['map_folder'])
 env = Environment(ENV=os.environ)
 
+# Constant
+wrap.add('refseq', [config['community']['seq']], create_dir=False)
 
 commPaths = appconfig.get_communities(config)
 wrap.add('community', commPaths, label_func=os.path.basename)
 
-wrap.add('hic_table', [config['community']['table']], label_func=stripext)
+wrap.add('com_table', [config['community']['table']], label_func=stripext)
 wrap.add('hic_n_frag', config['hic_n_frag'])
 wrap.add('wgs_xfold', config['wgs_xfold'])
 
 wrap.add_aggregate('align_files', list)
 wrap.add_aggregate('graph_files', list)
 wrap.add_aggregate('cl_input', list)
-wrap.add_aggregate('truth', list)
+
+# BWA and LAST index related file suffixes
+index_suffixes = ['.bck', '.des', '.prj', '.sds', '.ssp', '.suf', '.tis']
+
+
+@wrap.add_target('index_ref')
+def index_ref(outdir, c):
+    source = '{0[community]}/{0[refseq]}'.format(c)
+    target = [source + suf for suf in index_suffixes]
+    action = 'bin/pbsrun_INDEX.sh $SOURCE.abspath'
+    #print '{0}\n{1}\n{2}'.format(source,target,action)
+    return env.Command(target, source, action)
 
 
 @wrap.add_target('make_hic2ctg')
 def map_hic2ctg(outdir, c):
     com = os.path.basename(c['community'])
-    tbl = stripext(c['hic_table'])
+    tbl = stripext(c['com_table'])
 
     query = os.path.join(os.path.abspath(config['hic_folder']), com, tbl,
                          str(c['hic_n_frag']), '{0[hic_base]}.fasta'.format(config))
@@ -73,9 +88,10 @@ def map_hic2ctg(outdir, c):
 
 
 @wrap.add_target('make_ctg2ref')
+@name_targets
 def map_ctg2ref(outdir, c):
     com = os.path.basename(c['community'])
-    tbl = stripext(c['hic_table'])
+    tbl = stripext(c['com_table'])
 
     query = os.path.join(
                 os.path.abspath(config['wgs_folder']), com, tbl,
@@ -90,15 +106,13 @@ def map_ctg2ref(outdir, c):
 
     action = 'bin/pbsrun_LAST.sh $SOURCES.abspath $TARGET.abspath'
 
-    c['align_files'].append(target)
-
-    return env.Command(target, source, action)
+    return 'output', env.Command(target, source, action)
 
 
 @wrap.add_target('make_wgs2ctg')
 def map_wgs2ctg(outdir, c):
     com = os.path.basename(c['community'])
-    tbl = stripext(c['hic_table'])
+    tbl = stripext(c['com_table'])
 
     # TODO find a better way to obtain the path to WGS reads
     query = appconfig.get_wgs_reads(
@@ -113,7 +127,7 @@ def map_wgs2ctg(outdir, c):
 
     target = os.path.join(outdir, config['wgs2ctg'])
     source = [subject] + query
-    action = 'bin/pbsrun_MAP2.sh $SOURCES.abspath $TARGET.abspath'
+    action = 'bin/pbsrun_MAP.sh $SOURCES.abspath $TARGET.abspath'
 
     c['align_files'].append(target)
 
@@ -129,18 +143,18 @@ def make_bam(outdir, c):
 
 
 @wrap.add_target('make_truth')
+@name_targets
 def make_truth(outdir, c):
-    source = pick_alignment(config['ctg2ref'], c)
+    source = str(c['make_ctg2ref']['output'])
     target = os.path.join(outdir, config['truth_table'])
-    c['truth'].append(target)
-    action = 'bin/alignmentToTruth.py --soft ' \
+    action = 'bin/alignmentToTruth.py ' \
              '--afmt {1[ctg_afmt]} ' \
              '--ofmt {1[ctg_ofmt]} ' \
              '--minlen {1[ctg_minlen]} ' \
              '--mincov {1[ctg_mincov]} ' \
              '--minid {1[ctg_minid]} ' \
              '$SOURCES.abspath $TARGET.abspath'.format(c, config)
-    return env.Command(target, source, action)
+    return 'truth', env.Command(target, source, action)
 
 
 @wrap.add_target('make_graph')
@@ -182,8 +196,7 @@ def do_mcl(outdir, c):
 @wrap.add_target('do_score')
 def do_score(outdir, c):
     cl_out = os.path.join(outdir, config['cluster']['output'])
-    print c['truth']
-    ttable = os.path.join(outdir, '../truth.txt')
+    ttable = str(c['make_truth']['truth'])
     # this target consumes truth table and clustering output
     source = [ttable, cl_out]
     # this target creates 3 output files

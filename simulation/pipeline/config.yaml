@@ -30,7 +30,7 @@ ctg_minlen: 1000
 map_folder: map_data
 
 cluster: {
-    input: cl_input
+    input: cl_input,
     output: cl_output
 }
 
