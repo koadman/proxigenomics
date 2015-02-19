@@ -43,7 +43,7 @@ else # EXECUTION MODE
     then
         echo "There doesn't appaear to be a LAST DB associated with this reference data"
         echo "Creating database..."
-        $LASTDB $FASTA $FASTA
+        $LASTDB $SUBJECT $SUBJECT
     fi
 
 	# align

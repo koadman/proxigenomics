@@ -22,7 +22,7 @@ function rollback_rm_dir() {
 
 function rollback_rm_files() {
 	echo "Rollback from premature exit" > /dev/stderr
-	echo "Removing list of files ${@}"
+	echo "Removing indicated files"
 	sleep 10
 	for fn in ${@}
 	do
