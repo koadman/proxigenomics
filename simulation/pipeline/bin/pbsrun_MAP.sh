@@ -42,7 +42,7 @@ then
     	echo "Submitting double query run"
     	BASE=${4%.sam}
     	TARGET=( ${BASE}.sam ${BASE}.bam ${BASE}.bai ${BASE}.idxstats ${BASE}.flagstats )
-        trap 'rollback_rm_files ${TARGET[@}}; exit $?' INT TERM EXIT
+        trap 'rollback_rm_files ${TARGET[@]}; exit $?' INT TERM EXIT
         qsub -W block=true -v SUBJECT=$1,QUERY1=$2,QUERY2=$3,OUTPUT=$4 $0
     	trap - INT TERM EXIT
     fi
@@ -55,7 +55,7 @@ else # EXECUTION MODE
 	# Map reads. The second query file can be empty
 	$BWAEXE mem -t 2 $SUBJECT $QUERY1 $QUERY2 > $OUTPUT
 
-    BASE=${sf%.sam}
+    BASE=${OUTPUT%.sam}
     $SAMTOOLS view -bS $OUTPUT | $SAMTOOLS sort - $BASE
     $SAMTOOLS index ${BASE}.bam
     $SAMTOOLS idxstats ${BASE}.bam > ${BASE}.idxstats
