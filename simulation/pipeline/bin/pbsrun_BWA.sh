@@ -1,15 +1,8 @@
 #!/bin/bash
 
-if [ -z "$PBS_ENVIRONMENT" ]
-then
-	BINDIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
-	source $BINDIR/bash_init.sh
-fi
-
 #
 # Map sequences in simulation
 #
-
 
 #PBS -q smallq
 #PBS -l select=1:ncpus=2:mem=32gb
@@ -17,7 +10,13 @@ fi
 #PBS -o logs/
 #PBS -N BWAJOB
 
-BWAEXE=$HOME/bin/bwa-0.7.6a/bwa
+if [ -z "$PBS_ENVIRONMENT" ]
+then
+	BINDIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
+	source $BINDIR/bash_init.sh
+fi
+
+#BWAEXE=$HOME/bin/bwa-0.7.6a/bwa
 
 if [ -z "$PBS_ENVIRONMENT" ] # SUBMIT MODE
 then

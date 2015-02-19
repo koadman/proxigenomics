@@ -1,11 +1,5 @@
 #!/bin/bash
 
-if [ -z "$PBS_ENVIRONMENT" ]
-then
-	BINDIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
-	source $BINDIR/bash_init.sh
-fi
-
 #
 # Align query to subject
 #
@@ -15,6 +9,12 @@ fi
 #PBS -e logs/
 #PBS -o logs/
 #PBS -N LASTJOB
+
+if [ -z "$PBS_ENVIRONMENT" ]
+then
+	BINDIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
+	source $BINDIR/bash_init.sh
+fi
 
 LASTAL=$HOME/bin/lastal
 LASTDB=$HOME/bin/lastdb

@@ -1,15 +1,8 @@
 #!/bin/bash
 
-if [ -z "$PBS_ENVIRONMENT" ]
-then
-	BINDIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
-	source $BINDIR/bash_init.sh
-fi
-
 #
 # Map sequences in simulation
 #
-
 
 #PBS -q smallq
 #PBS -l select=1:ncpus=2:mem=32gb
@@ -17,6 +10,11 @@ fi
 #PBS -o logs/
 #PBS -N SCOREJOB
 
+if [ -z "$PBS_ENVIRONMENT" ]
+then
+	BINDIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
+	source $BINDIR/bash_init.sh
+fi
 
 JOINTRUTH=bin/mclJoinWithTruth.py
 F1SCORE=bin/f1score.py

@@ -1,21 +1,21 @@
 #!/bin/bash
 
-if [ -z "$PBS_ENVIRONMENT" ]
-then
-	BINDIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
-	source $BINDIR/bash_init.sh
-fi
-
 #
 # Create a simulated WGS sequencing run
 #
-
 
 #PBS -q smallq
 #PBS -l select=1:ncpus=2:mem=32gb
 #PBS -e logs/
 #PBS -o logs/
 #PBS -N ARTJOB
+
+if [ -z "$PBS_ENVIRONMENT" ]
+then
+	BINDIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
+	source $BINDIR/bash_init.sh
+fi
+
 
 ARTEXE=$HOME/bin/ART/art_illumina
 

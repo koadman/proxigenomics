@@ -1,11 +1,5 @@
 #!/bin/bash
 
-if [ -z "$PBS_ENVIRONMENT" ]
-then
-	BINDIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
-	source $BINDIR/bash_init.sh
-fi
-
 #
 # Create simulated Hi-C sequencing data
 #
@@ -15,6 +9,12 @@ fi
 #PBS -e logs/
 #PBS -o logs/
 #PBS -N HICJOB
+
+if [ -z "$PBS_ENVIRONMENT" ]
+then
+	BINDIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
+	source $BINDIR/bash_init.sh
+fi
 
 HICEXE=$HOME/git/proxigenomics/simulation/hic_simulator/src/simForward.py
 

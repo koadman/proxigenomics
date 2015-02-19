@@ -4,7 +4,6 @@
 # Create homology search indexes
 #
 
-
 #PBS -q smallq
 #PBS -l select=1:ncpus=2:mem=32gb
 #PBS -e logs/
