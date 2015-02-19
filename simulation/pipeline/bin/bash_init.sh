@@ -9,21 +9,24 @@ set -e
 function rollback_rm_file() {
 	echo "Rollback from premature exit" > /dev/stderr
 	echo "Removing output target $1" > /dev/stderr
-	rm $1
+	sleep 10
+	rm -f $1
 }
 
 function rollback_rm_dir() {
 	echo "Rollback from premature exit" > /dev/stderr
 	echo "Removing directory $1"
-	rm -r $1
+	sleep 10
+	rm -fr $1
 }
 
 function rollback_rm_files() {
 	echo "Rollback from premature exit" > /dev/stderr
 	echo "Removing list of files ${@}"
+	sleep 10
 	for fn in ${@}
 	do
 		echo "Removing $fn"
-		rm $fn
+		rm -f  $fn
 	done
 }
