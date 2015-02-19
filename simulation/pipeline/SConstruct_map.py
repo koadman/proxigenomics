@@ -180,7 +180,7 @@ def do_score(outdir, c):
     # this target consumes truth table and clustering output
     source = [ttable, cl_out]
     # this target creates 3 output files
-    target = ['{0}.{1}'.format(cl_out, suffix) for suffix in ['joined', 'f1', 'vm']]
+    target = ['{0}.{1}'.format(cl_out, suffix) for suffix in ['f1', 'vm']]
     action = 'bin/pbsrun_SCORE.sh $SOURCES.abspath'
     return env.Command(target, source, action)
 
