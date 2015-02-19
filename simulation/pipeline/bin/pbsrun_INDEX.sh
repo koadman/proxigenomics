@@ -12,7 +12,6 @@
 #PBS -N INDEXJOB
 
 BWA=$HOME/bin/bwa-0.7.6a/bwa
-LASTDB=$HOME/bin/lastdb
 
 if [ -z "$PBS_ENVIRONMENT" ] # SUBMIT MODE
 then
@@ -31,5 +30,5 @@ else # EXECUTION MODE
 
 	# create indexes
 	$BWA index $FASTA
-	$LASTDB $FASTA $FASTA
+
 fi
