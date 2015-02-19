@@ -1,5 +1,11 @@
 #!/bin/bash
 
+if [ -z "$PBS_ENVIRONMENT" ]
+then
+	BINDIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
+	source $BINDIR/bash_init.sh
+fi
+
 #
 # Map 2 query sequences in simulation
 #
@@ -24,7 +30,10 @@ then
 		exit 1
 	fi
 	echo "Submitting run"
+	trap 'rollback_rm_file $4; exit $?' INT TERM EXIT
 	qsub -W block=true -v SUBJECT=$1,QUERY1=$2,QUERY2=$3,OUTPUT=$4 $0
+	trap - INT TERM EXIT
+	echo "Finished"
 
 else # EXECUTION MODE
 	echo "Running"

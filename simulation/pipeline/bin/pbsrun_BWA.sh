@@ -1,5 +1,11 @@
 #!/bin/bash
 
+if [ -z "$PBS_ENVIRONMENT" ]
+then
+	BINDIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
+	source $BINDIR/bash_init.sh
+fi
+
 #
 # Map sequences in simulation
 #

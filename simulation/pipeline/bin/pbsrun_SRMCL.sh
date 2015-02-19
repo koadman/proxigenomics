@@ -1,5 +1,11 @@
 #!/bin/bash
 
+if [ -z "$PBS_ENVIRONMENT" ]
+then
+	BINDIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
+	source $BINDIR/bash_init.sh
+fi
+
 #
 # Map sequences in simulation
 #
@@ -50,7 +56,10 @@ then
 	export CMDOPT
 	
 	echo "Submitting run"
+	trap 'rollback_rm_file $2; exit $?' INT TERM EXIT
 	qsub -V -W block=true -v INPUT=$1,OUTPUT=$2 $0
+	trap - INT TERM EXIT
+	echo "Finished"
 
 else # EXECUTION MODE
 	echo "Running"

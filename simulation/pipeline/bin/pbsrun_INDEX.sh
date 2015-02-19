@@ -23,6 +23,7 @@ then
 	fi
 	echo "Submitting run"
 	qsub -W block=true -v FASTA=$1 $0
+	echo "Finished"
 
 else # EXECUTION MODE
 	echo "Running"

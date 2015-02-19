@@ -22,14 +22,6 @@ commPaths = appconfig.get_communities(config)
 wrap.add('community', commPaths, label_func=os.path.basename)
 
 
-index_suffixes = ['.amb', '.ann', '.bwt', '.pac', '.sa']
-@wrap.add_target('index_ref')
-def index_ref(outdir, c):
-    source = '{0[community]}/{0[refseq]}'.format(c)
-    target = [source + suf for suf in index_suffixes]
-    action = 'bin/pbsrun_INDEX.sh $SOURCE.abspath'.format(c)
-    return env.Command(target, source, action)
-
 wrap.add('comm_table', [config['community']['table']], label_func=stripext)
 wrap.add('hic_n_frag', config['hic_n_frag'])
 
@@ -43,6 +35,7 @@ def generate_hic(outdir, c):
              '{0[seed]} {0[hic_n_frag]} {0[hic_read_length]} {0[hic_inter_prob]} ' \
              '{0[community]}/{0[comm_table]} $SOURCE.abspath $TARGET.abspath'.format(c)
     return 'hr', env.Command(target, source, action)
+
 
 wrap.add_controls(Environment())
 

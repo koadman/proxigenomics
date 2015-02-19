@@ -1,5 +1,11 @@
 #!/bin/bash
 
+if [ -z "$PBS_ENVIRONMENT" ]
+then
+	BINDIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
+	source $BINDIR/bash_init.sh
+fi
+
 #
 # Map sequences in simulation
 #
@@ -21,7 +27,11 @@ then
 		exit 1
 	fi
 	echo "Submitting run"
+
+	trap 'rollback_rm_file $3; exit $?' INT TERM EXIT
 	qsub -W block=true -v INFLATION=$1,INPUT=$2,OUTPUT=$3 $0
+	trap - INT TERM EXIT
+	echo "Finished"
 
 else # EXECUTION MODE
 	echo "Running"

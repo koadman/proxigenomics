@@ -7,7 +7,7 @@ then
 fi
 
 #
-# Create graph files
+# Create mcl input file
 #
 
 
@@ -15,30 +15,29 @@ fi
 #PBS -l select=1:ncpus=2:mem=32gb
 #PBS -e logs/
 #PBS -o logs/
-#PBS -N GRAPHJOB
+#PBS -N MKMCLJOB
 
-SAMTOEDGES=bin/samToEdges.py
+MKMCL=bin/makeMCLinput.py
 
 if [ -z "$PBS_ENVIRONMENT" ] # SUBMIT MODE
 then
-	
+
 	if [ $# -ne 4 ]
 	then
-		echo "Usage: [hic2ctg.sam] [wgs2ctg.bam] [edge out] [node out]"
+		echo "Usage: [min length] [edges csv] [nodes csv] [output]"
 		exit 1
 	fi
 
 	echo "Submitting run"
-	TARGET=( $3 $4 )
-	trap 'rollback_rm_files ${TARGET[@]}; exit $?' INT TERM EXIT
-	qsub -W block=true -v HIC2CTG=$1,WGS2CTG=$2,EDGES=$3,NODES=$4 $0
+	trap 'rollback_rm_file $4; exit $?' INT TERM EXIT
+	qsub -W block=true -v MINLEN=$1,EDGES=$2,NODES=$3,OUTPUT=$4 $0
 	trap - INT TERM EXIT
 	echo "Finished"
 
 else # EXECUTION MODE
 	echo "Running"
 	cd $PBS_O_WORKDIR
-	
-	$SAMTOEDGES ${HIC2CTG} ${WGS2CTG%.bam}.idxstats $EDGES $NODES
-	
+
+    $MKMCL $MINLEN $EDGES $NODES $OUTPUT
+
 fi

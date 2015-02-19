@@ -50,18 +50,6 @@ wrap.add_aggregate('align_files', list)
 wrap.add_aggregate('graph_files', list)
 wrap.add_aggregate('cl_input', list)
 
-# BWA and LAST index related file suffixes
-index_suffixes = ['.bck', '.des', '.prj', '.sds', '.ssp', '.suf', '.tis']
-
-
-@wrap.add_target('index_ref')
-def index_ref(outdir, c):
-    source = '{0[community]}/{0[refseq]}'.format(c)
-    target = [source + suf for suf in index_suffixes]
-    action = 'bin/pbsrun_INDEX.sh $SOURCE.abspath'
-    #print '{0}\n{1}\n{2}'.format(source,target,action)
-    return env.Command(target, source, action)
-
 
 @wrap.add_target('make_hic2ctg')
 def map_hic2ctg(outdir, c):
@@ -134,14 +122,6 @@ def map_wgs2ctg(outdir, c):
     return env.Command(target, source, action)
 
 
-@wrap.add_target('make_sam2bam')
-def make_bam(outdir, c):
-    target = [os.path.splitext(dn)[0] + ".bam" for dn in c['align_files']]
-    source = c['align_files']
-    action = 'bin/pbsrun_SAMTOOLS.sh {0}'.format(outdir)
-    return env.Command(target, source, action)
-
-
 @wrap.add_target('make_truth')
 @name_targets
 def make_truth(outdir, c):
@@ -177,7 +157,7 @@ wrap.add('cluster_method', ['mcl'])
 def make_cluster_input(outdir, c):
     source = c['graph_files']
     target = prepend_paths(outdir, config['cluster']['input'])
-    action = 'bin/makeMCLinput.py {1[ctg_minlen]} $SOURCES.abspath $TARGET.abspath'.format(c, config)
+    action = 'bin/pbsrun_MKMCL.sh {1[ctg_minlen]} $SOURCES.abspath $TARGET.abspath'.format(c, config)
     c['cl_input'].append(target)
     return env.Command(target, source, action)
 

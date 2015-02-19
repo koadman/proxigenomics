@@ -29,7 +29,8 @@ then
 	fi
 
 	echo "Submitting run"
-	trap 'rollback_rm_file $3; exit $?' INT TERM EXIT
+	TARGET=( ${1}.prj ${3} )
+	trap 'rollback_rm_files ${TARGET[@]}; exit $?' INT TERM EXIT
 	qsub -W block=true -v SUBJECT=$1,QUERY=$2,OUTPUT=$3 $0
 	trap - INT TERM EXIT
 	echo "Finished"

@@ -1,5 +1,11 @@
 #!/bin/bash
 
+if [ -z "$PBS_ENVIRONMENT" ]
+then
+	BINDIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
+	source $BINDIR/bash_init.sh
+fi
+
 #
 # Samtools on simulation
 #
@@ -21,6 +27,7 @@ then
 	
 	echo "Submitting run"
 	qsub -W block=true -v SAMFILE=$1 $0
+	echo "Finished"
 
 else # EXECUTION MODE
 	echo "Running"

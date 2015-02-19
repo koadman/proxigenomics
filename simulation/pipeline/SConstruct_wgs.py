@@ -46,14 +46,10 @@ def assemble_wgs(work_dir, c):
     return 'ctg', env.Command(target, source, action)
 
 
-# BWA and LAST index related file suffixes
-index_suffixes = ['.amb', '.ann', '.bwt', '.pac', '.sa', '.bck',
-                  '.des', '.prj', '.sds', '.ssp', '.suf', '.tis']
-
 @wrap.add_target('index_ctg')
 def index_ctg(outdir, c):
     source = str(c['assemble_wgs']['ctg'])
-    target = [source + suf for suf in index_suffixes]
+    target = source + '.bwt'
     action = 'bin/pbsrun_INDEX.sh $SOURCE.abspath'.format(c)
     return env.Command(target, source, action)
 

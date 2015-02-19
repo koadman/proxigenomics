@@ -1,5 +1,11 @@
 #!/bin/bash
 
+if [ -z "$PBS_ENVIRONMENT" ]
+then
+	BINDIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
+	source $BINDIR/bash_init.sh
+fi
+
 #
 # Create a minia assembly
 #
@@ -21,7 +27,10 @@ then
 		exit 1
 	fi
 	echo "Submitting run"
+	trap 'rollback_rm_dir $6; exit $?' INT TERM EXIT
 	qsub -W block=true -v KMER=$1,ABUN=$2,GSIZE=$3,R1=$4,R2=$5,OUT_BASE=$6 $0
+	trap - INT TERM EXIT
+	echo "Finished"
 
 else # EXECUTION MODE
 	echo "Running"

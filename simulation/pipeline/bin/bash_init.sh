@@ -1,3 +1,4 @@
+
 set -o pipefail
 set -e
 
@@ -20,7 +21,7 @@ function rollback_rm_dir() {
 function rollback_rm_files() {
 	echo "Rollback from premature exit" > /dev/stderr
 	echo "Removing list of files ${1[@]}"
-	for fn in "${1[@]}"
+	for fn in ${@}
 	do
 		echo "Removing $fn"
 		rm $fn
