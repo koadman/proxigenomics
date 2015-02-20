@@ -27,7 +27,7 @@ def get_communities(config):
     :param config: application config object
     :return: list of community folders
     """
-    return [os.path.abspath(dn) for dn in glob.glob(config['community']['folder'] + '/*')]
+    return [os.path.abspath(dn) for dn in glob.glob(config['community']['folder'] + '/*') if os.path.isdir(dn)]
 
 
 def get_wgs_reads(path, config):
