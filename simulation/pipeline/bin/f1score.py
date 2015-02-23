@@ -3,6 +3,7 @@
 from munkres import Munkres, make_cost_matrix
 from numpy import diag, average
 import truthtable as tt
+import pipeline_utils
 import sys
 
 def cost_matrix(contingency_table):
@@ -51,13 +52,13 @@ def false_positives(contingency_table):
 def recall_macro(contingency_table):
     tp = true_positives(contingency_table)
     fn = false_negatives(contingency_table)
-    return average(tp) / (average(tp) + average(fn))
+    return float(average(tp) / (average(tp) + average(fn)))
 
 
 def precision_macro(contingency_table):
     tp = true_positives(contingency_table)
     fp = false_positives(contingency_table)
-    return average(tp) / (average(tp) + average(fp))
+    return float(average(tp) / (average(tp) + average(fp)))
 
 
 def f1_score_macro(contingency_table):
@@ -65,7 +66,7 @@ def f1_score_macro(contingency_table):
     tp = true_positives(contingency_table)
     fn = false_negatives(contingency_table)
     fp = false_positives(contingency_table)
-    return 2.0 * average(tp) / (2.0 * average(tp) + average(fn) + average(fp))
+    return float(2.0 * average(tp) / (2.0 * average(tp) + average(fn) + average(fp)))
 
 
 def rearrange_columns(indices, contingency_table):
@@ -128,10 +129,15 @@ if over_clustered(ct):
     print 'Squaring table with dummy classes'
     print ct
 
+# Write the table to stdout
 mct = match_labels(ct)
 print 'Aligned contigency table'
 print mct
 
-with open(sys.argv[3], 'w') as h_out:
-    h_out.write("{f1:.4} {recall:.4} {prec:.4}\n".format(
-        f1=f1_score_macro(mct), recall=recall_macro(mct), prec=precision_macro(mct)))
+# Calculate measure
+score = {'f1': f1_score_macro(mct),
+         'recall': recall_macro(mct),
+         'prec': precision_macro(mct)}
+
+# Write measure to file
+pipeline_utils.write_data(sys.argv[3], score)
