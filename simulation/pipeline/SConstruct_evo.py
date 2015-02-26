@@ -18,10 +18,12 @@ wrap.add('basis_seq', [config['reference']['raw_seq']], create_dir=False)
 wrap.add('seq_len', [config['reference']['seq_len']], create_dir=False)
 
 # Variation
-treePaths = appconfig.get_files(config['reference']['tree_folder'], 'nwk')
+treeFolder = os.path.join(config['reference']['folder'], config['reference']['tree_folder'])
+treePaths = appconfig.get_files(treeFolder, 'nwk')
 wrap.add('tree', treePaths, label_func=os.path.basename)
-wrap.add('branch_length', np.logspace(-3, -6, num=10, endpoint=True).tolist())
+wrap.add('branch_length', ['{:.4e}'.format(n) for n in np.logspace(-3, -6, num=10, endpoint=True).tolist()])
 
+print treePaths
 
 @wrap.add_target('generate_set')
 def generate_set(outdir, c):
@@ -30,7 +32,7 @@ def generate_set(outdir, c):
     sources = [tree, seq]
     target = '{od}/{0[genomes]}'.format(c, od=outdir)
     action = 'bin/pbsrun_SGEVOLVER.sh ' \
-             '{0[seed]} {0[branch_length].4e} {0[seq_len]} $SOURCES.abspath $TARGET.abspath'.format(c)
+             '{0[seed]} {0[branch_length]} {0[seq_len]} $SOURCES.abspath $TARGET.abspath'.format(c)
     return 'hr', env.Command(target, sources, action)
 
 wrap.add_controls(Environment())

@@ -11,7 +11,7 @@ reference: {
 
 community: {
     folder: comm_data,
-    seq: genomes.fasta,
+    seq: genomes.fasta
 }
 
 wgs_base: wgs
