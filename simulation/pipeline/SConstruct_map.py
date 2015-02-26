@@ -10,19 +10,6 @@ import types
 # Helper functions
 #
 
-
-#def pick_alignment(fname, c):
-#    return [fn for fn in c['align_files'] if fn.endswith(fname)]
-
-
-#def get_wgs_fasta(c):
-#    com = os.path.basename(c['community'])
-#    tbl = stripext(c['hic_table'])
-#    return os.path.join(
-#            os.path.abspath(config['wgs_folder']), com, tbl,
-#            str(c['wgs_xfold']), config['wgs_asmdir'],
-#            '{0}.contigs.fasta'.format(config['wgs_base']))
-
 def prepend_paths(path, fnames):
     if isinstance(fnames, types.StringTypes):
         fnames = [fnames]
@@ -38,12 +25,10 @@ env = Environment(ENV=os.environ)
 # Constant
 wrap.add('refseq', [config['community']['seq']], create_dir=False)
 
-commPaths = appconfig.get_communities(config)
-wrap.add('community', commPaths, label_func=os.path.basename)
-
-treeFolder = os.path.join(config['reference']['folder'], config['reference']['tree_folder'])
-treePaths = appconfig.get_files(treeFolder, 'nwk')
-wrap.add('comm_tree', treePaths, label_func=os.path.basename)
+# Variation
+genomes = appconfig.find_files(config['community']['folder'], config['community']['seq'])
+commPaths = [os.path.dirname(pn) for pn in genomes]
+wrap.add('community', commPaths)
 
 tableFolder = os.path.join(config['reference']['folder'], config['reference']['table_folder'])
 tablePaths = appconfig.get_files(tableFolder, 'table')
@@ -62,7 +47,9 @@ def make_ctg2ref(outdir, c):
                 os.path.abspath(config['wgs_folder']), com, tbl,
                 str(c['wgs_xfold']), config['wgs_asmdir'],
                 '{0[wgs_base]}.contigs.fasta'.format(config))
+
     subject = os.path.join(c['community'], config['community']['seq'])
+
     source = [subject, query]
     target = os.path.join(outdir, config['ctg2ref'])
     action = 'bin/pbsrun_LAST.sh $SOURCES.abspath $TARGET.abspath'
