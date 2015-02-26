@@ -40,12 +40,12 @@ def find_priming_sites(oligo, seq):
     returns list of sites.
     """
     array = []
-    for m in re.finditer(oligo, seq.tostring()):
-        array.append(m.end())
+    for m in re.finditer(oligo, str(seq)):
+	array.append(m.end())
     rc_oligo = Seq(oligo)
     rc_oligo.reverse_complement()
-    for m in re.finditer(rc_oligo.tostring(), seq.tostring()):
-        array.append(m.end())
+    for m in re.finditer(str(rc_oligo), str(seq)):
+	array.append(m.end())    
     return array
 
 
