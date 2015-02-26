@@ -1,6 +1,5 @@
 from nestly import Nest, stripext
 from nestly.scons import SConsWrap, name_targets
-import glob
 import os
 import os.path
 import appconfig

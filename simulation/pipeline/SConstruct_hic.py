@@ -27,14 +27,12 @@ wrap.add('hic_n_frag', config['hic_n_frag'])
 
 
 @wrap.add_target('generate_hic')
-@name_targets
 def generate_hic(outdir, c):
     source = '{0[community]}/{0[refseq]}'.format(c)
-    target = '{od}/{0[hic_base]}.fasta'.format(c, od=outdir)
-    action = 'bin/pbsrun_HiC.sh ' \
-             '{0[seed]} {0[hic_n_frag]} {0[hic_read_length]} {0[hic_inter_prob]} ' \
-             '{0[community]}/{0[comm_table]} $SOURCE.abspath $TARGET.abspath'.format(c)
-    return 'hr', env.Command(target, source, action)
+    target = '{od}/community.fasta'.format(od=outdir)
+    action = 'bin/pbsrun_SGEVOLVER.sh ' \
+             '{0[seed]} $SOURCE.abspath $TARGET.abspath'.format(c)
+    return env.Command(target, source, action)
 
 
 wrap.add_controls(Environment())

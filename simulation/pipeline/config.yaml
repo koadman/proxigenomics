@@ -4,8 +4,14 @@ truth_table: truth.yaml
 community: {
     folder: references,
     table: uniform.table,
-    seq: genomes.fasta
+    seq: genomes.fasta,
+    basis: seq.raw,
+    tree: ['star.nwk', 'ladder.nwk'],
+#    tree: ['star.nwk'],
+    seq_len: 1000000
 }
+
+evo_folder: evo_data
 
 wgs_base: wgs
 wgs_folder: wgs_data
