@@ -41,6 +41,6 @@ cluster: {
     output: cl_output
 }
 
-hic2ctg: hic2ctg.sam
+hic2ctg: hic2ctg.bam
 ctg2ref: ctg2ref.psl
-wgs2ctg: wgs2ctg.sam
+wgs2ctg: wgs2ctg.bam
