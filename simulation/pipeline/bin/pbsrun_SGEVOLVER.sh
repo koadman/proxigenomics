@@ -47,9 +47,10 @@ else # EXECUTION MODE
     cd $OUTDIR
 
     # create runtime parameter file
-    $SGPARMS --tree `basename $TREE` --seq `basename $INPUT_SEQ` --seq-len $LENGTH --tree-scale $SCALE -o .
+    $SGPARMS --tree `basename $TREE` --seq `basename $INPUT_SEQ` --seq-len $LENGTH --tree-scale $SCALE
 
     $SGBIN $INPUT_SEQ $SEED
+
     cp evolved_seqs.fas `basename $OUTPUT_SEQ`
 
 fi

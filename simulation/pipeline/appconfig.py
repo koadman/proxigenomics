@@ -21,13 +21,21 @@ def read(file_name):
         sys.exit(e.errno)
 
 
+def get_files(path, suffix):
+    return [os.path.abspath(f) for f in glob.glob(os.path.join(path, '*.{0}'.format(suffix))) if os.path.isfile(f)]
+
+
+def get_folders(path):
+    return [os.path.abspath(dn) for dn in glob.glob(os.path.join(path, '*')) if os.path.isdir(dn)]
+
+
 def get_communities(config):
     """
     Return the list of community folders
     :param config: application config object
     :return: list of community folders
     """
-    return [os.path.abspath(dn) for dn in glob.glob(config['community']['folder'] + '/*') if os.path.isdir(dn)]
+    return get_folders(config['community']['folder'])
 
 
 def get_wgs_reads(path, config):

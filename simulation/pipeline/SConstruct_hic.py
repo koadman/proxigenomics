@@ -21,8 +21,14 @@ wrap.add('hic_read_length', [config['hic_read_length']], create_dir=False)
 commPaths = appconfig.get_communities(config)
 wrap.add('community', commPaths, label_func=os.path.basename)
 
+treeFolder = os.path.join(config['reference']['folder'], config['reference']['tree_folder'])
+treePaths = appconfig.get_files(treeFolder, 'nwk')
+wrap.add('comm_tree', treePaths, label_func=os.path.basename)
 
-wrap.add('comm_table', [config['community']['table']], label_func=stripext)
+tableFolder = os.path.join(config['reference']['folder'], config['reference']['table_folder'])
+tablePaths = appconfig.get_files(tableFolder, 'table')
+wrap.add('comm_table', tablePaths, label_func=os.path.basename)
+
 wrap.add('hic_n_frag', config['hic_n_frag'])
 
 

@@ -15,13 +15,13 @@ import types
 #    return [fn for fn in c['align_files'] if fn.endswith(fname)]
 
 
-def get_wgs_fasta(c):
-    com = os.path.basename(c['community'])
-    tbl = stripext(c['hic_table'])
-    return os.path.join(
-            os.path.abspath(config['wgs_folder']), com, tbl,
-            str(c['wgs_xfold']), config['wgs_asmdir'],
-            '{0}.contigs.fasta'.format(config['wgs_base']))
+#def get_wgs_fasta(c):
+#    com = os.path.basename(c['community'])
+#    tbl = stripext(c['hic_table'])
+#    return os.path.join(
+#            os.path.abspath(config['wgs_folder']), com, tbl,
+#            str(c['wgs_xfold']), config['wgs_asmdir'],
+#            '{0}.contigs.fasta'.format(config['wgs_base']))
 
 def prepend_paths(path, fnames):
     if isinstance(fnames, types.StringTypes):
@@ -40,7 +40,15 @@ wrap.add('refseq', [config['community']['seq']], create_dir=False)
 
 commPaths = appconfig.get_communities(config)
 wrap.add('community', commPaths, label_func=os.path.basename)
-wrap.add('com_table', [config['community']['table']], label_func=stripext)
+
+treeFolder = os.path.join(config['reference']['folder'], config['reference']['tree_folder'])
+treePaths = appconfig.get_files(treeFolder, 'nwk')
+wrap.add('comm_tree', treePaths, label_func=os.path.basename)
+
+tableFolder = os.path.join(config['reference']['folder'], config['reference']['table_folder'])
+tablePaths = appconfig.get_files(tableFolder, 'table')
+wrap.add('comm_table', tablePaths, label_func=os.path.basename)
+
 wrap.add('wgs_xfold', config['wgs_xfold'])
 
 
@@ -48,7 +56,7 @@ wrap.add('wgs_xfold', config['wgs_xfold'])
 @name_targets
 def make_ctg2ref(outdir, c):
     com = os.path.basename(c['community'])
-    tbl = stripext(c['com_table'])
+    tbl = stripext(c['comm_table'])
 
     query = os.path.join(
                 os.path.abspath(config['wgs_folder']), com, tbl,
@@ -80,7 +88,7 @@ def make_truth(outdir, c):
 @name_targets
 def make_wgs2ctg(outdir, c):
     com = os.path.basename(c['community'])
-    tbl = stripext(c['com_table'])
+    tbl = stripext(c['comm_table'])
 
     # TODO find a better way to obtain the path to WGS reads
     query = appconfig.get_wgs_reads(
@@ -106,7 +114,7 @@ wrap.add('hic_n_frag', config['hic_n_frag'])
 @name_targets
 def make_hic2ctg(outdir, c):
     com = os.path.basename(c['community'])
-    tbl = stripext(c['com_table'])
+    tbl = stripext(c['comm_table'])
 
     query = os.path.join(os.path.abspath(config['hic_folder']), com, tbl,
                          str(c['hic_n_frag']), '{0[hic_base]}.fasta'.format(config))

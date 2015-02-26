@@ -1,17 +1,18 @@
 seed: 2136841
 truth_table: truth.yaml
 
-community: {
-    folder: references,
-    table: uniform.table,
-    seq: genomes.fasta,
-    basis: seq.raw,
-    tree: ['star.nwk', 'ladder.nwk'],
-#    tree: ['star.nwk'],
-    seq_len: 1000000
+reference: {
+    folder: ref_data,
+    raw_seq: seq.raw,
+    tree_folder: trees,
+    seq_len: 1000000,
+    table_folder: tables
 }
 
-evo_folder: evo_data
+community: {
+    folder: comm_data,
+    seq: genomes.fasta,
+}
 
 wgs_base: wgs
 wgs_folder: wgs_data
