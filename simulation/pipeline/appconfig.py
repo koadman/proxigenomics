@@ -22,11 +22,16 @@ def read(file_name):
         sys.exit(e.errno)
 
 
-def find_files(path, pattern):
+def find_files(path, pattern, remove_top=True):
     matches = []
     for root, dirs, files in os.walk(path):
         for f in fnmatch.filter(files, pattern):
-            matches.append(os.path.join(root, f))
+            if remove_top:
+                matches.append(
+                    os.path.join(
+                        '/'.join(root.split('/')[1:]), f))
+            else:
+                matches.append(os.path.join(root, f))
     return matches
 
 
