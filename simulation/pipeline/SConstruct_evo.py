@@ -21,7 +21,7 @@ wrap.add('seq_len', [config['reference']['seq_len']], create_dir=False)
 treeFolder = os.path.join(config['reference']['folder'], config['reference']['tree_folder'])
 treePaths = appconfig.get_files(treeFolder, 'nwk')
 wrap.add('tree', treePaths, label_func=os.path.basename)
-wrap.add('branch_length', ['{:.4e}'.format(n) for n in np.logspace(-3, -6, num=10, endpoint=True).tolist()])
+wrap.add('branch_length', ['{:.4e}'.format(n) for n in np.logspace(-3, -6, num=3, endpoint=True).tolist()])
 
 print treePaths
 
