@@ -40,15 +40,15 @@ wrap.add('wgs_xfold', config['wgs_xfold'])
 @wrap.add_target('make_ctg2ref')
 @name_targets
 def make_ctg2ref(outdir, c):
-    com = os.path.basename(c['community'])
-    tbl = stripext(c['comm_table'])
+    com = c['community']
+    tbl = os.path.basename(c['comm_table'])
 
     query = os.path.join(
                 os.path.abspath(config['wgs_folder']), com, tbl,
                 str(c['wgs_xfold']), config['wgs_asmdir'],
                 '{0[wgs_base]}.contigs.fasta'.format(config))
 
-    subject = os.path.join(c['community'], config['community']['seq'])
+    subject = os.path.join(config['community']['folder'], com, config['community']['seq'])
 
     source = [subject, query]
     target = os.path.join(outdir, config['ctg2ref'])
@@ -74,13 +74,15 @@ def make_truth(outdir, c):
 @wrap.add_target('make_wgs2ctg')
 @name_targets
 def make_wgs2ctg(outdir, c):
-    com = os.path.basename(c['community'])
-    tbl = stripext(c['comm_table'])
+    com = c['community']
+    tbl = os.path.basename(c['comm_table'])
 
     # TODO find a better way to obtain the path to WGS reads
     query = appconfig.get_wgs_reads(
-                os.path.join(os.path.abspath(config['wgs_folder']), com, tbl, str(c['wgs_xfold'])),
+                os.path.join(os.path.abspath(config['wgs_folder']),
+                com, tbl, str(c['wgs_xfold'])),
                 config)
+
     # TODO likewise
     subject = os.path.join(
                 os.path.abspath(config['wgs_folder']),
@@ -100,8 +102,8 @@ wrap.add('hic_n_frag', config['hic_n_frag'])
 @wrap.add_target('make_hic2ctg')
 @name_targets
 def make_hic2ctg(outdir, c):
-    com = os.path.basename(c['community'])
-    tbl = stripext(c['comm_table'])
+    com = c['community']
+    tbl = os.path.basename(c['comm_table'])
 
     query = os.path.join(os.path.abspath(config['hic_folder']), com, tbl,
                          str(c['hic_n_frag']), '{0[hic_base]}.fasta'.format(config))
