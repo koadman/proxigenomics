@@ -20,28 +20,23 @@ wrap.add('hic_read_length', [config['hic_read_length']], create_dir=False)
 # Variation
 genomes = appconfig.find_files(config['community']['folder'], config['community']['seq'])
 commPaths = [os.path.dirname(pn) for pn in genomes]
-wrap.add('community', commPaths, label_func=os.path.basename)
+wrap.add('community', commPaths)
 
 tableFolder = os.path.join(config['reference']['folder'], config['reference']['table_folder'])
 tablePaths = appconfig.get_files(tableFolder, 'table')
 wrap.add('comm_table', tablePaths, label_func=os.path.basename)
-
-
-#treeFolder = os.path.join(config['reference']['folder'], config['reference']['tree_folder'])
-#treePaths = appconfig.get_files(treeFolder, 'nwk')
-#wrap.add('comm_tree', treePaths, label_func=os.path.basename)
 
 wrap.add('hic_n_frag', config['hic_n_frag'])
 
 
 @wrap.add_target('generate_hic')
 def generate_hic(outdir, c):
-    source = '{0[community]}/{0[refseq]}'.format(c)
-    target = '{od}/community.fasta'.format(od=outdir)
-    action = 'bin/pbsrun_SGEVOLVER.sh ' \
-             '{0[seed]} $SOURCE.abspath $TARGET.abspath'.format(c)
+    source = '{1[community][folder]}/{0[community]}/{0[refseq]}'.format(c, config)
+    target = '{od}/{0[hic_base]}.fasta'.format(c, od=outdir)
+    action = 'bin/pbsrun_HiC.sh ' \
+             '{0[seed]} {0[hic_n_frag]} {0[hic_read_length]} {0[hic_inter_prob]} ' \
+             '{0[comm_table]} $SOURCE.abspath $TARGET.abspath'.format(c)
     return env.Command(target, source, action)
-
 
 wrap.add_controls(Environment())
 

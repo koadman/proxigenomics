@@ -10,20 +10,6 @@ nest = Nest()
 wrap = SConsWrap(nest, config['wgs_folder'])
 env = Environment(ENV=os.environ)
 
-# Variation
-commPaths = appconfig.get_communities(config)
-wrap.add('community', commPaths, label_func=os.path.basename)
-
-treeFolder = os.path.join(config['reference']['folder'], config['reference']['tree_folder'])
-treePaths = appconfig.get_files(treeFolder, 'nwk')
-wrap.add('comm_tree', treePaths, label_func=os.path.basename)
-
-tableFolder = os.path.join(config['reference']['folder'], config['reference']['table_folder'])
-tablePaths = appconfig.get_files(tableFolder, 'table')
-wrap.add('comm_table', tablePaths, label_func=os.path.basename)
-
-wrap.add('wgs_xfold', config['wgs_xfold'])
-
 # Constants
 wrap.add('seed', [config['seed']], create_dir=False)
 wrap.add('refseq', [config['community']['seq']], create_dir=False)
@@ -32,11 +18,22 @@ wrap.add('wgs_insert_length', [config['wgs_insert_length']], create_dir=False)
 wrap.add('wgs_insert_sd', [config['wgs_insert_sd']], create_dir=False)
 wrap.add('wgs_base', [config['wgs_base']],  create_dir=False)
 
+# Variation
+genomes = appconfig.find_files(config['community']['folder'], config['community']['seq'])
+commPaths = [os.path.dirname(pn) for pn in genomes]
+wrap.add('community', commPaths)
+
+tableFolder = os.path.join(config['reference']['folder'], config['reference']['table_folder'])
+tablePaths = appconfig.get_files(tableFolder, 'table')
+wrap.add('comm_table', tablePaths, label_func=os.path.basename)
+
+wrap.add('wgs_xfold', config['wgs_xfold'])
+
 @wrap.add_target('generate_wgs')
 @name_targets
 def generate_wgs(outdir, c):
     target = appconfig.get_wgs_reads(outdir, config)
-    source = '{0[community]}/{0[refseq]}'.format(c)
+    source = '{1[community][folder]}/{0[community]}/{0[refseq]}'.format(c, config)
     action = 'bin/pbsrun_ART.sh {0[seed]} {0[wgs_insert_length]} {0[wgs_insert_sd]} ' \
              '{0[wgs_read_length]} {0[wgs_xfold]} $SOURCE.abspath {od}/{0[wgs_base]}'.format(c, od=outdir)
     return 'r1', 'r2', env.Command(target, source, action)
@@ -60,4 +57,3 @@ def index_ctg(outdir, c):
     return env.Command(target, source, action)
 
 wrap.add_controls(Environment())
-
