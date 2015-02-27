@@ -121,8 +121,8 @@ wrap.add_aggregate('graph_output', list)
 
 @wrap.add_target('make_graph')
 def make_graph(outdir, c):
-    hic_sam = c['make_hic2ctg']['output']
-    wgs_bam = '{0}.bam'.format(os.path.splitext( str(c['make_wgs2ctg']['output']) )[0])
+    hic_sam = '{0}.sam'.format(os.path.splitext(str(c['make_hic2ctg']['output']))[0])
+    wgs_bam = str(c['make_wgs2ctg']['output'])
 
     sources = [hic_sam, wgs_bam]
     target = prepend_paths(outdir, ['edges.csv', 'nodes.csv'])
