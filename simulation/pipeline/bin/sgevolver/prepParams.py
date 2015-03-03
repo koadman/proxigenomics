@@ -17,7 +17,7 @@ try:
     if not os.path.exists(args.output[0]) or not os.path.isdir(args.output[0]):
         raise IOError('Output path {0} is not a directory or does not exist'.format(args.output[0]))
 
-    out_file = os.path.join(args.output[0], 'simujobparams.pm')
+    out_file = os.path.join(os.path.abspath(args.output[0]), 'simujobparams.pm')
 
     tree = Phylo.read(args.tree[0], args.fmt)
     tips = tree.get_terminals()
@@ -33,13 +33,13 @@ try:
         h_out.write('#\n# user set values\n#\n')
         h_out.write('@seqnames=({0});\n'.format(','.join(seq_names)))
         h_out.write('$seq_count="{0}";\n'.format(seq_count))
-        h_out.write('$tree_filename="{0}";\n'.format(args.tree[0]))
-        h_out.write('$ancestral_donor="{0}";\n'.format(args.seq[0]))
+        h_out.write('$tree_filename="{0}";\n'.format(os.path.abspath(args.tree[0])))
+        h_out.write('$ancestral_donor="{0}";\n'.format(os.path.abspath(args.seq[0])))
         h_out.write('$seq_length={0};\n'.format(args.seq_len[0]))
         h_out.write('$tree_scale={0};\n'.format(args.tree_scale[0]))
+        h_out.write('$nt_sub_scale={0};\n'.format(args.tree_scale[0]))
         h_out.write('#\n# extra constants\n#\n')
-        h_out.write('$nt_sub_scale=1;\n' \
-                    '$tools_dir="";\n' \
+        h_out.write('$tools_dir="";\n' \
                     '$mauve_dir="";\n' \
                     '$mavid_dir="";\n' \
                     '$lagan_dir="";\n' \

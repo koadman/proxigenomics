@@ -8,9 +8,10 @@
 #
 import sys
 import math
+import pysam
 
 if len(sys.argv) != 5:
-    print 'Usage: [SAM input] [WGS2SCF-IDXSTATS] [edges output] [nodes output]'
+    print 'Usage: [HIC2CTG BAM] [WGS2CTG-IDXSTATS] [edges output] [nodes output]'
     sys.exit(1)
 
 
@@ -108,8 +109,27 @@ def filter(line):
 
 # Read the sam file and build a linkage map
 linkage_map = {}
-with open(sys.argv[1], 'r') as h_in:
-    [update_linkage_map(line) for line in h_in if not filter(line)]
+with pysam.AlignmentFile(sys.argv[1], 'rb') as bam_file:
+    iter_bam = bam_file.fetch()
+    for mr in iter_bam:
+        if mr.reference_id == -1:
+            continue
+        read = mr.query_name[:-3]
+        rdir = mr.query_name[-3:]
+
+        # We depend on read naming from HiC simulator
+        # this could be changed if the simulator tool created
+        # read names with conventional Illumina FastQ headers.
+        if not (rdir == 'fwd' or rdir == 'rev'):
+            raise RuntimeError('Reads in alignment file do not conform to expected convention '
+                                '[a-zA-Z]+[0-9]+(fwd|ref)')
+
+        contig = bam_file.getrname(mr.reference_id)
+        linkage = linkage_map.get(read)
+        if linkage is None:
+            linkage_map[read] = [(contig, rdir)]
+        else:
+            linkage.append((contig, rdir))
 
 
 def update_node_map(line):

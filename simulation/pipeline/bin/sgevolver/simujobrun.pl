@@ -33,7 +33,16 @@ close OUTRAW;
 close INFASTA;
 
 # fix the sequence length to the complete ancestral genome
-$simujobparams::seq_length = $ancestor_length;
+# $simujobparams::seq_length = $ancestor_length;
+if ($simujobparams::seq_length > $ancestor_length/1.5) {
+    die "Requested evolved sequence length too long in comparison to input sequence"
+}
+# ancestor from the beginning of input sequence
+$simujobparams::ancestral_start = 0;
+$simujobparams::ancestral_length = $simujobparams::seq_length;
+# donor uses remainder of input sequence
+$simujobparams::donor_start = $simujobparams::seq_length;
+$simujobparams::donor_length = $ancestor_length - $simujobparams::seq_length;
 
 # Set the location of the evolution and scoring tools here:
 # this is the directory where seq-gen, sgEvolver, and scoreAlignment reside
@@ -81,13 +90,13 @@ executeCommand( $seqgen_cl, ">$simujobparams::seqgen_out_name", "seqgen_ancestra
 
 		# generate a donor base
 open( DONOR, ">$simujobparams::donor_seq_name" );
-print DONOR " 1 $simujobparams::seq_length\n";
+print DONOR " 1 $simujobparams::donor_length\n";
 print DONOR "Donor\n";
 close DONOR;
 
 
 		# extract the specified donor sequence
-$extract_cl = "dd if=$simujobparams::ancestral_donor bs=1 skip=$simujobparams::donor_start count=$simujobparams::seq_length";
+$extract_cl = "dd if=$simujobparams::ancestral_donor bs=1 skip=$simujobparams::donor_start count=$simujobparams::donor_length";
 executeCommand( $extract_cl, ">$simujobparams::donor_seq_name", "donor_dd.err" );
 
 		# generate a donor data set

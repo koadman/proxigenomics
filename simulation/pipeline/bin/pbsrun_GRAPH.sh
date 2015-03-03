@@ -16,14 +16,14 @@ then
 	source $BINDIR/bash_init.sh
 fi
 
-SAMTOEDGES=bin/samToEdges.py
+BAMTOEDGES=bin/bamToEdges.py
 
 if [ -z "$PBS_ENVIRONMENT" ] # SUBMIT MODE
 then
 	
 	if [ $# -ne 4 ]
 	then
-		echo "Usage: [hic2ctg.sam] [wgs2ctg.bam] [edge out] [node out]"
+		echo "Usage: [hic2ctg.bam] [wgs2ctg.bam] [edge out] [node out]"
 		exit 1
 	fi
 
@@ -38,6 +38,6 @@ else # EXECUTION MODE
 	echo "Running"
 	cd $PBS_O_WORKDIR
 	
-	$SAMTOEDGES ${HIC2CTG} ${WGS2CTG%.bam}.idxstats $EDGES $NODES
+	$BAMTOEDGES ${HIC2CTG} ${WGS2CTG%.bam}.idxstats $EDGES $NODES
 	
 fi

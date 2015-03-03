@@ -28,10 +28,19 @@ then
 		echo "Usage: [seed] [scale] [length] [tree] [input seq] [output seqs]"
 		exit 1
 	fi
+
+	if [ ! -d logs ]
+	then
+	    echo "Log folder is missing, creating one..."
+	    mkdir logs
+	fi
+
 	echo "Submitting run"
 
 	trap 'rollback_rm_file $6; exit $?' INT TERM EXIT
-	qsub -W block=true -v SEED=$1,SCALE="$2",LENGTH=$3,TREE=$4,INPUT_SEQ=$5,OUTPUT_SEQ=$6 $0
+	# get the absolute path for output
+	OUT_ABS=`readlink -f $6`
+	qsub -W block=true -v SEED=$1,SCALE="$2",LENGTH=$3,TREE=$4,INPUT_SEQ=$5,OUTPUT_SEQ=$OUT_ABS $0
 	trap - INT TERM EXIT
 	echo "Finished"
 
@@ -42,12 +51,14 @@ else # EXECUTION MODE
     OUTDIR=`dirname $OUTPUT_SEQ`
 
     # copy base files
-    cp $TREE $OUTDIR
-    cp $INPUT_SEQ $OUTDIR
+    cp -n $TREE $OUTDIR
+    cp -n $INPUT_SEQ $OUTDIR
+
     cd $OUTDIR
 
     # create runtime parameter file
     $SGPARMS --tree `basename $TREE` --seq `basename $INPUT_SEQ` --seq-len $LENGTH --tree-scale $SCALE
+
 
     $SGBIN $INPUT_SEQ $SEED
 

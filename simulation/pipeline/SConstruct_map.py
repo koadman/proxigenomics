@@ -61,13 +61,10 @@ def make_ctg2ref(outdir, c):
 def make_truth(outdir, c):
     source = str(c['make_ctg2ref']['output'])
     target = os.path.join(outdir, config['truth_table'])
-    action = 'bin/alignmentToTruth.py ' \
-             '--afmt {1[ctg_afmt]} ' \
-             '--ofmt {1[ctg_ofmt]} ' \
-             '--minlen {1[ctg_minlen]} ' \
-             '--mincov {1[ctg_mincov]} ' \
-             '--minid {1[ctg_minid]} ' \
+    action = 'bin/pbsrun_MKTRUTH.sh ' \
+             '{1[ctg_afmt]} {1[ctg_ofmt]} {1[ctg_minlen]} {1[ctg_mincov]} {1[ctg_minid]} ' \
              '$SOURCES.abspath $TARGET.abspath'.format(c, config)
+
     return 'output', env.Command(target, source, action)
 
 
@@ -121,10 +118,10 @@ wrap.add_aggregate('graph_output', list)
 
 @wrap.add_target('make_graph')
 def make_graph(outdir, c):
-    hic_sam = '{0}.sam'.format(os.path.splitext(str(c['make_hic2ctg']['output']))[0])
+    hic_bam = str(c['make_hic2ctg']['output'])
     wgs_bam = str(c['make_wgs2ctg']['output'])
 
-    sources = [hic_sam, wgs_bam]
+    sources = [hic_bam, wgs_bam]
     target = prepend_paths(outdir, ['edges.csv', 'nodes.csv'])
     action = 'bin/pbsrun_GRAPH.sh $SOURCES.abspath $TARGETS.abspath'
     c['graph_output'].extend(target)
@@ -144,8 +141,8 @@ def make_cluster_input(outdir, c):
     action = 'bin/pbsrun_MKMCL.sh {1[ctg_minlen]} $SOURCES.abspath $TARGET.abspath'.format(c, config)
     return 'output', env.Command(target, source, action)
 
-
-wrap.add('mcl_inflation', numpy.linspace(1.1, 2.0, 2))
+mcl_param = config['cluster']['mcl_infl']
+wrap.add('mcl_inflation', numpy.linspace(mcl_param['min'], mcl_param['max'], mcl_param['steps']))
 
 @wrap.add_target('do_mcl')
 @name_targets
