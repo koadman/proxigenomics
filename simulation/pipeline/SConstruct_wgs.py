@@ -1,6 +1,5 @@
 from nestly import Nest, stripext
 from nestly.scons import SConsWrap, name_targets
-import glob
 import os
 import os.path
 import appconfig
@@ -11,13 +10,6 @@ nest = Nest()
 wrap = SConsWrap(nest, config['wgs_folder'])
 env = Environment(ENV=os.environ)
 
-commPaths = appconfig.get_communities(config)
-
-# Variation
-wrap.add('community', commPaths, label_func=os.path.basename)
-wrap.add('comm_table', [config['community']['table']], label_func=stripext)
-wrap.add('wgs_xfold', config['wgs_xfold'])
-
 # Constants
 wrap.add('seed', [config['seed']], create_dir=False)
 wrap.add('refseq', [config['community']['seq']], create_dir=False)
@@ -26,11 +18,22 @@ wrap.add('wgs_insert_length', [config['wgs_insert_length']], create_dir=False)
 wrap.add('wgs_insert_sd', [config['wgs_insert_sd']], create_dir=False)
 wrap.add('wgs_base', [config['wgs_base']],  create_dir=False)
 
+# Variation
+genomes = appconfig.find_files(config['community']['folder'], config['community']['seq'])
+commPaths = [os.path.dirname(pn) for pn in genomes]
+wrap.add('community', commPaths)
+
+tableFolder = os.path.join(config['reference']['folder'], config['reference']['table_folder'])
+tablePaths = appconfig.get_files(tableFolder, 'table')
+wrap.add('comm_table', tablePaths, label_func=os.path.basename)
+
+wrap.add('wgs_xfold', config['wgs_xfold'])
+
 @wrap.add_target('generate_wgs')
 @name_targets
 def generate_wgs(outdir, c):
     target = appconfig.get_wgs_reads(outdir, config)
-    source = '{0[community]}/{0[refseq]}'.format(c)
+    source = '{1[community][folder]}/{0[community]}/{0[refseq]}'.format(c, config)
     action = 'bin/pbsrun_ART.sh {0[seed]} {0[wgs_insert_length]} {0[wgs_insert_sd]} ' \
              '{0[wgs_read_length]} {0[wgs_xfold]} $SOURCE.abspath {od}/{0[wgs_base]}'.format(c, od=outdir)
     return 'r1', 'r2', env.Command(target, source, action)
@@ -46,13 +49,11 @@ def assemble_wgs(work_dir, c):
     return 'ctg', env.Command(target, source, action)
 
 
-index_suffixes = ['.amb', '.ann', '.bwt', '.pac', '.sa']
 @wrap.add_target('index_ctg')
 def index_ctg(outdir, c):
     source = str(c['assemble_wgs']['ctg'])
-    target = [source + suf for suf in index_suffixes]
+    target = source + '.bwt'
     action = 'bin/pbsrun_INDEX.sh $SOURCE.abspath'.format(c)
     return env.Command(target, source, action)
 
 wrap.add_controls(Environment())
-

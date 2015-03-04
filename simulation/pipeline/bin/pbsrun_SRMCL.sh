@@ -4,12 +4,17 @@
 # Map sequences in simulation
 #
 
-
 #PBS -q smallq
 #PBS -l select=1:ncpus=2:mem=32gb
 #PBS -e logs/
 #PBS -o logs/
 #PBS -N SRMCLJOB
+
+if [ -z "$PBS_ENVIRONMENT" ]
+then
+	BINDIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
+	source $BINDIR/bash_init.sh
+fi
 
 CMD=$HOME/bin/srmcl
 
@@ -50,7 +55,10 @@ then
 	export CMDOPT
 	
 	echo "Submitting run"
+	trap 'rollback_rm_file $2; exit $?' INT TERM EXIT
 	qsub -V -W block=true -v INPUT=$1,OUTPUT=$2 $0
+	trap - INT TERM EXIT
+	echo "Finished"
 
 else # EXECUTION MODE
 	echo "Running"

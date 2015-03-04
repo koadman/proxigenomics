@@ -11,12 +11,16 @@
 #
 # Work will be performed relative to the submission current directory. Paths 
 # to data reads and output can be expressed locally.
+
 #
 #
 # PBS configuration choices can go here.
 #
-#PBS -l select=1:ncpus=2:mem=32gb
 #PBS -q smallq
+#PBS -l select=1:ncpus=2:mem=32gb
+#PBS -e logs/
+#PBS -o logs/
+#PBS -N A5JOB
 
 # Path to the a5 executable
 # This might need to be set!
@@ -111,7 +115,7 @@ then
 		fi
 	
 		# Queue submission
-		qsub $WAITOPT -N A5job -v TAG=$TAG,OVERWRITE=$OVERWRITE,OPTIONS=$METAGENOME,READ1=$R1,READ2=$R2,OUTDIR=$3 $0
+		qsub $WAITOPT -v TAG=$TAG,OVERWRITE=$OVERWRITE,OPTIONS=$METAGENOME,READ1=$R1,READ2=$R2,OUTDIR=$3 $0
 		
 	# Set up paths for libfile submission
 	else
@@ -130,7 +134,7 @@ then
 		fi
 
 		# Queue submission
-		qsub $WAITOPT -N A5job -v TAG=$TAG,OVERWRITE=$OVERWRITE,OPTIONS=$METAGENOME,LIBFILE=$LIBFILE,OUTDIR=$2 $0
+		qsub $WAITOPT -v TAG=$TAG,OVERWRITE=$OVERWRITE,OPTIONS=$METAGENOME,LIBFILE=$LIBFILE,OUTDIR=$2 $0
 	fi
 else
 	##############
@@ -153,9 +157,9 @@ else
 	if [ -z "$LIBFILE" ]
 	then
 		# Read-set invocation
-		$A5EXE $OPTIONS $READ1 $READ2 $TAG
+		$A5EXE --threads=2 $OPTIONS $READ1 $READ2 $TAG
 	else
 		# Libfile invocation
-		$A5EXE $OPTIONS $LIBFILE $TAG
+		$A5EXE --threads=2 $OPTIONS $LIBFILE $TAG
 	fi
 fi

@@ -1,16 +1,26 @@
 seed: 2136841
-truth_table: truth.txt
+truth_table: truth.yaml
+
+reference: {
+    folder: ref_data,
+    raw_seq: seq.raw,
+    tree_folder: trees,
+    tree_suffix: nwk,
+    seq_len: 800000,
+    table_folder: tables,
+    tree_scale: {min: -1.4, max: 0.5, steps: 10}
+}
 
 community: {
-    folder: references,
-    table: uniform.table,
+    folder: comm_data,
     seq: genomes.fasta
 }
 
 wgs_base: wgs
 wgs_folder: wgs_data
 wgs_asmdir: asm
-wgs_xfold: [5, 10]
+wgs_xfold: [20]
+#[5, 10]
 wgs_read_length: 150
 wgs_insert_length: 450
 wgs_insert_sd: 100
@@ -19,9 +29,23 @@ hic_base: hic
 hic_folder: hic_data
 hic_inter_prob: 0.9
 hic_read_length: 150
-hic_n_frag: [10000, 20000, 50000]
+hic_n_frag: [50000]
+#[10000, 20000, 50000]
+
+ctg_ofmt: yaml
+ctg_afmt: psl
+ctg_mincov: 0.8
+ctg_minid: 95.0
+ctg_minlen: 1000
 
 map_folder: map_data
-hic2ctg: hic2ctg.sam
-ctg2ref: ctg2ref.sam
-wgs2ctg: wgs2ctg.sam
+
+cluster: {
+    input: cl_input,
+    output: cl_output,
+    mcl_infl: {min: 1.1, max: 2.0, steps: 5}
+}
+
+hic2ctg: hic2ctg.bam
+ctg2ref: ctg2ref.psl
+wgs2ctg: wgs2ctg.bam

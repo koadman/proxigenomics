@@ -1,9 +1,8 @@
 #!/bin/bash
 
 #
-# create BWA index
+# Create homology search indexes
 #
-
 
 #PBS -q smallq
 #PBS -l select=1:ncpus=2:mem=32gb
@@ -11,7 +10,7 @@
 #PBS -o logs/
 #PBS -N INDEXJOB
 
-BWAEXE=$HOME/bin/bwa-0.7.6a/bwa
+BWA=$HOME/bin/bwa-0.7.6a/bwa
 
 if [ -z "$PBS_ENVIRONMENT" ] # SUBMIT MODE
 then
@@ -22,11 +21,13 @@ then
 	fi
 	echo "Submitting run"
 	qsub -W block=true -v FASTA=$1 $0
+	echo "Finished"
 
 else # EXECUTION MODE
 	echo "Running"
 	cd $PBS_O_WORKDIR
 
 	# create indexes
-	$BWAEXE index $FASTA
+	$BWA index $FASTA
+
 fi
