@@ -7,9 +7,10 @@ A user supplies an organised set(s) of reference genomes and community definitio
 These are taken by the pipeline and a sweep of experimental conditions are explored. This happens in three stages.
 
 ####Stages
-1. Generation of WGS data  
-2. Generation of HiC data  
-3. WGS and HiC are brought together, subsequently clustered and validated.  
+1. Generation of Communities
+2. Generation of WGS data  
+3. Generation of HiC data  
+4. WGS and HiC are brought together, subsequently clustered and validated.  
 
 The pipeline is built on top of Nestly and utilises the SCons wrapper. This make-like tool permits the definition of dependencies and manages the need for intermediate recalculation internally.
 
@@ -49,6 +50,7 @@ Eg. For 2 communities both using a simple uniform distribution.
 ####Generated data
 For each stage generated data and results are stored in folder hierarchies.
 
+- `evo_data` contains communities from sgevolver
 - `wgs_data` contains WGS reads and assemblies  
 - `hic_data` contains HiC reads  
 - `map_data` contains all further results.  
