@@ -3,12 +3,15 @@ truth_table: truth.yaml
 
 reference: {
     folder: ref_data,
-    raw_seq: seq.raw,
+    raw_seq: NC_000913.raw,
     tree_folder: trees,
     tree_suffix: nwk,
-    seq_len: 800000,
+    seq_len: 3000000,
     table_folder: tables,
-    tree_scale: {min: -1.4, max: 0.5, steps: 10}
+    # Branch length scale factor now specified as regular scalars and converted internally to powers of base.
+    tree_scale: {min: 0.025, max: 1.0 , steps: 10},
+    # Scale indel/inv/ht events by an additional factor above tree_scale
+    sg_scale: 1e-4
 }
 
 community: {
