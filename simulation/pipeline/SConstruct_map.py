@@ -27,7 +27,7 @@ wrap.add('refseq', [config['community']['seq']], create_dir=False)
 
 # Variation
 genomes = appconfig.find_files(config['community']['folder'], config['community']['seq'])
-commPaths = [os.path.dirname(pn) for pn in genomes]
+commPaths = [os.path.dirname(pn) for pn in genomes if 'ladder' not in pn]
 wrap.add('community', commPaths)
 
 tableFolder = os.path.join(config['reference']['folder'], config['reference']['table_folder'])
