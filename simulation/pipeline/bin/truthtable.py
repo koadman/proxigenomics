@@ -1,5 +1,5 @@
 import pandas as pd
-from collections import OrderedDict, Iterable
+from collections import OrderedDict, Iterable, Counter
 import yaml
 
 
@@ -16,8 +16,19 @@ class TruthTable:
     """
     def __init__(self):
         self.asgn_dict = {}
+        self.label_map = {}
+        self.label_count = Counter()
 
-    def soft(self):
+    def print_tally(self):
+        n_symbol = len(self.label_count)
+        print '{0} symbols in table'.format(n_symbol)
+        n_obj = float(sum(self.label_count.values()))
+        print 'ext_symb\tint_symb\tcount\tpercentage'
+        for ci in sorted(self.label_count, key=self.label_count.get, reverse=True):
+            print '{0}\t{1}\t{2}\t{3:5.3f}'.format(ci, self.label_map[ci],
+                self.label_count[ci], self.label_count[ci] / n_obj)
+
+    def soft(self, universal=False):
         """
         :return plain dictionary with degenerate classification
         """
@@ -25,6 +36,11 @@ class TruthTable:
         _keys = sorted(self.asgn_dict.keys())
         for k in _keys:
             _s[k] = sorted(self.asgn_dict[k].keys())
+            if universal:
+                # relabel with universal symbols if requested
+                labels = _s[k]
+                _s[k] = [self.label_map[l] for l in labels]
+
         return _s
 
     def hard(self):
@@ -46,11 +62,18 @@ class TruthTable:
         self.asgn_dict[key] = value
 
     def update(self, dt):
+        """
+        Initialise the assignment dictionary and also generate a mapping of
+        class symbol to the positive integers. We can use this as a universal
+        symbol basis.
+
+        :param dt: the dictionary to initialise from
+        """
         for k, v in dt.iteritems():
             self.asgn_dict[k] = v
-
-    def add(self, key, value):
-        self.asgn_dict[key] = value
+            self.label_count.update(v.keys())
+        labels = sorted(self.label_count.keys())
+        self.label_map = dict((l, n) for n, l in enumerate(labels, 1))
 
     def to_vector(self):
         vec = {}
@@ -108,12 +131,14 @@ def read_mcl(pathname):
     :return: truth table
     """
     with open(pathname, 'r') as h_in:
-        mcl = TruthTable()
+        mcl = {}
         for n, line in enumerate(h_in, start=1):
             objs = line.rstrip().split()
             for o in objs:
-                mcl.add(o, {n: None})
-    return mcl
+                mcl[o] = {n: None}
+        tt = TruthTable()
+        tt.update(mcl)
+    return tt
 
 
 def unique_labels(dt):
