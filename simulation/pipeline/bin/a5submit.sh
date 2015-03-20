@@ -16,8 +16,7 @@
 #
 # PBS configuration choices can go here.
 #
-#PBS -q smallq
-#PBS -l select=1:ncpus=2:mem=32gb
+#PBS -l walltime=200:00:00
 #PBS -e logs/
 #PBS -o logs/
 #PBS -N A5JOB
@@ -42,10 +41,14 @@ then
 	# Regular CLI mode #
 	####################
 
-    # defaults
-    TAG=a5
+	# defaults
+	TAG=a5
+	NCPU=2
+	MEM=32gb
+	QUEUE=smallq
 
-	while getopts ":mt:wf" opt
+
+	while getopts ":mt:wfn:M:q:" opt
 	do
 		case $opt in
 			m)
@@ -58,8 +61,17 @@ then
 				OVERWRITE="true"
 				;;
 			t)
-		        TAG=$OPTARG
-		        ;;
+		                TAG=$OPTARG
+		                ;;
+                        n)
+                                NCPU=$OPTARG
+                                ;;
+			M)
+				MEM=$OPTARG
+				;;
+			q)
+				QUEUE=$OPTARG
+				;;
 			\?)
 				echo "Invalid option: -$OPTARG"
 				;;
@@ -75,18 +87,21 @@ then
 		echo ""
 		echo "Single set of paired Reads"
 		echo "" 
-		echo " Usage: [-m] <READS1> <READS2> <OUTPUT_PATH>"
+		echo " Usage: [OPTIONS] <READS1> <READS2> <OUTPUT_PATH>"
 		echo ""
 		echo "Using a libfile"
 		echo ""
-		echo " Usage: [-m] <LIBFILE> <OUTPUT_PATH>"
+		echo " Usage: [OPTIONS] <LIBFILE> <OUTPUT_PATH>"
 		echo ""
-		echo "Arguments"
+		echo "Optional Arguments"
 		echo ""
 		echo " -m    enable metagenome behaviour in A5 (optional)"
 		echo " -w    block on submission, wait for assembly to finish (optional)"
 		echo " -f    force overwriting of output folder contents (optional)"
 		echo " -t    prefix tag for output file names"
+                echo " -n    number of concurrent threads [default: 2]"
+		echo " -M    job memory with units. [default: 32gb]"
+		echo " -q    job queue [default: smallq]"
 		echo ""
 		echo " READS1     first input reads file (paired reads)"
 		echo " READS2     second input reads file (paired reads)"
@@ -115,7 +130,7 @@ then
 		fi
 	
 		# Queue submission
-		qsub $WAITOPT -v TAG=$TAG,OVERWRITE=$OVERWRITE,OPTIONS=$METAGENOME,READ1=$R1,READ2=$R2,OUTDIR=$3 $0
+		qsub -q $QUEUE -l select=1:ncpus=$NCPU:mem=$MEM $WAITOPT -v NCPU=$NCPU,TAG=$TAG,OVERWRITE=$OVERWRITE,OPTIONS=$METAGENOME,READ1=$R1,READ2=$R2,OUTDIR=$3 $0
 		
 	# Set up paths for libfile submission
 	else
@@ -134,7 +149,7 @@ then
 		fi
 
 		# Queue submission
-		qsub $WAITOPT -v TAG=$TAG,OVERWRITE=$OVERWRITE,OPTIONS=$METAGENOME,LIBFILE=$LIBFILE,OUTDIR=$2 $0
+		qsub -q $QUEUE -l select=1:ncpus=$NCPU:mem=$MEM $WAITOPT -v NCPU=$NCPU,TAG=$TAG,OVERWRITE=$OVERWRITE,OPTIONS=$METAGENOME,LIBFILE=$LIBFILE,OUTDIR=$2 $0
 	fi
 else
 	##############
@@ -157,9 +172,9 @@ else
 	if [ -z "$LIBFILE" ]
 	then
 		# Read-set invocation
-		$A5EXE --threads=2 $OPTIONS $READ1 $READ2 $TAG
+		$A5EXE --threads=$NCPU $OPTIONS $READ1 $READ2 $TAG
 	else
 		# Libfile invocation
-		$A5EXE --threads=2 $OPTIONS $LIBFILE $TAG
+		$A5EXE --threads=$NCPU $OPTIONS $LIBFILE $TAG
 	fi
 fi
