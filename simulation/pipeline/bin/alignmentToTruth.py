@@ -118,7 +118,7 @@ def write_truth(simple, minlen, mincov, alignment_list, file_name):
             t = truth.get(aln.query_name)
             if t is None:
                 t = {}
-                truth[aln.query_name] = t
+                truth.put(aln.query_name, t)
             t[aln.ref_name] = aln.align_length
 
     if simple:
