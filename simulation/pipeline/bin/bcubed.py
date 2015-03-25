@@ -56,10 +56,10 @@ def extended_bcubed_precision(c, g):
         pre = 0
         for obj2 in shared_obj:
             # only applicable to non-zero intersection of classses
-            #if obj2 in g and len(set(c[obj1]) & set(c[obj2])) > 0:
+            n += overlap(g[obj1], g[obj2])
             if obj2 in g and overlap(c[obj1], c[obj2]) > 0:
                 pre += multi_precision_or_recall(obj1, obj2, c, g)
-                n += 1
+                #n += 1
         pre_overall += float(pre)/n
         n_overall += 1
     print 'n_overall={0}'.format(n_overall)
@@ -82,10 +82,10 @@ def extended_bcubed_recall(c, g):
         rec = 0
         for obj2 in shared_obj:
             # only applicable to non-zero intersection of classses
-            #if len(set(g[obj1]) & set(g[obj2])) > 0:
+            n += overlap(c[obj1], c[obj2])
             if overlap(g[obj1], g[obj2]) > 0:
                 rec += multi_precision_or_recall(obj1, obj2, g, c)
-                n += 1
+                #n += 1
         rec_overall += float(rec)/n
         n_overall += 1
     print 'n_overall={0}'.format(n_overall)
