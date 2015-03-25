@@ -62,6 +62,7 @@ def extended_bcubed_precision(c, g):
                 n += 1
         pre_overall += float(pre)/n
         n_overall += 1
+    print 'n_overall={0}'.format(n_overall)
     return pre_overall/n_overall
 
 
@@ -87,6 +88,7 @@ def extended_bcubed_recall(c, g):
                 n += 1
         rec_overall += float(rec)/n
         n_overall += 1
+    print 'n_overall={0}'.format(n_overall)
     return rec_overall/n_overall
 
 
