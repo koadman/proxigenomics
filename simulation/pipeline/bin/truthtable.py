@@ -21,7 +21,7 @@ class TruthTable:
 
     def print_tally(self):
         n_symbol = len(self.label_count)
-        n_categories = len(Counter.values()) 
+        n_categories = sum(self.label_count.values())
         print '{0} symbols in table and {1} categories'.format(n_symbol, n_categories)
         n_obj = float(sum(self.label_count.values()))
         print 'ext_symb\tint_symb\tcount\tpercentage'
