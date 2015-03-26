@@ -1,5 +1,7 @@
-import pandas as pd
 from collections import OrderedDict, Iterable, Counter
+import pandas as pd
+import copy
+import numpy
 import yaml
 
 
@@ -71,7 +73,7 @@ class TruthTable:
         :param dt: the dictionary to initialise from
         """
         for k, v in dt.iteritems():
-            self.asgn_dict[k] = v
+            self.asgn_dict[str(k)] = v
             self.label_count.update(v.keys())
         labels = sorted(self.label_count.keys())
         self.label_map = dict((l, n) for n, l in enumerate(labels, 1))
@@ -131,12 +133,18 @@ def read_mcl(pathname):
     :param pathname: mcl output file
     :return: truth table
     """
+
     with open(pathname, 'r') as h_in:
+        # read the MCL file, which lists all members of a class on a single line
+        # the class ids are implicit, therefore we use line number.
         mcl = {}
-        for n, line in enumerate(h_in, start=1):
-            objs = line.rstrip().split()
-            for o in objs:
-                mcl[o] = {n: None}
+        for ci, line in enumerate(h_in, start=1):
+            objects = line.rstrip().split()
+            for oi in objects:
+                if oi not in mcl:
+                    mcl[oi] = {}
+                mcl[oi][ci] = 1.0  # there are no weights, therefore give them all 1
+        # initialise the table
         tt = TruthTable()
         tt.update(mcl)
     return tt
@@ -178,3 +186,43 @@ def crosstab(dt1, dt2):
             ctab.loc[i1, i2] += 1
 
     return ctab
+
+
+def simulate_error(tt, p_mut, p_indel, extra_symb=[]):
+    """
+    Simple method for introducing error in a truth table. This is useful when
+    testing clustering metrics (Fm, Vm, Bcubed, etc). By defult, the list of possible
+    symbols is taken from those already assigned, but a user may provide additional
+    symbols. These can provide a useful source of novelty, when for instance
+    an object is already assigned to all existing class symbols.
+
+    :param tt: the truth table to add error
+    :param p_mut: the probably of a class mutation
+    :param p_indel: the probability of deletion or insertion of a class to an object
+    :param extra_symb: extra class symbols for inserting
+    :return: truth table mutatant
+    """
+    symbols = list(set(tt.label_count.keys() + extra_symb))
+    print symbols
+    mut_dict = copy.deepcopy(tt.asgn_dict)
+
+    for o_i in mut_dict.keys():
+        others = list(set(symbols) - set(mut_dict[o_i]))
+        if numpy.random.uniform() < p_mut:
+            if len(others) > 0:
+                c_mut = numpy.random.choice(others, 1)[0]
+                c_old = numpy.random.choice(mut_dict[o_i].keys(), 1)[0]
+                del mut_dict[o_i][c_old]
+                mut_dict[o_i][c_mut] = 1.0
+
+        if numpy.random.uniform() < p_indel:
+            if numpy.random.uniform() < 0.5:
+                c_del = numpy.random.choice(mut_dict[o_i].keys(), 1)[0]
+                del mut_dict[o_i][c_del]
+            elif len(others) > 0:
+                c_add = numpy.random.choice(others, 1)[0]
+                mut_dict[o_i][c_add] = 1.0
+
+    mut_tt = TruthTable()
+    mut_tt.update(mut_dict)
+    return mut_tt
