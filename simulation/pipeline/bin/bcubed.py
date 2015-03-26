@@ -31,14 +31,48 @@ def multi_precision_or_recall(o1, o2, C, L):
     :param L: the clustering (precision), the gold truth (recall)
     :return:
     """
-    ovl_C = overlap(C[o1], C[o2]) #len(set(C[o1]) & set(C[o2]))
+    ovl_C = overlap(C[o1], C[o2])
     if ovl_C == 0:
         raise RuntimeError('cardinality of intersection was zero')
 
-    ovl_L = overlap(L[o1], L[o2]) #len(set(L[o1]) & set(L[o2]))
+    ovl_L = overlap(L[o1], L[o2])
 
     return float(min(ovl_C, ovl_L)) / float(ovl_C)
 
+
+def recall(o1, o2, C, L):
+    ovl_L = overlap(L[o1], L[o2])
+    if ovl_L == 0:
+        raise RuntimeError('cardinality of intersection was zero')
+    ovl_C = overlap(C[o1], C[o2])
+    return float(min(ovl_C, ovl_L)) / float(ovl_L)
+
+def objects_with_overlap(o, C):
+    """
+    Determine the union of objects which share at least one class (or clustering)
+    with an object o. The union also includes o.
+
+    :param o: the subject object
+    :param C: the class (or clustering) of objects
+    :return: the set of objects overlapping with o
+    """
+    # class to object map for convenience
+    class_to_obj = {}
+    for oi, classes in C.iteritems():
+        for ci in classes:
+            if ci not in class_to_obj:
+                class_to_obj[ci] = []
+            class_to_obj[ci].append(oi)
+
+    # iterate over o's classes to build the
+    # union of all objects sharing a class with o
+    D = set([o])  # also include o.
+    o_classes = set(C[o])
+    for ci in o_classes:
+        # objects also belonging to the class
+        D |= set(class_to_obj[ci])
+
+    return D
 
 def extended_bcubed_precision(c, g):
     """
@@ -49,21 +83,22 @@ def extended_bcubed_precision(c, g):
     :return: Bcubed_pre
     """
     pre_overall = 0
-    n_overall = 0
-    shared_obj = intersection(c.keys(), g.keys())  #set(c.keys()) & set(g.keys())
+    shared_obj = intersection(c.keys(), g.keys()) # this might be incorrect.
     for obj1 in shared_obj:
-        n = 0
+
+        clustering_objects = objects_with_overlap(obj1, g)
+
         pre = 0
-        for obj2 in shared_obj:
-            # count the number of objects which share at least one cluster with obj1
-            n += overlap(g[obj1], g[obj2])
+        for obj2 in clustering_objects:
             # only applicable to non-zero intersection of classses
-            if obj2 in g and overlap(c[obj1], c[obj2]) > 0:
+            if obj2 in c and overlap(c[obj1], c[obj2]) > 0:
                 pre += multi_precision_or_recall(obj1, obj2, c, g)
-        pre_overall += float(pre)/n
-        n_overall += 1
-    print 'n_overall={0}'.format(n_overall)
-    return pre_overall/n_overall
+
+        pre_overall += float(pre) / len(clustering_objects)
+        #print 'PRE: {:.4f}'.format(float(pre) / len(clustering_objects))
+
+    print '{0} shared objects used in precision'.format(len(shared_obj))
+    return pre_overall / len(shared_obj)
 
 
 def extended_bcubed_recall(c, g):
@@ -75,22 +110,22 @@ def extended_bcubed_recall(c, g):
     :return: Bcubed_rec
     """
     rec_overall = 0
-    n_overall = 0
-    shared_obj = intersection(c.keys(), g.keys())  #set(c.keys()) & set(g.keys())
+    shared_obj = intersection(c.keys(), g.keys())
     for obj1 in shared_obj:
-        n = 0
+
+        class_objects = objects_with_overlap(obj1, c)
+
         rec = 0
-        for obj2 in shared_obj:
-            # count the number of objects which share at least one class with obj1
-            n += overlap(c[obj1], c[obj2])
+        for obj2 in class_objects:
             # only applicable to non-zero intersection of classses
-            if overlap(g[obj1], g[obj2]) > 0:
+            if obj2 in g and overlap(g[obj1], g[obj2]) > 0:
                 rec += multi_precision_or_recall(obj1, obj2, g, c)
-                #n += 1
-        rec_overall += float(rec)/n
-        n_overall += 1
-    print 'n_overall={0}'.format(n_overall)
-    return rec_overall/n_overall
+
+        rec_overall += float(rec) / len(class_objects)
+        #print 'REC: {:.4f}'.format(float(rec) / len(class_objects))
+
+    print '{0} shared objects used in recall'.format(len(shared_obj))
+    return rec_overall / len(shared_obj)
 
 
 def extended_bcubed(c, g):
