@@ -191,7 +191,7 @@ def crosstab(dt1, dt2):
 def simulate_error(tt, p_mut, p_indel, extra_symb=[]):
     """
     Simple method for introducing error in a truth table. This is useful when
-    testing clustering metrics (Fm, Vm, Bcubed, etc). By defult, the list of possible
+    testing clustering metrics (Fm, Vm, Bcubed, etc). By default, the list of possible
     symbols is taken from those already assigned, but a user may provide additional
     symbols. These can provide a useful source of novelty, when for instance
     an object is already assigned to all existing class symbols.
