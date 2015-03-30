@@ -116,6 +116,7 @@ def make_hic2ctg(outdir, c):
 
 wrap.add_aggregate('graph_output', list)
 
+
 @wrap.add_target('make_graph')
 def make_graph(outdir, c):
     hic_bam = str(c['make_hic2ctg']['output'])

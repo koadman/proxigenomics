@@ -9,10 +9,7 @@
 import sys
 import math
 import pysam
-
-if len(sys.argv) != 5:
-    print 'Usage: [HIC2CTG BAM] [WGS2CTG-IDXSTATS] [edges output] [nodes output]'
-    sys.exit(1)
+import argparse
 
 
 class Edge:
@@ -107,65 +104,73 @@ def filter(line):
     if fields[2] == '*': return True
     return False
 
-# Read the sam file and build a linkage map
-linkage_map = {}
-with pysam.AlignmentFile(sys.argv[1], 'rb') as bam_file:
-    iter_bam = bam_file.fetch()
-    for mr in iter_bam:
-        if mr.reference_id == -1:
-            continue
-        read = mr.query_name[:-3]
-        rdir = mr.query_name[-3:]
+if __name__ == '__main__':
 
-        # We depend on read naming from HiC simulator
-        # this could be changed if the simulator tool created
-        # read names with conventional Illumina FastQ headers.
-        if not (rdir == 'fwd' or rdir == 'rev'):
-            raise RuntimeError('Reads in alignment file do not conform to expected convention '
-                                '[a-zA-Z]+[0-9]+(fwd|ref)')
+    parser = argparse.ArgumentParser(description='Create edge and node tables from a HiC bam file')
+    parser.add_argument('--wgs', dest='wgs2ctg', metavar='WGS_BAM', nargs=1, help='WGS reads to contigs bam file')
+    parser.add_argument('hic2ctg', metavar='HIC_BAM', nargs=1, help='HiC to contigs bam file')
+    parser.add_argument('edge_csv', metavar='EDGE_CSV', nargs=1, help='Edges csv output file')
+    parser.add_argument('node_csv', metavar='NODE_CSV', nargs=1, help='Nodes csv output file')
+    args = parser.parse_args()
 
-        contig = bam_file.getrname(mr.reference_id)
-        linkage = linkage_map.get(read)
-        if linkage is None:
-            linkage_map[read] = [(contig, rdir)]
-        else:
-            linkage.append((contig, rdir))
+    # Read the idxstats file and build the node list
+    node_map = {}
+    if args.wgs2ctg is not None:
+        with pysam.AlignmentFile(args.wgs2ctg[0], 'rb') as bam_file:
+            for n, rn in enumerate(bam_file.references):
+                node_map[rn] = Node(rn, bam_file.lengths[n], bam_file.count(reference=rn))
+    else:
+        with pysam.AlignmentFile(args.hic2ctg[0], 'rb') as bam_file:
+            for n, rn in enumerate(bam_file.references):
+                node_map[rn] = Node(rn, bam_file.lengths[n], 1)
 
+    # Read the sam file and build a linkage map
+    linkage_map = {}
+    with pysam.AlignmentFile(args.hic2ctg[0], 'rb') as bam_file:
+        iter_bam = bam_file.fetch()
+        for mr in iter_bam:
+            if mr.reference_id == -1:
+                continue
+            read = mr.query_name[:-3]
+            rdir = mr.query_name[-3:]
 
-def update_node_map(line):
-    fields = line.rsplit()
-    if len(fields) != 4:
-        raise Exception('Invalid line in idxstats file [' + line + ']')
-    node_map[fields[0]] = Node(fields[0], int(fields[1]), int(fields[2]))
+            # We depend on read naming from HiC simulator
+            # this could be changed if the simulator tool created
+            # read names with conventional Illumina FastQ headers.
+            if not (rdir == 'fwd' or rdir == 'rev'):
+                raise RuntimeError('Reads in alignment file do not conform to expected convention '
+                                    '[a-zA-Z]+[0-9]+(fwd|ref)')
 
-# Read the idxstats file and build the node list
-node_map = {}
-with open(sys.argv[2], 'r') as h_in:
-    [update_node_map(line) for line in h_in if not line.startswith('*')]
+            contig = bam_file.getrname(mr.reference_id)
+            linkage = linkage_map.get(read)
+            if linkage is None:
+                linkage_map[read] = [(contig, rdir)]
+            else:
+                linkage.append((contig, rdir))
 
-# From the set of all linkages, convert this information
-# into inter-contig edges, where the nodes are contigs.
-# Count the number of redundant links as a raw edge weight.
-edge_map = {}
-for (insert, linkage) in linkage_map.iteritems():
-    for i in range(len(linkage)):
-        for j in range(i):
-            if linkage[i][1] != linkage[j][1] and linkage[i][0] != linkage[j][0]:
-                e = Edge([node_map[linkage[i][0]], node_map[linkage[j][0]]])
-                if e.get_id() not in edge_map:
-                    edge_map[e.get_id()] = e
-                else:
-                    e = edge_map.get(e.get_id())
-                    e.inc_weight()
+    # From the set of all linkages, convert this information
+    # into inter-contig edges, where the nodes are contigs.
+    # Count the number of redundant links as a raw edge weight.
+    edge_map = {}
+    for (insert, linkage) in linkage_map.iteritems():
+        for i in range(len(linkage)):
+            for j in range(i):
+                if linkage[i][1] != linkage[j][1] and linkage[i][0] != linkage[j][0]:
+                    e = Edge([node_map[linkage[i][0]], node_map[linkage[j][0]]])
+                    if e.get_id() not in edge_map:
+                        edge_map[e.get_id()] = e
+                    else:
+                        e = edge_map.get(e.get_id())
+                        e.inc_weight()
 
-# Write out all edges to stdout
-# Extra columns for the Gephi
-with open(sys.argv[3], 'w') as h_out:
-    h_out.write("SOURCE TARGET RAWWEIGHT WEIGHT TYPE\n")
-    for e in edge_map.values():
-        h_out.write('{0} UNDIRECTED\n'.format(e))
+    # Write out all edges to stdout
+    # Extra columns for the Gephi
+    with open(args.edge_csv[0], 'w') as h_out:
+        h_out.write("SOURCE TARGET RAWWEIGHT WEIGHT TYPE\n")
+        for e in edge_map.values():
+            h_out.write('{0} UNDIRECTED\n'.format(e))
 
-with open(sys.argv[4], 'w') as h_out:
-    h_out.write('ID LENGTH READS\n')
-    for n in node_map.values():
-        h_out.write('{0}\n'.format(n))
+    with open(args.node_csv[0], 'w') as h_out:
+        h_out.write('ID LENGTH READS\n')
+        for n in node_map.values():
+            h_out.write('{0}\n'.format(n))

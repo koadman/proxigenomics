@@ -471,6 +471,8 @@ parser.add_option('-r', '--seed', dest='seed',
                   help="Random seed for initialising number generator", metavar='INT', type='int')
 parser.add_option('-o', '--output', dest='output_file',
                   help='Output Hi-C reads file', metavar='FILE')
+parser.add_option('-f', '--ofmt', dest='output_format', default='fastq',
+                  help='Output format', choices=['fasta', 'fastq'], metavar='output_format')
 (options, args) = parser.parse_args()
 
 if options.num_frag is None:
@@ -544,14 +546,14 @@ with open(options.output_file, 'wb') as h_output:
             continue
 
         read1 = make_read(fragment, True, options.read_length)
-        read1.id = "frg" + str(frag_count) + "fwd"
-        read1.description = partA.seq.id + " " + partA.seq.description
+        read1.id = 'frg{0}fwd'.format(frag_count)
+        read1.description = '{0} {1}'.format(partA.seq.id, partA.seq.description)
 
         read2 = make_read(fragment, False, options.read_length)
-        read2.id = "frg" + str(frag_count) + "rev"
-        read2.description = partB.seq.id + " " + partB.seq.description
+        read2.id = 'frg{0}rev'.format(frag_count)
+        read2.description = '{0} {1}'.format(partB.seq.id, partB.seq.description)
 
-        write_reads(h_output, [read1, read2], "fastq", dummyQ=True)
+        write_reads(h_output, [read1, read2], options.output_format, dummyQ=True)
 
         frag_count += 1
 

@@ -4,7 +4,13 @@ import pysam
 
 
 if len(sys.argv) != 5:
-    print 'Usage: [mcov] [mapq] [in file] [out bam]'
+    print 'Usage: [min cov] [min mapq] [infile] [outfile]'
+    print ''
+    print '   mcov    - min coverage of read on subject [0..1]'
+    print '   mapq    - minimum mapping quality of read [0..100]'
+    print '   infile  - input bam file'
+    print '   outfile - output bam file'
+    print ''
     sys.exit(1)
 
 min_cov = float(sys.argv[1])

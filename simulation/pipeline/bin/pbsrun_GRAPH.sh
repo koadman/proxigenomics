@@ -38,6 +38,6 @@ else # EXECUTION MODE
 	echo "Running"
 	cd $PBS_O_WORKDIR
 	
-	$BAMTOEDGES ${HIC2CTG} ${WGS2CTG%.bam}.idxstats $EDGES $NODES
+	$BAMTOEDGES --wgs $WGS2CTG $HIC2CTG $EDGES $NODES
 	
 fi
