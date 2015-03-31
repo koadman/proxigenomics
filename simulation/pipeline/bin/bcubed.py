@@ -101,6 +101,38 @@ def extended_bcubed_precision(c, g):
     return pre_overall / len(shared_obj)
 
 
+def weighted_extended_bcubed_precision(w, c, g):
+    """
+    Calculate the overall average extended Bcubed precision for a gold truth and clustering.
+
+    :param c: the gold truth
+    :param g: the clustering
+    :return: Bcubed_pre
+    """
+    pre_overall = 0
+    shared_obj = intersection(c.keys(), g.keys()) # this might be incorrect.
+    for obj1 in shared_obj:
+
+        clustering_objects = objects_with_overlap(obj1, g)
+
+        pre = 0
+        for obj2 in clustering_objects:
+            # only applicable to non-zero intersection of classses
+
+            if obj2 in c:
+                ovl_c = overlap(c[obj1], c[obj2])
+                if ovl_c > 0:
+                    ovl_g = overlap(g[obj1], g[obj2])
+                    pre += w[obj2] * float(min(ovl_c, ovl_g)) / float(ovl_c)
+
+        weight_clust = float(sum([w[k] for k in clustering_objects]))
+        pre_overall += float(pre) / weight_clust
+        print 'PRE: {:.4f}'.format(float(pre) / weight_clust)
+
+    print '{0} shared objects used in precision'.format(len(shared_obj))
+    return pre_overall / len(shared_obj)
+
+
 def extended_bcubed_recall(c, g):
     """
     Calculate the overall average extended Bcubed recall for a gold truth and clustering.
@@ -128,6 +160,37 @@ def extended_bcubed_recall(c, g):
     return rec_overall / len(shared_obj)
 
 
+def weighted_extended_bcubed_recall(w, c, g):
+    """
+    Calculate the overall average extended Bcubed recall for a gold truth and clustering.
+
+    :param c: the gold truth
+    :param g: the clustering
+    :return: Bcubed_rec
+    """
+    rec_overall = 0
+    shared_obj = intersection(c.keys(), g.keys())
+    for obj1 in shared_obj:
+
+        class_objects = objects_with_overlap(obj1, c)
+
+        rec = 0
+        for obj2 in class_objects:
+            # only applicable to non-zero intersection of classses
+            if obj2 in g:
+                ovl_g = overlap(g[obj1], g[obj2])
+                if ovl_g > 0:
+                    ovl_c = overlap(c[obj1], c[obj2])
+                    rec += w[obj2] * float(min(ovl_c, ovl_g)) / float(ovl_g)
+
+        weight_class = float(sum([w[k] for k in class_objects]))
+        rec_overall += float(rec) / weight_class
+        print 'REC: {:.4f}'.format(float(rec) / weight_class)
+
+    print '{0} shared objects used in recall'.format(len(shared_obj))
+    return rec_overall / len(shared_obj)
+
+
 def extended_bcubed(c, g):
     """
     Calculate the overall average extended Bcubed F measure for a gold truth and clustering.
@@ -142,6 +205,21 @@ def extended_bcubed(c, g):
     fbcubed = 2.0 * pre * rec / (pre + rec)
     return {'pre': pre, 'rec': rec, 'f': fbcubed}
 
+
+def weighted_extended_bcubed(w, c, g):
+    """
+    Calculate the overall average extended Bcubed F measure for a gold truth and clustering.
+    The F measure is the harmonic mean of the extended Bcubed precision and recall.
+
+    :param c: the gold truth
+    :param g: the clustering
+    :return: precision, recall and F.
+    """
+    pre = weighted_extended_bcubed_precision(w, c, g)
+    rec = weighted_extended_bcubed_recall(w, c, g)
+    fbcubed = 2.0 * pre * rec / (pre + rec)
+    return {'pre': pre, 'rec': rec, 'f': fbcubed}
+
 if __name__ == '__main__':
 
     def count_labels(cl):
@@ -153,22 +231,42 @@ if __name__ == '__main__':
     from collections import Counter
     import truthtable as tt
     import pipeline_utils
-    import sys
+    import argparse
 
-    if len(sys.argv) != 4:
-        print 'Usage [truth] [prediction] [output]'
-        sys.exit(1)
+    parser = argparse.ArgumentParser(description='Calculate extended bcubed metric')
+    parser.add_argument('--weighted', metavar='WEIGHT_CSV', help='Calculate a weighted bcubed')
+    parser.add_argument('-o', '--output', help='Output file')
+    parser.add_argument('truth', metavar='TRUTH', nargs=1, help='Truth table (yaml format)')
+    parser.add_argument('pred', metavar='PREDICTION', nargs=1, help='Prediction table (mcl format)')
+    args = parser.parse_args()
 
     # read truth and convert to basic soft table
-    truth = tt.read_truth(sys.argv[1])
+    truth = tt.read_truth(args.truth[0])
     print 'Truth Statistics'
     truth.print_tally()
     truth = truth.soft(True)
 
     # read clustering and convert to basic soft table
-    clustering = tt.read_mcl(sys.argv[2])
+    clustering = tt.read_mcl(args.pred[0])
     print 'Clustering Statistics'
     clustering.print_tally()
     clustering = clustering.soft(True)
 
-    pipeline_utils.write_data(sys.argv[3], extended_bcubed(truth, clustering))
+    # Read weights from CSV.
+    weights = None
+    if args.weight_csv is not None:
+        weights = {}
+        with open(args.weight_csv, 'r') as h_in:
+            for line in h_in:
+                fields = line.strip().split()
+                if len(fields) != 2:
+                    raise IOError('weight csv did not contain 2 columns')
+                if fields[0] in weights:
+                    raise IOError('weight csv contains duplicate keys')
+                weights[fields[0]] = float(fields[1])
+
+        pipeline_utils.write_data(args.output, weighted_extended_bcubed(weights, truth, clustering))
+
+    else:
+
+        pipeline_utils.write_data(args.output, extended_bcubed(truth, clustering))
