@@ -171,8 +171,8 @@ def do_score(outdir, c):
     source = [ttable, cl_out]
     # this target creates 3 output files
     target = ['{0}.{1}'.format(cl_out, suffix) for suffix in ['f1', 'vm']]
-    action = 'bin/pbsrun_SCORE.sh $SOURCES.abspath'
+    #action = 'bin/pbsrun_SCORE.sh $SOURCES.abspath'
+    action = 'bin/echoCmd.sh $SOURCES.abspath'
     return env.Command(target, source, action)
-
 
 wrap.add_controls(Environment())
