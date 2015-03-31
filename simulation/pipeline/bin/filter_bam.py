@@ -1,23 +1,24 @@
 #!/usr/bin/env python
 import sys
 import pysam
+import argparse
 
+parser = argparse.ArgumentParser(description='Filter BAM/SAM files for read coverage and mapping quality')
+parser.add_argument('-s', dest='sam_input', default=False, action='store_true', help='Input is ASCII SAM format')
+parser.add_argument('--mincov', type=float, default=0.95, help='Minimum coverage of aligned read [0..1]')
+parser.add_argument('--minqual', type=int, default=40, help='Minimum mapping quality score of aligned read [40]')
+parser.add_argument('input', metavar='INPUT_FILE', nargs=1, help='Input BAM/SAM file')
+parser.add_argument('output', metavar='OUTPUT_FILE', nargs=1, help='Output BAM file')
+args = parser.parse_args()
 
-if len(sys.argv) != 5:
-    print 'Usage: [min cov] [min mapq] [infile] [outfile]'
-    print ''
-    print '   mcov    - min coverage of read on subject [0..1]'
-    print '   mapq    - minimum mapping quality of read [0..100]'
-    print '   infile  - input bam file'
-    print '   outfile - output bam file'
-    print ''
-    sys.exit(1)
+# set these here to eliminate some deferencing in the callback
+min_cov = args.mincov
+min_mapq = args.minqual
 
-min_cov = float(sys.argv[1])
-min_mapq = int(sys.argv[2])
-
-infile = pysam.AlignmentFile(sys.argv[3], 'rb')
-outfile = pysam.AlignmentFile(sys.argv[4], 'wb', template=infile)
+# Set input mode based commandline option
+input_mode = 'r' if args.sam_input else 'rb'
+infile = pysam.AlignmentFile(args.input[0], input_mode)
+outfile = pysam.AlignmentFile(args.output[0], 'wb', template=infile)
 
 kept = 0
 total = 0
