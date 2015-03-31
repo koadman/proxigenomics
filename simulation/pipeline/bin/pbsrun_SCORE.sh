@@ -16,9 +16,9 @@ then
 	source $BINDIR/bash_init.sh
 fi
 
-JOINTRUTH=bin/mclJoinWithTruth.py
 F1SCORE=bin/f1score.py
 VMEASURE=bin/vmeasure.py
+BCUBED=bin/bcubed.py
 
 if [ -z "$PBS_ENVIRONMENT" ] # SUBMIT MODE
 then
@@ -41,4 +41,6 @@ else # EXECUTION MODE
 
 	$F1SCORE $TRUTH $CLUSTERING ${CLUSTERING}.f1
 	$VMEASURE $TRUTH $CLUSTERING ${CLUSTERING}.vm
+	$BCUBED -o ${CLUSTERING}.bc $TRUTH $CLUSTERING
+
 fi

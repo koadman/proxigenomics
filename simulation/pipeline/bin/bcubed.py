@@ -232,9 +232,10 @@ if __name__ == '__main__':
     import truthtable as tt
     import pipeline_utils
     import argparse
+    import sys
 
     parser = argparse.ArgumentParser(description='Calculate extended bcubed metric')
-    parser.add_argument('--weighted', metavar='WEIGHT_CSV', help='Calculate a weighted bcubed')
+    parser.add_argument('--weighted', dest='weight_csv', metavar='WEIGHT_CSV', help='Calculate a weighted bcubed')
     parser.add_argument('-o', '--output', help='Output file')
     parser.add_argument('truth', metavar='TRUTH', nargs=1, help='Truth table (yaml format)')
     parser.add_argument('pred', metavar='PREDICTION', nargs=1, help='Prediction table (mcl format)')
@@ -252,6 +253,12 @@ if __name__ == '__main__':
     clustering.print_tally()
     clustering = clustering.soft(True)
 
+    # initialise the output stream
+    if args.output is None:
+        args.output = sys.stdout
+    else:
+        args.output = open(args.output, 'w')
+
     # Read weights from CSV.
     weights = None
     if args.weight_csv is not None:
@@ -265,8 +272,8 @@ if __name__ == '__main__':
                     raise IOError('weight csv contains duplicate keys')
                 weights[fields[0]] = float(fields[1])
 
-        pipeline_utils.write_data(args.output, weighted_extended_bcubed(weights, truth, clustering))
+        pipeline_utils.write_to_stream(args.output, weighted_extended_bcubed(weights, truth, clustering))
 
     else:
-
-        pipeline_utils.write_data(args.output, extended_bcubed(truth, clustering))
+    #unweighted bcubed
+        pipeline_utils.write_to_stream(args.output, extended_bcubed(truth, clustering))
