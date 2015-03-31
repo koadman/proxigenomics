@@ -21,6 +21,8 @@ config = appconfig.read('config.yaml')
 nest = Nest()
 wrap = SConsWrap(nest, config['map_folder'])
 env = Environment(ENV=os.environ)
+debug = ARGUMENTS.get('debug', 0)
+
 
 # Constant
 wrap.add('refseq', [config['community']['seq']], create_dir=False)
@@ -52,8 +54,12 @@ def make_ctg2ref(outdir, c):
 
     source = [subject, query]
     target = os.path.join(outdir, config['ctg2ref'])
-    #action = 'bin/pbsrun_LAST.sh $SOURCES.abspath $TARGET.abspath'
-    action = 'bin/echoCmd.sh $SOURCES.abspath $TARGET.abspath'
+
+    if debug:
+        action = 'bin/echoCmd.sh $SOURCES.abspath $TARGET.abspath'
+    else:
+        action = 'bin/pbsrun_LAST.sh $SOURCES.abspath $TARGET.abspath'
+
 
     return 'output', env.Command(target, source, action)
 
@@ -62,12 +68,15 @@ def make_ctg2ref(outdir, c):
 def make_truth(outdir, c):
     source = str(c['make_ctg2ref']['output'])
     target = os.path.join(outdir, config['truth_table'])
-    #action = 'bin/pbsrun_MKTRUTH.sh ' \
-    #         '{1[ctg_afmt]} {1[ctg_ofmt]} {1[ctg_minlen]} {1[ctg_mincov]} {1[ctg_minid]} ' \
-    #         '$SOURCES.abspath $TARGET.abspath'.format(c, config)
-    action = 'bin/echoCmd.sh ' \
-             '{1[ctg_afmt]} {1[ctg_ofmt]} {1[ctg_minlen]} {1[ctg_mincov]} {1[ctg_minid]} ' \
-             '$SOURCES.abspath $TARGET.abspath'.format(c, config)
+
+    if debug:
+        action = 'bin/echoCmd.sh ' \
+                 '{1[ctg_afmt]} {1[ctg_ofmt]} {1[ctg_minlen]} {1[ctg_mincov]} {1[ctg_minid]} ' \
+                 '$SOURCES.abspath $TARGET.abspath'.format(c, config)
+    else:
+        action = 'bin/pbsrun_MKTRUTH.sh ' \
+                 '{1[ctg_afmt]} {1[ctg_ofmt]} {1[ctg_minlen]} {1[ctg_mincov]} {1[ctg_minid]} ' \
+                 '$SOURCES.abspath $TARGET.abspath'.format(c, config)
 
     return 'output', env.Command(target, source, action)
 
@@ -92,8 +101,12 @@ def make_wgs2ctg(outdir, c):
 
     target = os.path.join(outdir, config['wgs2ctg'])
     source = [subject] + query
-    #action = 'bin/pbsrun_MAP.sh $SOURCES.abspath $TARGET.abspath'
-    action = 'bin/echoCmd.sh $SOURCES.abspath $TARGET.abspath'
+
+    if debug:
+        action = 'bin/echoCmd.sh $SOURCES.abspath $TARGET.abspath'
+    else:
+        action = 'bin/pbsrun_MAP.sh $SOURCES.abspath $TARGET.abspath'
+
     return 'output', env.Command(target, source, action)
 
 
@@ -114,8 +127,12 @@ def make_hic2ctg(outdir, c):
                 '{0[wgs_base]}.contigs.fasta'.format(config))
     source = [subject, query]
     target = os.path.join(outdir, config['hic2ctg'])
-    #action = 'bin/pbsrun_MAP.sh $SOURCES.abspath $TARGET.abspath'
-    action = 'bin/echoCmd.sh $SOURCES.abspath $TARGET.abspath'
+
+    if debug:
+        action = 'bin/echoCmd.sh $SOURCES.abspath $TARGET.abspath'
+    else:
+        action = 'bin/pbsrun_MAP.sh $SOURCES.abspath $TARGET.abspath'
+
     return 'output', env.Command(target, source, action)
 
 wrap.add_aggregate('graph_output', list)
@@ -128,8 +145,12 @@ def make_graph(outdir, c):
 
     sources = [hic_bam, wgs_bam]
     target = prepend_paths(outdir, ['edges.csv', 'nodes.csv'])
-    #action = 'bin/pbsrun_GRAPH.sh $SOURCES.abspath $TARGETS.abspath'
-    action = 'bin/echoCmd.sh $SOURCES.abspath $TARGETS.abspath'
+
+    if debug:
+        action = 'bin/echoCmd.sh $SOURCES.abspath $TARGETS.abspath'
+    else:
+        action = 'bin/pbsrun_GRAPH.sh $SOURCES.abspath $TARGETS.abspath'
+
     c['graph_output'].extend(target)
     return env.Command(target, sources, action)
 
@@ -144,8 +165,12 @@ def make_graph(outdir, c):
 def make_cluster_input(outdir, c):
     source = c['graph_output']
     target = prepend_paths(outdir, config['cluster']['input'])
-    #action = 'bin/pbsrun_MKMCL.sh {1[ctg_minlen]} $SOURCES.abspath $TARGET.abspath'.format(c, config)
-    action = 'bin/echoCmd.sh {1[ctg_minlen]} $SOURCES.abspath $TARGET.abspath'.format(c, config)
+
+    if debug:
+        action = 'bin/echoCmd.sh {1[ctg_minlen]} $SOURCES.abspath $TARGET.abspath'.format(c, config)
+    else:
+        action = 'bin/pbsrun_MKMCL.sh {1[ctg_minlen]} $SOURCES.abspath $TARGET.abspath'.format(c, config)
+
     return 'output', env.Command(target, source, action)
 
 mcl_param = config['cluster']['mcl_infl']
@@ -157,8 +182,12 @@ def do_mcl(outdir, c):
     # TODO run over both weighted/unweighted?
     source = c['make_cluster_input']['output']
     target = prepend_paths(outdir, config['cluster']['output'])
-    #action = 'bin/pbsrun_MCL.sh {0[mcl_inflation]} $SOURCE.abspath $TARGET.abspath'.format(c)
-    action = 'bin/echoCmd.sh {0[mcl_inflation]} $SOURCE.abspath $TARGET.abspath'.format(c)
+
+    if debug:
+        action = 'bin/echoCmd.sh {0[mcl_inflation]} $SOURCE.abspath $TARGET.abspath'.format(c)
+    else:
+        action = 'bin/pbsrun_MCL.sh {0[mcl_inflation]} $SOURCE.abspath $TARGET.abspath'.format(c)
+
     return 'output', env.Command(target, source, action)
 
 
@@ -171,8 +200,13 @@ def do_score(outdir, c):
     source = [ttable, cl_out]
     # this target creates 3 output files
     target = ['{0}.{1}'.format(cl_out, suffix) for suffix in ['f1', 'vm']]
-    #action = 'bin/pbsrun_SCORE.sh $SOURCES.abspath'
-    action = 'bin/echoCmd.sh $SOURCES.abspath'
+
+    if debug:
+        action = 'bin/echoCmd.sh $SOURCES.abspath'
+    else:
+        action = 'bin/pbsrun_SCORE.sh $SOURCES.abspath'
+
     return env.Command(target, source, action)
+
 
 wrap.add_controls(Environment())
