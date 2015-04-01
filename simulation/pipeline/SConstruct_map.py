@@ -128,7 +128,7 @@ wrap.add('hic_min_qual', [0, 20, 30, 40, 50, 60])
 def filter_hic(outdir, c):
     source = str(c['make_hic2ctg']['output'])
     target = os.path.join(outdir, config['hic2ctg'])
-    action = 'bin/pbsrun_BAMFILTER.py {0[hic_min_cov]} {0[hic_min_qual]} $SOURCE $TARGET'.format(c)
+    action = 'bin/pbsrun_BAMFILTER.sh {0[hic_min_cov]} {0[hic_min_qual]} $SOURCE $TARGET'.format(c)
     return 'output', env.Command(target, source, action)
 
 
@@ -148,7 +148,7 @@ def make_graph(outdir, c):
     action = 'bin/pbsrun_GRAPH.sh $SOURCES.abspath $TARGETS.abspath'
 
     #c['graph_output'].extend(target)
-    return 'output', env.Command(target, sources, action)
+    return 'edges', 'nodes', env.Command(target, sources, action)
 
 #
 #  Everything below here is MCL specific but should be made agnostic of algorithm
@@ -160,7 +160,8 @@ def make_graph(outdir, c):
 @name_targets
 def make_cluster_input(outdir, c):
     #source = c['graph_output']
-    source = c['make_graph']['output']
+    source = [str(c['make_graph']['edges']), str(c['make_graph']['nodes'])]
+    print source
     target = prepend_paths(outdir, config['cluster']['input'])
 
     action = 'bin/pbsrun_MKMCL.sh {1[ctg_minlen]} $SOURCES.abspath $TARGET.abspath'.format(c, config)
