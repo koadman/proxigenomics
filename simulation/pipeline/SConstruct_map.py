@@ -128,7 +128,7 @@ wrap.add('hic_min_qual', [0, 20, 30, 40, 50, 60])
 def filter_hic(outdir, c):
     source = str(c['make_hic2ctg']['output'])
     target = os.path.join(outdir, config['hic2ctg'])
-    action = 'bin/filter_bam.py {0[hic_min_cov]} {0[hic_min_qual]} $SOURCE $TARGET'.format(c)
+    action = 'bin/pbsrun_BAMFILTER.py {0[hic_min_cov]} {0[hic_min_qual]} $SOURCE $TARGET'.format(c)
     return 'output', env.Command(target, source, action)
 
 
@@ -190,7 +190,7 @@ def do_score(outdir, c):
     # this target consumes truth table and clustering output
     source = [ttable, cl_out]
     # this target creates 3 output files
-    target = ['{0}.{1}'.format(cl_out, suffix) for suffix in ['f1', 'vm']]
+    target = ['{0}.{1}'.format(cl_out, suffix) for suffix in ['f1', 'vm', 'bc']]
 
     action = 'bin/pbsrun_SCORE.sh $SOURCES.abspath'
 

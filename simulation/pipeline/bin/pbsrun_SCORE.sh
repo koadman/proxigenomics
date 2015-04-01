@@ -29,7 +29,7 @@ then
 	fi
 	echo "Submitting run"
 
-    TARGETS=( ${CLUSTERING}.f1, ${CLUSTERING}.vm )
+    TARGETS=( ${CLUSTERING}.f1, ${CLUSTERING}.vm, ${CLUSTERING}.bc )
 	trap 'rollback_rm_files "${TARGETS[@]}"; exit $?' INT TERM EXIT
 	qsub -W block=true -v TRUTH=$1,CLUSTERING=$2 $0
 	trap - INT TERM EXIT
