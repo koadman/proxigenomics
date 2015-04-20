@@ -83,7 +83,11 @@ def extended_bcubed_precision(c, g):
     :return: Bcubed_pre
     """
     pre_overall = 0
-    shared_obj = intersection(c.keys(), g.keys()) # this might be incorrect.
+    shared_obj = intersection(c.keys(), g.keys())  # this might be incorrect.
+
+    if len(shared_obj) <= 0:
+        raise RuntimeError('The intersection of truth and prediction was null')
+
     for obj1 in shared_obj:
 
         clustering_objects = objects_with_overlap(obj1, g)
@@ -110,7 +114,11 @@ def weighted_extended_bcubed_precision(w, c, g):
     :return: Bcubed_pre
     """
     pre_overall = 0
-    shared_obj = intersection(c.keys(), g.keys()) # this might be incorrect.
+    shared_obj = intersection(c.keys(), g.keys())  # this might be incorrect.
+
+    if len(shared_obj) <= 0:
+        raise RuntimeError('The intersection of truth and prediction was null')
+
     for obj1 in shared_obj:
 
         clustering_objects = objects_with_overlap(obj1, g)
@@ -143,6 +151,10 @@ def extended_bcubed_recall(c, g):
     """
     rec_overall = 0
     shared_obj = intersection(c.keys(), g.keys())
+
+    if len(shared_obj) <= 0:
+        raise RuntimeError('The intersection of truth and prediction was null')
+
     for obj1 in shared_obj:
 
         class_objects = objects_with_overlap(obj1, c)
@@ -170,6 +182,10 @@ def weighted_extended_bcubed_recall(w, c, g):
     """
     rec_overall = 0
     shared_obj = intersection(c.keys(), g.keys())
+
+    if len(shared_obj) <= 0:
+        raise RuntimeError('The intersection of truth and prediction was null')
+
     for obj1 in shared_obj:
 
         class_objects = objects_with_overlap(obj1, c)

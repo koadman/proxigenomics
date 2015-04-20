@@ -23,8 +23,11 @@ class TruthTable:
 
     def print_tally(self):
         n_symbol = len(self.label_count)
-        n_categories = sum(self.label_count.values())
-        print '{0} symbols in table and {1} categories'.format(n_symbol, n_categories)
+        n_assignments = sum(self.label_count.values())
+        n_objects = len(self.asgn_dict.keys())
+        degen_ratio = 100.0 * n_assignments / n_objects - 100.0
+        print '{0} symbols in table, {1} assignments of {2} objects ({3:.1f}% degeneracy)'.format(
+            n_symbol, n_assignments, n_objects, degen_ratio)
         n_obj = float(sum(self.label_count.values()))
         print 'ext_symb\tint_symb\tcount\tpercentage'
         for ci in sorted(self.label_count, key=self.label_count.get, reverse=True):
@@ -88,16 +91,21 @@ class TruthTable:
 
 
     @staticmethod
-    def _write(table, pathname):
+    def _write(dt, pathname):
+        """
+        Write out bare dictionary.
+        :param dt: the dictionary to write
+        :param pathname: the path for output file
+        """
         with open(pathname, 'w') as h_out:
-            yaml.dump(table.asgn_dict, h_out, default_flow_style=False)
+            yaml.dump(dt, h_out, default_flow_style=False)
 
     def write(self, pathname):
         """
         Write the full table in YAML format"
         :pathname the output path
         """
-        TruthTable._write(self, pathname)
+        TruthTable._write(self.asgn_dict, pathname)
 
     def write_soft(self, pathname):
         """
