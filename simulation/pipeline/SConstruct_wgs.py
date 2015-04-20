@@ -21,6 +21,8 @@ wrap.add('wgs_base', [config['wgs_base']],  create_dir=False)
 # Variation
 genomes = appconfig.find_files(config['community']['folder'], config['community']['seq'])
 commPaths = [os.path.dirname(pn) for pn in genomes]
+# For testing - constraint on branch length
+#commPaths = [pn for pn in commPaths if float(os.path.basename(pn)) > 0.4 and float(os.path.basename(pn)) < 1]
 wrap.add('community', commPaths)
 
 tableFolder = os.path.join(config['reference']['folder'], config['reference']['table_folder'])

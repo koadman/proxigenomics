@@ -27,7 +27,9 @@ wrap.add('refseq', [config['community']['seq']], create_dir=False)
 
 # Variation
 genomes = appconfig.find_files(config['community']['folder'], config['community']['seq'])
-commPaths = [os.path.dirname(pn) for pn in genomes if 'ladder' not in pn]
+# For testing - restrict to only star topology
+#commPaths = [os.path.dirname(pn) for pn in genomes if 'ladder' not in pn]
+commPaths = [os.path.dirname(pn) for pn in genomes]
 wrap.add('community', commPaths)
 
 tableFolder = os.path.join(config['reference']['folder'], config['reference']['table_folder'])
@@ -119,8 +121,8 @@ def make_hic2ctg(outdir, c):
     return 'output', env.Command(target, source, action)
 
 
-wrap.add('hic_min_cov', [0, 0.5, 0.85, 0.9, 0.95, 1.0])
-wrap.add('hic_min_qual', [0, 20, 30, 40, 50, 60])
+wrap.add('hic_min_cov', [0, 0.5, 0.95])
+wrap.add('hic_min_qual', [0, 30, 60])
 
 
 @wrap.add_target('filter_hic2ctg')
@@ -132,13 +134,9 @@ def filter_hic(outdir, c):
     return 'output', env.Command(target, source, action)
 
 
-#wrap.add_aggregate('graph_output', list)
-
-
 @wrap.add_target('make_graph')
 @name_targets
 def make_graph(outdir, c):
-    #hic_bam = str(c['make_hic2ctg']['output'])
     hic_bam = str(c['filter_hic2ctg']['output'])
     wgs_bam = str(c['make_wgs2ctg']['output'])
 
@@ -147,21 +145,18 @@ def make_graph(outdir, c):
 
     action = 'bin/pbsrun_GRAPH.sh $SOURCES.abspath $TARGETS.abspath'
 
-    #c['graph_output'].extend(target)
     return 'edges', 'nodes', env.Command(target, sources, action)
 
 #
 #  Everything below here is MCL specific but should be made agnostic of algorithm
 #  or deal with multiple algorithms in "cluster_method".
 #
-#wrap.add('cluster_method', ['mcl'])
+wrap.add('cluster_method', ['mcl'])
 
 @wrap.add_target('make_cluster_input')
 @name_targets
 def make_cluster_input(outdir, c):
-    #source = c['graph_output']
     source = [str(c['make_graph']['edges']), str(c['make_graph']['nodes'])]
-    print source
     target = prepend_paths(outdir, config['cluster']['input'])
 
     action = 'bin/pbsrun_MKMCL.sh {1[ctg_minlen]} $SOURCES.abspath $TARGET.abspath'.format(c, config)
