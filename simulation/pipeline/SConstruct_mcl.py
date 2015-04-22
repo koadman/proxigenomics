@@ -25,23 +25,20 @@ env = Environment(ENV=os.environ)
 
 # Variation
 hic_bams = appconfig.find_files(config['map_folder'], config['hic2ctg'])
-hic_paths = [os.path.dirname(pn) for pn in hic_bams]
+hic_paths = [os.path.join(config['map_folder'], os.path.dirname(pn)) for pn in hic_bams]
 wrap.add('hic_path', hic_paths)
 
 @wrap.add_target('make_input')
 @name_targets
 def make_graph(outdir, c):
     hic_bam = str(os.path.join(c['hic_path'], config['hic2ctg']))
-
-    wgs_bam = appconfig.search_up(c['hic_path'], config['wgs2ctg'])
+    wgs_bam = appconfig.search_up(config['map_folder'], c['hic_path'], config['wgs2ctg'])
     if wgs_bam is None:
         raise RuntimeError('Could not find an accompanying wgs bam for hic bam {0}'.format(hic_bam))
 
     sources = [hic_bam, wgs_bam]
     target = prepend_paths(outdir, ['edges.csv', 'nodes.csv'])
-
     action = 'bin/pbsrun_GRAPH.sh $SOURCES.abspath $TARGETS.abspath'
-
     return 'edges', 'nodes', env.Command(target, sources, action)
 
 
@@ -90,8 +87,5 @@ def do_score(outdir, c):
 
     return env.Command(target, source, action)
 '''
-
-import sys
-sys.exit(0)
 
 wrap.add_controls(Environment())
