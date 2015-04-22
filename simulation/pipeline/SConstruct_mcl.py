@@ -76,7 +76,8 @@ def do_mcl(outdir, c):
 def do_score(outdir, c):
     cl_out = c['do_mcl']['output']
 
-    ttable = appconfig.search_up(c['hic_path'], config['truth_table'])
+    ref_path = os.path.join(config['map_folder'], c['hic_path'])
+    ttable = appconfig.search_up(ref_path, config['truth_table'])
     if ttable is None:
         raise RuntimeError('Could not find an accompanying truth table for associated run {0}'.format(c['hic_path']))
     #ttable = c['make_truth']['output']
