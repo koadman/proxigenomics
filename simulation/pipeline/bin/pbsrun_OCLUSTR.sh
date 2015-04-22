@@ -44,7 +44,7 @@ then
 	fi
 	echo "Submitting run"
 
-	trap 'rollback_rm_file ${3}.mcl; exit $?' INT TERM EXIT
+	trap 'rollback_rm_file $3; exit $?' INT TERM EXIT
 	qsub -W block=true -v OPTIONS=$ISOLATES,INPUT=$1,OUTPUT=$2 $0
 	trap - INT TERM EXIT
 	echo "Finished"
@@ -55,7 +55,7 @@ else # EXECUTION MODE
 
 	if [ -s $INPUT ]
 	then
-		$OCLUSTR $OPTIONS $INPUT $OUTPUT
+		$OCLUSTR -f mcl $OPTIONS $INPUT $OUTPUT
 	else
 		echo "Input had no data" > $OUTPUT
 	fi

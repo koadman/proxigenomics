@@ -1,9 +1,5 @@
 #!/bin/bash
 
-#
-# Map sequences in simulation
-#
-
 #PBS -q smallq
 #PBS -l select=1:ncpus=2:mem=32gb
 #PBS -e logs/

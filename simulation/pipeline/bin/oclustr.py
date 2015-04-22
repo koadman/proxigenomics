@@ -178,17 +178,31 @@ class Cover:
         """
         The set of vertices exists in the cover graph.
         :param vset: the target set of vertices.
+        :param no_isolates: include isolated vertices in output graph
         :return: True if the target set is contained by the cover graph.
         """
         return vset < set(self.hubs.nodes())
 
-    def write(self, path):
+    def write(self, path, no_isolates=False):
+        """
+        Write cover graph to a file.
+        :param path:
+        :param no_isolates:
+        :return:
+        """
         gout = self.hubs.copy()
+
+        if no_isolates:
+            for v in gout:
+                if gout.degree(v) == 0:
+                    gout.remove(v)
+
         for v in gout:
             # TODO
             # networkx cannot write collections as attributes
             # so we're converting to a string for now.
             gout.node[v]['owned_by'] = ' '.join(gout.node[v]['owned_by'])
+
         nx.write_graphml(gout, path)
 
     def __str__(self):
@@ -201,6 +215,7 @@ class Cover:
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser('Cluster similarity graph using OClustR')
+    parser.add_argument('-f', '--fmt', dest='format', choices=['graphml', 'mcl'], default='mcl', help='Output format')
     parser.add_argument('--debug', action='store_true', default=False, help='Enable debugging')
     parser.add_argument('--no-isolates', action='store_true', default=False, help='Ignore isolates in output')
     parser.add_argument('graph', nargs=1, help='Input graphml file')
@@ -285,16 +300,17 @@ if __name__ == '__main__':
         print 'Demoted hubs were: {0}'.format(demoted)
         print 'Migrated vertices were: {0}'.format(migrated)
 
-    # write cover graph to file
-    cover.write(args.output[0] + '.graphml')
-
-    # write MCL format cluster solution
-    with open(args.output[0] + '.mcl', 'w') as out:
-        min_deg = 1 if args.no_isolates else 0
-        # build a list of hubs and their degree, sort be descending degree for output
-        hubs = cover.hubs
-        hub_dict = dict((v, hubs.degree(v)) for v in hubs if hubs.node[v]['hub'] and hubs.degree(v) >= min_deg)
-        desc_deg = sorted(hub_dict, key=hub_dict.get, reverse=True)
-        for vi in desc_deg:
-            out.write('{0} {1}\n'.format(vi, ' '.join(cover.hubs[vi])))
-        print 'Final solution: {0} stars and {1} satellites'.format(len(hub_dict), sum(hub_dict.values()))
+    if args.format == 'graphml':
+        # write cover graph to file
+        cover.write(args.output[0], args.no_isolates)
+    else:
+        # write MCL format cluster solution
+        with open(args.output[0], 'w') as out:
+            min_deg = 1 if args.no_isolates else 0
+            # build a list of hubs and their degree, sort be descending degree for output
+            hubs = cover.hubs
+            hub_dict = dict((v, hubs.degree(v)) for v in hubs if hubs.node[v]['hub'] and hubs.degree(v) >= min_deg)
+            desc_deg = sorted(hub_dict, key=hub_dict.get, reverse=True)
+            for vi in desc_deg:
+                out.write('{0} {1}\n'.format(vi, ' '.join(cover.hubs[vi])))
+            print 'Final solution: {0} stars and {1} satellites'.format(len(hub_dict), sum(hub_dict.values()))

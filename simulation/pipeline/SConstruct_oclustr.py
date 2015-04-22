@@ -73,7 +73,7 @@ def do_score(outdir, c):
         raise RuntimeError('Could not find an accompanying truth table for associated run {0}'.format(c['hic_path']))
 
     # this target consumes truth table and clustering output
-    source = [ttable, str(cl_out) + '.mcl']
+    source = [ttable, cl_out]
     # this target creates 3 output files
     target = ['{0}.{1}'.format(cl_out, suffix) for suffix in ['f1', 'vm', 'bc']]
 
