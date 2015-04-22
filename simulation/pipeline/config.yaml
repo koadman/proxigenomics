@@ -42,9 +42,19 @@ ctg_minlen: 1000
 map_folder: map_data
 
 cluster: {
+    folder: cluster_data,
     input: cl_input,
     output: cl_output,
-    mcl_infl: {min: 1.1, max: 2.0, steps: 5}
+
+    algorithms: {
+        mcl: {
+            folder: 'mcl'
+            infl: {min: 1.1, max: 2.0, steps: 5}
+        },
+        oclustr: {
+            folder: 'oclustr'
+        }
+    }
 }
 
 hic2ctg: hic2ctg.bam

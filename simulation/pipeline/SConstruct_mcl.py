@@ -20,7 +20,8 @@ config = appconfig.read('config.yaml')
 
 # Base folder
 nest = Nest()
-wrap = SConsWrap(nest, config['cluster']['folder'])
+wrap = SConsWrap(nest, os.path.join(config['cluster']['folder'],
+                                    config['cluster']['algorithms']['mcl']['folder']))
 env = Environment(ENV=os.environ)
 
 # Variation
@@ -31,35 +32,31 @@ wrap.add('hic_path', hic_paths)
 @wrap.add_target('make_input')
 @name_targets
 def make_graph(outdir, c):
+
     hic_bam = str(os.path.join(c['hic_path'], config['hic2ctg']))
-    wgs_bam = appconfig.search_up(config['map_folder'], c['hic_path'], config['wgs2ctg'])
+    wgs_bam = appconfig.search_up(c['hic_path'], config['wgs2ctg'])
     if wgs_bam is None:
         raise RuntimeError('Could not find an accompanying wgs bam for hic bam {0}'.format(hic_bam))
 
     sources = [hic_bam, wgs_bam]
     target = prepend_paths(outdir, ['edges.csv', 'nodes.csv'])
     action = 'bin/pbsrun_GRAPH.sh $SOURCES.abspath $TARGETS.abspath'
+
     return 'edges', 'nodes', env.Command(target, sources, action)
 
 
-'''
 @wrap.add_target('make_cluster_input')
 @name_targets
 def make_cluster_input(outdir, c):
 
     source = [str(c['make_graph']['edges']), str(c['make_graph']['nodes'])]
     target = prepend_paths(outdir, config['cluster']['input'])
-
-    if c['cluster_method'] == 'mcl':
-        action = 'bin/pbsrun_MKMCL.sh {1[ctg_minlen]} $SOURCES.abspath $TARGET.abspath'.format(c, config)
-
-    elif c['cluster_method'] == 'oclustr':
-        action = 'bin/edgeToMetis.py -m {1[ctg_minlen]} -f graphml $SOURCES.abspath $TARGET.abspath'.format(c, config)
+    action = 'bin/pbsrun_MKMCL.sh {1[ctg_minlen]} $SOURCES.abspath $TARGET.abspath'.format(c, config)
 
     return 'output', env.Command(target, source, action)
 
-mcl_param = config['cluster']['mcl_infl']
-wrap.add('mcl_inflation', numpy.linspace(mcl_param['min'], mcl_param['max'], mcl_param['steps']))
+mcl_infl = config['cluster']['algorithms']['mcl']['infl']
+wrap.add('mcl_inflation', numpy.linspace(mcl_infl['min'], mcl_infl['max'], mcl_infl['steps']))
 
 @wrap.add_target('do_mcl')
 @name_targets
@@ -75,9 +72,13 @@ def do_mcl(outdir, c):
 
 @wrap.add_target('do_score')
 def do_score(outdir, c):
-    #cl_out = os.path.join(outdir, config['cluster']['output'])
     cl_out = c['do_mcl']['output']
-    ttable = c['make_truth']['output']
+
+    ttable = appconfig.search_up(c['hic_path'], config['truth_table'])
+    if ttable is None:
+        raise RuntimeError('Could not find an accompanying truth table for associated run {0}'.format(c['hic_path']))
+    #ttable = c['make_truth']['output']
+
     # this target consumes truth table and clustering output
     source = [ttable, cl_out]
     # this target creates 3 output files
@@ -87,5 +88,8 @@ def do_score(outdir, c):
 
     return env.Command(target, source, action)
 '''
+
+import sys
+sys.exit(0)
 
 wrap.add_controls(Environment())
