@@ -50,7 +50,7 @@ def make_cluster_input(outdir, c):
 mcl_infl = config['cluster']['algorithms']['mcl']['infl']
 wrap.add('mcl_inflation', numpy.linspace(mcl_infl['min'], mcl_infl['max'], mcl_infl['steps']))
 
-@wrap.add_target('do_mcl')
+@wrap.add_target('do_cluster')
 @name_targets
 def do_mcl(outdir, c):
     # TODO run over both weighted/unweighted?
@@ -64,7 +64,7 @@ def do_mcl(outdir, c):
 
 @wrap.add_target('do_score')
 def do_score(outdir, c):
-    cl_out = c['do_mcl']['output']
+    cl_out = c['do_cluster']['output']
 
     ref_path = os.path.join(config['map_folder'], c['hic_path'])
     ttable = appconfig.search_up(ref_path, config['truth_table'])

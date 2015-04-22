@@ -65,7 +65,7 @@ def do_mcl(outdir, c):
 
 @wrap.add_target('do_score')
 def do_score(outdir, c):
-    cl_out = c['do_mcl']['output']
+    cl_out = c['do_cluster']['output']
 
     ref_path = os.path.join(config['map_folder'], c['hic_path'])
     ttable = appconfig.search_up(ref_path, config['truth_table'])
