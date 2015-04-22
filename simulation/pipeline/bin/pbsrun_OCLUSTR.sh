@@ -17,6 +17,7 @@ OCLUSTR=bin/oclustr.py
 if [ -z "$PBS_ENVIRONMENT" ] # SUBMIT MODE
 then
 
+    # by default, no isolates
     ISOLATES="--no-isolates"
 
 	while getopts ":i" opt
@@ -36,12 +37,15 @@ then
     if [ $# -ne 2 ]
     then
 		echo "Usage: [-i] <input> <output>"
+		echo ""
+		echo "-i     include isolated nodes"
+		echo ""
 		exit 1
 	fi
 	echo "Submitting run"
 
 	trap 'rollback_rm_file ${3}.mcl; exit $?' INT TERM EXIT
-	qsub -W block=true -v OPTIONS=$ISOLATES,INPUT=$2,OUTPUT=$3 $0
+	qsub -W block=true -v OPTIONS=$ISOLATES,INPUT=$1,OUTPUT=$2 $0
 	trap - INT TERM EXIT
 	echo "Finished"
 
