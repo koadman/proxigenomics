@@ -35,6 +35,28 @@ def find_files(path, pattern, remove_top=True):
     return matches
 
 
+def search_up(path, filename):
+    """
+    Search up a directory path until a file by the given name is
+    found. The method stops as the first occurence, that is the
+    lowest point in the path containing a file by the given name.
+    :param path: the path to search upwards
+    :param filename: the file to find
+    :return: the containing path with the filename as a string
+    :raises: RuntimeError if a folder contains more than one file of the same name. This should never happen.
+    """
+    while path != '':
+        filepath = [fn for fn in os.listdir(path) if fn == filename]
+        nfiles = len(filepath)
+        if nfiles > 1:
+            raise RuntimeError('duplicate file names in same directory {0}'.format(p))
+        elif len(filepath) == 1:
+            return os.path.join(path, filepath[0])
+        path = os.path.dirname(path)
+    return None
+
+
+
 def get_files(path, suffix):
     return [os.path.abspath(f) for f in glob.glob(os.path.join(path, '*.{0}'.format(suffix))) if os.path.isfile(f)]
 
