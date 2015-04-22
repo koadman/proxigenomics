@@ -2,7 +2,6 @@ from nestly import Nest
 from nestly.scons import SConsWrap, name_targets
 import os
 import os.path
-import numpy
 import appconfig
 
 
@@ -11,7 +10,7 @@ config = appconfig.read('config.yaml')
 # Base folder
 nest = Nest()
 wrap = SConsWrap(nest, os.path.join(config['cluster']['folder'],
-                                    config['cluster']['algorithms']['mcl']['folder']))
+                                    config['cluster']['algorithms']['oclustr']['folder']))
 env = Environment(ENV=os.environ)
 
 # Variation
@@ -43,21 +42,23 @@ def make_cluster_input(outdir, c):
 
     source = [str(c['make_graph']['edges']), str(c['make_graph']['nodes'])]
     target = appconfig.prepend_paths(outdir, config['cluster']['input'])
-    action = 'bin/pbsrun_MKMCL.sh {1[ctg_minlen]} $SOURCES.abspath $TARGET.abspath'.format(c, config)
+    action = 'bin/edgeToMetis.py -m {1[ctg_minlen]} $SOURCES.abspath $TARGET.abspath'.format(c, config)
 
     return 'output', env.Command(target, source, action)
 
-mcl_infl = config['cluster']['algorithms']['mcl']['infl']
-wrap.add('mcl_inflation', numpy.linspace(mcl_infl['min'], mcl_infl['max'], mcl_infl['steps']))
+wrap.add('isolates', ['isolates', 'no-isolates'])
 
-@wrap.add_target('do_mcl')
+@wrap.add_target('do_cluster')
 @name_targets
 def do_mcl(outdir, c):
     # TODO run over both weighted/unweighted?
     source = c['make_cluster_input']['output']
     target = appconfig.prepend_paths(outdir, config['cluster']['output'])
 
-    action = 'bin/pbsrun_MCL.sh {0[mcl_inflation]} $SOURCE.abspath $TARGET.abspath'.format(c)
+    if c['isolates'] == 'isolates':
+        action = 'bin/oclustr.py $SOURCE.abspath $TARGET.abspath'.format(c)
+    else:
+        action = 'bin/oclustr.py --no-isolates $SOURCE.abspath $TARGET.abspath'.format(c)
 
     return 'output', env.Command(target, source, action)
 

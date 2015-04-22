@@ -3,6 +3,7 @@ import sys
 import os.path
 import glob
 import fnmatch
+import types
 
 
 def read(file_name):
@@ -20,6 +21,12 @@ def read(file_name):
     except IOError as e:
         print e
         sys.exit(e.errno)
+
+
+def prepend_paths(path, fnames):
+    if isinstance(fnames, types.StringTypes):
+        fnames = [fnames]
+    return [os.path.join(path, fn) for fn in fnames]
 
 
 def find_files(path, pattern, remove_top=True):
@@ -87,7 +94,7 @@ def get_precedents(root, filename, strip_file=True, prepend_root=True):
     else:
         f2 = lambda x: f1(x)
 
-    paths = [f2(pn) for pn in appconfig.find_files(root, filename)]
+    paths = [f2(pn) for pn in find_files(root, filename)]
     return paths
 
 

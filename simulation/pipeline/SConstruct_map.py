@@ -2,18 +2,7 @@ from nestly import Nest, stripext
 from nestly.scons import SConsWrap, name_targets
 import os
 import os.path
-import numpy
 import appconfig
-import types
-
-#
-# Helper functions
-#
-
-def prepend_paths(path, fnames):
-    if isinstance(fnames, types.StringTypes):
-        fnames = [fnames]
-    return [os.path.join(path, fn) for fn in fnames]
 
 
 config = appconfig.read('config.yaml')
