@@ -21,6 +21,13 @@ class TruthTable:
         self.label_map = {}
         self.label_count = Counter()
 
+    def __len__(self):
+        """
+        Length of truth table is equal to the number of assignment classes.
+        :return: number of assignment classes
+        """
+        return len(self.asgn_dict.keys())
+
     def print_tally(self):
         n_symbol = len(self.label_count)
         n_assignments = sum(self.label_count.values())

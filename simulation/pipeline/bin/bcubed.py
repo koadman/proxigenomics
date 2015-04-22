@@ -236,6 +236,12 @@ def weighted_extended_bcubed(w, c, g):
     fbcubed = 2.0 * pre * rec / (pre + rec)
     return {'pre': pre, 'rec': rec, 'f': fbcubed}
 
+
+def write_msg(file, msg):
+    with open(file, 'w') as hout:
+        hout.write(msg + '\n')
+
+
 if __name__ == '__main__':
 
     def count_labels(cl):
@@ -257,17 +263,28 @@ if __name__ == '__main__':
     parser.add_argument('pred', metavar='PREDICTION', nargs=1, help='Prediction table (mcl format)')
     args = parser.parse_args()
 
-    # read truth and convert to basic soft table
-    truth = tt.read_truth(args.truth[0])
-    print 'Truth Statistics'
-    truth.print_tally()
-    truth = truth.soft(True)
+    try:
+        # read truth and convert to basic soft table
+        truth = tt.read_truth(args.truth[0])
+        if len(truth) == 0:
+            raise RuntimeWarning('Truth table contains no assignments: {0}'.format(args.truth[0]))
 
-    # read clustering and convert to basic soft table
-    clustering = tt.read_mcl(args.pred[0])
-    print 'Clustering Statistics'
-    clustering.print_tally()
-    clustering = clustering.soft(True)
+        print 'Truth Statistics'
+        truth.print_tally()
+        truth = truth.soft(True)
+
+        # read clustering and convert to basic soft table
+        clustering = tt.read_mcl(args.pred[0])
+        if len(clustering) == 0:
+            raise RuntimeWarning('Clustering contains no assignments: {0}'.format(args.pred[0]))
+
+        print 'Clustering Statistics'
+        clustering.print_tally()
+        clustering = clustering.soft(True)
+
+    except RuntimeWarning as wn:
+        write_msg(args.output, wn.msg)
+        sys.exit(0)
 
     # initialise the output stream
     if args.output is None:
