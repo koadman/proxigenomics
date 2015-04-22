@@ -42,7 +42,7 @@ def make_cluster_input(outdir, c):
 
     source = [str(c['make_graph']['edges']), str(c['make_graph']['nodes'])]
     target = appconfig.prepend_paths(outdir, config['cluster']['input'])
-    action = 'bin/edgeToMetis.py -m {1[ctg_minlen]} $SOURCES.abspath $TARGET.abspath'.format(c, config)
+    action = 'bin/edgeToMetis.py -m {1[ctg_minlen]} -f graphml $SOURCES.abspath $TARGET.abspath'.format(c, config)
 
     return 'output', env.Command(target, source, action)
 
@@ -56,9 +56,9 @@ def do_mcl(outdir, c):
     target = appconfig.prepend_paths(outdir, config['cluster']['output'])
 
     if c['isolates'] == 'isolates':
-        action = 'bin/oclustr.py $SOURCE.abspath $TARGET.abspath'.format(c)
+        action = 'bin/pbsrun_OCLUSTR.sh -i $SOURCE.abspath $TARGET.abspath'.format(c)
     else:
-        action = 'bin/oclustr.py --no-isolates $SOURCE.abspath $TARGET.abspath'.format(c)
+        action = 'bin/pbsrun_OCLUSTR.sh $SOURCE.abspath $TARGET.abspath'.format(c)
 
     return 'output', env.Command(target, source, action)
 
@@ -73,7 +73,7 @@ def do_score(outdir, c):
         raise RuntimeError('Could not find an accompanying truth table for associated run {0}'.format(c['hic_path']))
 
     # this target consumes truth table and clustering output
-    source = [ttable, cl_out]
+    source = [ttable, str(cl_out) + '.mcl']
     # this target creates 3 output files
     target = ['{0}.{1}'.format(cl_out, suffix) for suffix in ['f1', 'vm', 'bc']]
 
