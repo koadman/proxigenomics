@@ -134,6 +134,8 @@ def filter_hic(outdir, c):
     return 'output', env.Command(target, source, action)
 
 
+""" MOVING ALL OF THESE TO SEPARATE MAKE FILE
+
 @wrap.add_target('make_graph')
 @name_targets
 def make_graph(outdir, c):
@@ -151,15 +153,20 @@ def make_graph(outdir, c):
 #  Everything below here is MCL specific but should be made agnostic of algorithm
 #  or deal with multiple algorithms in "cluster_method".
 #
-wrap.add('cluster_method', ['mcl'])
+wrap.add('cluster_method', ['mcl', 'oclustr'])
 
 @wrap.add_target('make_cluster_input')
 @name_targets
 def make_cluster_input(outdir, c):
+
     source = [str(c['make_graph']['edges']), str(c['make_graph']['nodes'])]
     target = prepend_paths(outdir, config['cluster']['input'])
 
-    action = 'bin/pbsrun_MKMCL.sh {1[ctg_minlen]} $SOURCES.abspath $TARGET.abspath'.format(c, config)
+    if c['cluster_method'] == 'mcl':
+        action = 'bin/pbsrun_MKMCL.sh {1[ctg_minlen]} $SOURCES.abspath $TARGET.abspath'.format(c, config)
+
+    elif c['cluster_method'] == 'oclustr':
+        action = 'bin/edgeToMetis.py -m {1[ctg_minlen]} -f graphml $SOURCES.abspath $TARGET.abspath'.format(c, config)
 
     return 'output', env.Command(target, source, action)
 
@@ -191,6 +198,6 @@ def do_score(outdir, c):
     action = 'bin/pbsrun_SCORE.sh $SOURCES.abspath'
 
     return env.Command(target, source, action)
-
+"""
 
 wrap.add_controls(Environment())

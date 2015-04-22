@@ -23,6 +23,13 @@ def read(file_name):
 
 
 def find_files(path, pattern, remove_top=True):
+    """
+    Search the given path, top down for the file pattern.
+    :param path: top of directory tree to search
+    :param pattern: the file name pattern to match
+    :param remove_top: optionally remove the top path element
+    :return: list of file paths
+    """
     matches = []
     for root, dirs, files in os.walk(path):
         for f in fnmatch.filter(files, pattern):
@@ -55,6 +62,33 @@ def search_up(path, filename):
         path = os.path.dirname(path)
     return None
 
+
+def get_precedents(root, filename, strip_file=True, prepend_root=True):
+    """
+    Search a given directory tree top to bottom and return file resources matching
+    the given name. Optionally, return the root path and file name itself.
+    target actions.
+    :param root: the root path to begin the search
+    :param filename: the file name to find
+    :param strip_file: remove the filename from found path elements
+    :param prepend_root: include the root element in the return paths
+    :return: the list of paths
+    """
+
+    # build a function to use in preparing elements to match
+    # requested options.
+    if strip_file:
+        f1 = lambda x: os.path.dirname(x)
+    else:
+        f1 = lambda x: x
+
+    if prepend_root:
+        f2 = lambda x: os.path.join(root, f1(x))
+    else:
+        f2 = lambda x: f1(x)
+
+    paths = [f2(pn) for pn in appconfig.find_files(root, filename)]
+    return paths
 
 
 def get_files(path, suffix):
