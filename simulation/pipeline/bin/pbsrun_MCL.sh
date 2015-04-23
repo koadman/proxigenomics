@@ -12,7 +12,7 @@ then
 	source $BINDIR/bash_init.sh
 fi
 
-MCLEXE=$HOME/bin/mcl
+MCLEXE=bin/mcl
 
 if [ -z "$PBS_ENVIRONMENT" ] # SUBMIT MODE
 then

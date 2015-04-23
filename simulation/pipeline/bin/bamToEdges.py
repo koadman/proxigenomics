@@ -107,7 +107,7 @@ def filter(line):
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='Create edge and node tables from a HiC bam file')
-    parser.add_argument('--wgs', dest='wgs2ctg', metavar='WGS_BAM', nargs=1, help='WGS reads to contigs bam file')
+    #parser.add_argument('--wgs', dest='wgs2ctg', metavar='WGS_BAM', nargs=1, help='WGS reads to contigs bam file')
     parser.add_argument('hic2ctg', metavar='HIC_BAM', nargs=1, help='HiC to contigs bam file')
     parser.add_argument('edge_csv', metavar='EDGE_CSV', nargs=1, help='Edges csv output file')
     parser.add_argument('node_csv', metavar='NODE_CSV', nargs=1, help='Nodes csv output file')
@@ -115,14 +115,15 @@ if __name__ == '__main__':
 
     # Read the idxstats file and build the node list
     node_map = {}
-    if args.wgs2ctg is not None:
-        with pysam.AlignmentFile(args.wgs2ctg[0], 'rb') as bam_file:
-            for n, rn in enumerate(bam_file.references):
-                node_map[rn] = Node(rn, bam_file.lengths[n], bam_file.count(reference=rn))
-    else:
-        with pysam.AlignmentFile(args.hic2ctg[0], 'rb') as bam_file:
-            for n, rn in enumerate(bam_file.references):
-                node_map[rn] = Node(rn, bam_file.lengths[n], 1)
+    # TODO we dont need to reference this file. If a scaffold does appear in HiC data, then it is no problem.
+    #if args.wgs2ctg is not None:
+    #    with pysam.AlignmentFile(args.wgs2ctg[0], 'rb') as bam_file:
+    #        for n, rn in enumerate(bam_file.references):
+    #            node_map[rn] = Node(rn, bam_file.lengths[n], bam_file.count(reference=rn))
+    #else:
+    with pysam.AlignmentFile(args.hic2ctg[0], 'rb') as bam_file:
+        for n, rn in enumerate(bam_file.references):
+            node_map[rn] = Node(rn, bam_file.lengths[n], 1)
 
     # Read the sam file and build a linkage map
     linkage_map = {}

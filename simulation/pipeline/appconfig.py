@@ -123,3 +123,24 @@ def get_wgs_reads(path, config):
     :return: list of read files (R1, R2)
     """
     return [os.path.join(path, '{0}{1}.fq'.format(config['wgs_base'], n)) for n in range(1, 3)]
+
+
+class ExecutionEnvironment:
+    # first is default
+    __defined_types = ['pbs', 'local']
+
+    def __init__(self, args):
+        self.exec_type = args.get('exec_type', self.__defined_types[0])
+        if self.exec_type not in self.__defined_types:
+            raise RuntimeError('Unknown execution type specified. '
+                               'Select one of {0} [default: {1}]'.format(
+                self.__defined_types, self.__defined_types[0]))
+
+    def resolve_action(self, action_dict):
+        """
+        Simple method to resolve the action associated with a particular
+        execution environment.
+        :param action_dict: the set of actions to choose from.
+        :return: the action associated with the value of global execution_type
+        """
+        return action_dict[self.exec_type]
