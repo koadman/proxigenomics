@@ -237,9 +237,12 @@ def weighted_extended_bcubed(w, c, g):
     return {'pre': pre, 'rec': rec, 'f': fbcubed}
 
 
-def write_msg(file, msg):
-    with open(file, 'w') as hout:
-        hout.write(msg + '\n')
+def write_msg(filename, msg):
+    if filename is None:
+        print msg
+    else:
+        with open(filename, 'w') as hout:
+            hout.write(msg + '\n')
 
 
 if __name__ == '__main__':
@@ -283,7 +286,7 @@ if __name__ == '__main__':
         clustering = clustering.soft(True)
 
     except RuntimeWarning as wn:
-        write_msg(args.output, wn.msg)
+        write_msg(args.output, wn.message)
         sys.exit(0)
 
     # initialise the output stream
