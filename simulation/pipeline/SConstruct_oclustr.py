@@ -13,7 +13,19 @@ wrap = SConsWrap(nest, os.path.join(config['cluster']['folder'],
                                     config['cluster']['algorithms']['oclustr']['folder']))
 env = Environment(ENV=os.environ)
 
-# Variation
+# control whether local or distributed execution of targets
+execution_type = ARGUMENTS.get('exec_type', 'pbs')
+if not (execution_type == 'pbs' or execution_type == 'local'):
+    raise RuntimeError('Unknown execution type specified. Select either "pbs" or "local" [default: pbs]')
+
+def resolve_action(action_dict):
+    """
+    Simple method to resolve the action associated with a particular
+    execution environment.
+    :param action_dict: the set of actions to choose from.
+    :return: the action associated with the value of global execution_type
+    """
+    return action_dict[execution_type]
 
 # don't include root as we don't want it embedded in this nest hierarchy
 hic_paths = appconfig.get_precedents(config['map_folder'], config['hic2ctg'], prepend_root=False)
@@ -31,7 +43,11 @@ def make_graph(outdir, c):
 
     sources = [hic_bam, wgs_bam]
     target = appconfig.prepend_paths(outdir, ['edges.csv', 'nodes.csv'])
-    action = 'bin/pbsrun_GRAPH.sh $SOURCES.abspath $TARGETS.abspath'
+
+    action = resolve_action({
+        'pbs': 'bin/pbsrun_GRAPH.sh $SOURCES.abspath $TARGETS.abspath',
+        'local': 'bin/bamToEdges.py --wgs $SOURCES.abspath $TARGETS.abspath'
+    })
 
     return 'edges', 'nodes', env.Command(target, sources, action)
 
@@ -42,7 +58,11 @@ def make_cluster_input(outdir, c):
 
     source = [str(c['make_graph']['edges']), str(c['make_graph']['nodes'])]
     target = appconfig.prepend_paths(outdir, config['cluster']['input'])
-    action = 'bin/edgeToMetis.py -m {1[ctg_minlen]} -f graphml $SOURCES.abspath $TARGET.abspath'.format(c, config)
+
+    action = resolve_action({
+        'pbs': 'bin/edgeToMetis.py -m {0[ctg_minlen]} -f graphml $SOURCES.abspath $TARGET.abspath'.format(config),
+        'local': 'bin/edgeToMetis.py -m {0[ctg_minlen]} -f graphml $SOURCES.abspath $TARGET.abspath'.format(config)
+    })
 
     return 'output', env.Command(target, source, action)
 
@@ -56,9 +76,15 @@ def do_mcl(outdir, c):
     target = appconfig.prepend_paths(outdir, config['cluster']['output'])
 
     if c['isolates'] == 'isolates':
-        action = 'bin/pbsrun_OCLUSTR.sh -i $SOURCE.abspath $TARGET.abspath'.format(c)
+        action = resolve_action({
+            'pbs': 'bin/pbsrun_OCLUSTR.sh -i $SOURCE.abspath $TARGET.abspath',
+            'local': 'bin/oclustr.py $SOURCE.abspath $TARGET.abspath'
+        })
     else:
-        action = 'bin/pbsrun_OCLUSTR.sh $SOURCE.abspath $TARGET.abspath'.format(c)
+        action = resolve_action({
+            'pbs': 'bin/pbsrun_OCLUSTR.sh $SOURCE.abspath $TARGET.abspath',
+            'local': 'bin/oclustr.py --no-isolates $SOURCE.abspath $TARGET.abspath'
+        })
 
     return 'output', env.Command(target, source, action)
 
@@ -77,7 +103,10 @@ def do_score(outdir, c):
     # this target creates 3 output files
     target = ['{0}.{1}'.format(cl_out, suffix) for suffix in ['f1', 'vm', 'bc']]
 
-    action = 'bin/pbsrun_SCORE.sh $SOURCES.abspath'
+    action = resolve_action({
+        'pbs:': 'bin/pbsrun_SCORE.sh $SOURCES.abspath',
+        'local': 'bin/all_scores.sh $SOURCES.abspath'
+    })
 
     return env.Command(target, source, action)
 
