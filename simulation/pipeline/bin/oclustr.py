@@ -193,9 +193,8 @@ class Cover:
         gout = self.hubs.copy()
 
         if no_isolates:
-            for v in gout:
-                if gout.degree(v) == 0:
-                    gout.remove(v)
+            iso_v = [v for v in gout if gout.degree(v) == 0]
+            gout.remove_nodes_from(iso_v)
 
         for v in gout:
             # TODO
