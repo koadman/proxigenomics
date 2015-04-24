@@ -21,16 +21,16 @@ BAMTOEDGES=bin/bamToEdges.py
 if [ -z "$PBS_ENVIRONMENT" ] # SUBMIT MODE
 then
 	
-	if [ $# -ne 4 ]
+	if [ $# -ne 3 ]
 	then
-		echo "Usage: [hic2ctg.bam] [wgs2ctg.bam] [edge out] [node out]"
+		echo "Usage: [hic2ctg.bam] [edge out] [node out]"
 		exit 1
 	fi
 
 	echo "Submitting run"
-	TARGET=( $3 $4 )
+	TARGET=( $2 $3 )
 	trap 'rollback_rm_files ${TARGET[@]}; exit $?' INT TERM EXIT
-	qsub -W block=true -v HIC2CTG=$1,WGS2CTG=$2,EDGES=$3,NODES=$4 $0
+	qsub -W block=true -v HIC2CTG=$1,EDGES=$2,NODES=$3 $0
 	trap - INT TERM EXIT
 	echo "Finished"
 
@@ -38,6 +38,6 @@ else # EXECUTION MODE
 	echo "Running"
 	cd $PBS_O_WORKDIR
 	
-	$BAMTOEDGES --wgs $WGS2CTG $HIC2CTG $EDGES $NODES
+	$BAMTOEDGES $HIC2CTG $EDGES $NODES
 	
 fi
