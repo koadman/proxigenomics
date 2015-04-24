@@ -52,8 +52,8 @@ def make_cluster_input(outdir, c):
     target = appconfig.prepend_paths(outdir, config['cluster']['input'])
 
     action = exec_env.resolve_action({
-        'pbs': 'bin/pbsrun_MKMCL.sh {1[ctg_minlen]} $SOURCES.abspath $TARGET.abspath'.format(config),
-        'local': 'bin/makeMCLinput.py {1[ctg_minlen]} $SOURCES.abspath $TARGET.abspath'.format(config)
+        'pbs': 'bin/pbsrun_MKMCL.sh {0[ctg_minlen]} $SOURCES.abspath $TARGET.abspath'.format(config),
+        'local': 'bin/makeMCLinput.py {0[ctg_minlen]} $SOURCES.abspath $TARGET.abspath'.format(config)
     })
 
     return 'output', env.Command(target, source, action)
