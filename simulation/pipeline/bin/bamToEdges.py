@@ -6,10 +6,10 @@
 #
 # Eg. frg01fwd or frg9999rev
 #
-import sys
 import math
 import pysam
 import argparse
+import networkx as nx
 
 
 class Edge:
@@ -108,30 +108,32 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='Create edge and node tables from a HiC bam file')
     #parser.add_argument('--wgs', dest='wgs2ctg', metavar='WGS_BAM', nargs=1, help='WGS reads to contigs bam file')
+    parser.add_argument('--add-selfloops', action='store_true', default=False,
+                        help='Add self-loops to all nodes to insuring edge lists contain all nodes')
+    parser.add_argument('--graphml', nargs=1, help='Write graphml file')
     parser.add_argument('hic2ctg', metavar='HIC_BAM', nargs=1, help='HiC to contigs bam file')
     parser.add_argument('edge_csv', metavar='EDGE_CSV', nargs=1, help='Edges csv output file')
     parser.add_argument('node_csv', metavar='NODE_CSV', nargs=1, help='Nodes csv output file')
     args = parser.parse_args()
 
-    # Read the idxstats file and build the node list
-    node_map = {}
-    # TODO we dont need to reference this file. If a scaffold does appear in HiC data, then it is no problem.
-    #if args.wgs2ctg is not None:
-    #    with pysam.AlignmentFile(args.wgs2ctg[0], 'rb') as bam_file:
-    #        for n, rn in enumerate(bam_file.references):
-    #            node_map[rn] = Node(rn, bam_file.lengths[n], bam_file.count(reference=rn))
-    #else:
+    # TODO We dont need to reference this file.
+    # TODO If a scaffold does appear in HiC data then it is not correct to introduce it.
+
+    g = nx.Graph()
     with pysam.AlignmentFile(args.hic2ctg[0], 'rb') as bam_file:
         for n, rn in enumerate(bam_file.references):
-            node_map[rn] = Node(rn, bam_file.lengths[n], 1)
+            g.add_node(rn, length=bam_file.lengths[n])
 
     # Read the sam file and build a linkage map
     linkage_map = {}
     with pysam.AlignmentFile(args.hic2ctg[0], 'rb') as bam_file:
         iter_bam = bam_file.fetch()
         for mr in iter_bam:
+
             if mr.reference_id == -1:
                 continue
+
+            # assumed naming convention of HiC simulated reads.
             read = mr.query_name[:-3]
             rdir = mr.query_name[-3:]
 
@@ -156,22 +158,30 @@ if __name__ == '__main__':
     for (insert, linkage) in linkage_map.iteritems():
         for i in range(len(linkage)):
             for j in range(i):
-                if linkage[i][1] != linkage[j][1] and linkage[i][0] != linkage[j][0]:
-                    e = Edge([node_map[linkage[i][0]], node_map[linkage[j][0]]])
-                    if e.get_id() not in edge_map:
-                        edge_map[e.get_id()] = e
-                    else:
-                        e = edge_map.get(e.get_id())
-                        e.inc_weight()
 
-    # Write out all edges to stdout
-    # Extra columns for the Gephi
+                # networkx based construction
+                u, ud = linkage[i]
+                v, vd = linkage[j]
+                if g.has_edge(u, v):
+                    g[u][v]['weight'] += 1
+                else:
+                    g.add_edge(u, v, weight=1)
+
+    # insure that there is a self-loop to each node.
+    if args.add_selfloops:
+        for v in g.nodes():
+            if not g.has_edge(v, v):
+                g.add_edge(v, v, weight=1)
+
+    if args.graphml is not None:
+        nx.write_graphml(g, args.graphml[0])
+
     with open(args.edge_csv[0], 'w') as h_out:
-        h_out.write("SOURCE TARGET RAWWEIGHT WEIGHT TYPE\n")
-        for e in edge_map.values():
-            h_out.write('{0} UNDIRECTED\n'.format(e))
+        h_out.write("SOURCE TARGET RAWWEIGHT TYPE\n")
+        for u, v, dat in g.edges(data=True):
+            h_out.write('{0} {1} {2} UNDIRECTED\n'.format(u, v, dat['weight']))
 
     with open(args.node_csv[0], 'w') as h_out:
-        h_out.write('ID LENGTH READS\n')
-        for n in node_map.values():
-            h_out.write('{0}\n'.format(n))
+        h_out.write('ID LENGTH\n')
+        for v, dat in g.nodes(data=True):
+            h_out.write('{0} {1[length]}\n'.format(v, dat))

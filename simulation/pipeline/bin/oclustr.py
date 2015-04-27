@@ -223,8 +223,12 @@ if __name__ == '__main__':
 
     # read the graph
     g = nx.read_graphml(args.graph[0])
-    if args.debug:
-        print 'Graph vertices {0} edges {1}'.format(g.order(), g.size())
+    print 'Graph contains {0} vertices, {1} edges'.format(g.order(), g.size())
+
+    # prune self-loops before starting analysis
+    for e in g.selfloop_edges():
+        g.remove_edge(*e)
+    print 'After removing self-loops, {0} edges remain'.format(g.size())
 
     # calculate relevance for all vertices
     rel_dict = dict((v, relevance(v, g)) for v in g.nodes() if len(g[v]) >= 1)
