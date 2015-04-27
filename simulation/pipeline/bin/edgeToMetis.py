@@ -9,43 +9,49 @@ import pandas
 import networkx
 
 
-def write_metis(G, graph_out):
+def write_metis(G, metis_file):
     """Metis format
     - this format imposes implicit limitation that nodes names must be integers
     - provision for weights also appears to be limited to integers
     """
-    # sort nodes by original names
-    nsrt = sorted(networkx.degree(G).iteritems(), key=operator.itemgetter(0))
-
-    # assign integer ids to all nodes
+    # sort nodes by original names and create a set of synthetic numeric identifiers
+    # to comply with Metis format limitations
+    sorted_nodes = sorted(networkx.degree(G).iteritems(), key=operator.itemgetter(0))
     node_map = OrderedDict()
-    for i, v in enumerate(nsrt):
-        node_map[v[0]] = i + 1
+    for nid, nname in enumerate(sorted_nodes, start=1):
+        node_map[nname[0]] = nid
 
-    format_type = '1'  # edge weights only
+    # Metis format uses a binary flag field in header to specify weights.
+    # '1' means just edge weights
+    format_type = '1'
 
     # write out two files.
     # - a list of node names to node ids
     # - a metis format file
     try:
-        map_out = open('{0}.nodemap'.format(graph_out), 'w')
-        graph_out = open(graph_out, 'w')
+        # original node names for downstream tools
+        map_file = open('{0}.nodemap'.format(metis_file), 'w')
+        metis_file = open(metis_file, 'w')
 
         try:
-            # header to metis is "#nodes #edges fmt", where fnt is a format code
-            # specifying whether or not the graph is weighted (unweighted, node weights,
-            # edge weights or both)
-            graph_out.write(
-                '{nodes} {edges} {fmt}\n'.format(nodes=G.number_of_nodes(), edges=G.number_of_edges(), fmt=format_type))
-            for k, v in node_map.iteritems():
+            # Header
+            metis_file.write('{0} {1} {2}\n'.format(G.number_of_nodes(), G.number_of_edges(), format_type))
+
+            # Body - the edge connectivity for each node
+            for nname, nid in node_map.iteritems():
+
+                # for all adjacent nodes, build the string of connected nodes with weights
                 line = []
-                for l, m in G[k].iteritems():
-                    line += [str(node_map[l]), str(m['weight'])]
-                graph_out.write(' '.join(line) + '\n')
-                map_out.write('{idx} {name}\n'.format(idx=v, name=k))
+                for adj, adj_dat in G[nname].iteritems():
+                    line.extend([str(node_map[adj]), str(adj_dat['weight'])])
+
+                metis_file.write(' '.join(line))
+                metis_file.write('\n')
+
+                map_file.write('{idx} {name}\n'.format(idx=nid, name=nname))
         finally:
-            map_out.close()
-            graph_out.close()
+            map_file.close()
+            metis_file.close()
     except IOError, ex:
         print "Error:", ex
 
