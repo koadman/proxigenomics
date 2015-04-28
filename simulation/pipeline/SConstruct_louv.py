@@ -10,7 +10,7 @@ config = appconfig.read('config.yaml')
 # Base folder
 nest = Nest()
 wrap = SConsWrap(nest, os.path.join(config['cluster']['folder'],
-                                    config['cluster']['algorithms']['oclustr']['folder']))
+                                    config['cluster']['algorithms']['louvain']['folder']))
 env = Environment(ENV=os.environ)
 
 # Used for resolving what type of execution environment will be used.
@@ -52,6 +52,9 @@ def make_cluster_input(outdir, c):
 
     return 'output', env.Command(target, source, action)
 
+
+wrap.add('otype', config['cluster']['algorithms']['louvain']['otype'])
+
 @wrap.add_target('do_cluster')
 @name_targets
 def do_cluster(outdir, c):
@@ -60,8 +63,8 @@ def do_cluster(outdir, c):
     target = appconfig.prepend_paths(outdir, config['cluster']['output'])
 
     action = exec_env.resolve_action({
-        'pbs': 'bin/pbsrun_OCLUSTR.sh -i $SOURCE.abspath $TARGET.abspath',
-        'local': 'bin/oclustr.py $SOURCE.abspath $TARGET.abspath'
+        'pbs': 'bin/pbsrun_LOUVAIN.sh {0[otype]} $SOURCE.abspath $TARGET.abspath'.format(c),
+        'local': 'bin/louvain.py -otype {0[otype]} $SOURCE.abspath $TARGET.abspath'.format(c)
     })
 
     return 'output', env.Command(target, source, action)

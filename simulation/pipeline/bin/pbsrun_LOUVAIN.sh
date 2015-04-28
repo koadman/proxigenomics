@@ -4,27 +4,28 @@
 #PBS -l select=1:ncpus=1:mem=32gb
 #PBS -e logs/
 #PBS -o logs/
-#PBS -N MCLJOB
+#PBS -N LOUVAINJOB
 
 if [ -z "$PBS_ENVIRONMENT" ]
 then
-	BINDIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
-	source $BINDIR/bash_init.sh
+    BINDIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
+    source $BINDIR/bash_init.sh
 fi
 
-MCLEXE=bin/mcl
+LOUVAIN=bin/louvain.py
 
 if [ -z "$PBS_ENVIRONMENT" ] # SUBMIT MODE
 then
-	if [ $# -ne 3 ]
-	then
-		echo "Usage: <inflation> <input> <output>"
+
+    if [ $# -ne 3 ]
+    then
+		echo "Usage: <otype> <input> <output>"
 		exit 1
 	fi
 	echo "Submitting run"
 
 	trap 'rollback_rm_file $3; exit $?' INT TERM EXIT
-	qsub -W block=true -v INFLATION=$1,INPUT=$2,OUTPUT=$3 $0
+	qsub -W block=true -v OTYPE=$1,INPUT=$2,OUTPUT=$3 $0
 	trap - INT TERM EXIT
 	echo "Finished"
 
@@ -34,7 +35,7 @@ else # EXECUTION MODE
 
 	if [ -s $INPUT ]
 	then
-		$MCLEXE $INPUT --abc -I $INFLATION -o $OUTPUT
+		$LOUVAIN --otype $OTYPE $INPUT $OUTPUT
 	else
 		echo "Input had no data" > $OUTPUT
 	fi

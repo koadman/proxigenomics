@@ -5,7 +5,7 @@
 #
 
 #PBS -q smallq
-#PBS -l select=1:ncpus=2:mem=32gb
+#PBS -l select=1:ncpus=1:mem=32gb
 #PBS -e logs/
 #PBS -o logs/
 #PBS -N SRMCLJOB
@@ -16,7 +16,7 @@ then
 	source $BINDIR/bash_init.sh
 fi
 
-CMD=$HOME/bin/srmcl
+CMD=bin/srmcl
 
 if [ -z "$PBS_ENVIRONMENT" ] # SUBMIT MODE
 then

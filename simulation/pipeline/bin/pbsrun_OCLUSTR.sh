@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #PBS -q smallq
-#PBS -l select=1:ncpus=2:mem=32gb
+#PBS -l select=1:ncpus=1:mem=32gb
 #PBS -e logs/
 #PBS -o logs/
 #PBS -N OCLUSTRJOB
@@ -44,7 +44,7 @@ then
 	fi
 	echo "Submitting run"
 
-	trap 'rollback_rm_file $3; exit $?' INT TERM EXIT
+	trap 'rollback_rm_file $2; exit $?' INT TERM EXIT
 	qsub -W block=true -v OPTIONS=$ISOLATES,INPUT=$1,OUTPUT=$2 $0
 	trap - INT TERM EXIT
 	echo "Finished"
