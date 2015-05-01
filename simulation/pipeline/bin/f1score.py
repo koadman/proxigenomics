@@ -4,6 +4,7 @@ from munkres import Munkres, make_cost_matrix
 from numpy import diag, average
 import truthtable as tt
 import pipeline_utils
+import argparse
 import sys
 
 def cost_matrix(contingency_table):
@@ -112,32 +113,44 @@ def add_padding_columns(dataFrame):
         i += 1
 
 
-if len(sys.argv) != 4:
-    print 'Usage: [truth] [prediction] [output]'
-    exit(1)
+if __name__ == '__main__':
 
-truth = tt.read_truth(sys.argv[1])
-pred = tt.read_mcl(sys.argv[2])
+    parser = argparse.ArgumentParser(description='Calculate F1 metric')
+    parser.add_argument('-s', '--min-score', type=int, help='minimum truth object score', default=0)
+    parser.add_argument('truth', nargs=1, help='truth table in yaml format')
+    parser.add_argument('pred', nargs=1, help='prediction in MCL format')
+    parser.add_argument('output', nargs='?', type=argparse.FileType('w'), default=sys.stdout, help='Output file')
+    args = parser.parse_args()
 
-ct = tt.crosstab(truth.hard(), pred.hard())
+    print 'Reading truth table...'
+    truth = tt.read_truth(args.truth[0], args.min_score)
+    print 'Reading prediction...'
+    pred = tt.read_mcl(args.pred[0])
 
-print 'Contigency table [rows=truth, cols=prediction]'
-print ct
+    print 'Creating contingency table...'
+    ct = tt.crosstab(truth.hard(), pred.hard())
 
-if over_clustered(ct):
-    add_padding_columns(ct)
-    print 'Squaring table with dummy classes'
+    print
+    print 'Contigency table [rows=truth, cols=prediction] contains {0} elements'.format(ct.size)
     print ct
+    print
 
-# Write the table to stdout
-mct = match_labels(ct)
-print 'Aligned contigency table'
-print mct
+    if over_clustered(ct):
+        add_padding_columns(ct)
+        print 'Squaring table with dummy classes'
+        print ct
+        print
 
-# Calculate measure
-score = {'f1': f1_score_macro(mct),
-         'recall': recall_macro(mct),
-         'prec': precision_macro(mct)}
+    # Write the table to stdout
+    print 'Matching labels using Munkres, algorithm suffers from high polynomial order...'
+    mct = match_labels(ct)
+    print 'Aligned contigency table'
+    print mct
 
-# Write measure to file
-pipeline_utils.write_data(sys.argv[3], score)
+    # Calculate measure
+    score = {'f1': f1_score_macro(mct),
+             'recall': recall_macro(mct),
+             'prec': precision_macro(mct)}
+
+    # Write measure to file
+    pipeline_utils.write_to_stream(args.output, score)

@@ -74,7 +74,7 @@ class TruthTable:
     def put(self, key, value):
         self.asgn_dict[key] = value
 
-    def update(self, dt):
+    def update(self, dt, min_score=0):
         """
         Initialise the assignment dictionary and also generate a mapping of
         class symbol to the positive integers. We can use this as a universal
@@ -82,9 +82,25 @@ class TruthTable:
 
         :param dt: the dictionary to initialise from
         """
+        all_asgn = 0
+        filt_obj = 0
+        filt_asgn = 0
+        all_obj = len(dt)
+
         for k, v in dt.iteritems():
-            self.asgn_dict[str(k)] = v
-            self.label_count.update(v.keys())
+            v_filt = dict((kv, vv) for kv, vv in v.iteritems() if int(vv) >= min_score)
+            filt_asgn += len(v) - len(v_filt)
+            all_asgn += len(v)
+            if len(v_filt) == 0:
+                filt_obj += 1
+                continue
+            self.asgn_dict[str(k)] = v_filt
+            self.label_count.update(v_filt.keys())
+
+        if filt_asgn > 0:
+            print 'Filtered {0}/{1} assignments and {2}/{3} objects below minimum score {4}'.format(
+                filt_asgn, all_asgn, filt_obj, all_obj, min_score)
+
         labels = sorted(self.label_count.keys())
         self.label_map = dict((l, n) for n, l in enumerate(labels, 1))
 
@@ -130,15 +146,16 @@ class TruthTable:
         TruthTable._write(self.hard(), pathname)
 
 
-def read_truth(pathname):
+def read_truth(pathname, min_score=0):
     """
     Read a TruthTable in YAML format
     :param pathname: path to truth table
+    :param min_score: ignore objects with scores/weights/lengths below the given threshold.
     :return: truth table
     """
     with open(pathname, 'r') as h_in:
         tt = TruthTable()
-        tt.update(yaml.load(h_in))
+        tt.update(yaml.load(h_in), min_score)
         return tt
 
 
