@@ -131,7 +131,7 @@ if __name__ == '__main__':
     ct = tt.crosstab(truth.hard(), pred.hard())
 
     print
-    print 'Contigency table [rows=truth, cols=prediction] contains {0} elements'.format(ct.size)
+    print 'Contigency table [rows=truth, cols=prediction] contains {0} elements'.format(ct.shape[0] * ct.shape[1])
     print ct
     print
 
