@@ -12,7 +12,7 @@ then
     source $BINDIR/bash_init.sh
 fi
 
-LOUVAIN=bin/louvain.py
+LOUVAIN=bin/louvain_cluster.py
 
 if [ -z "$PBS_ENVIRONMENT" ] # SUBMIT MODE
 then
