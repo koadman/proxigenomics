@@ -53,8 +53,8 @@ cluster: {
         },
         srmcl: {
             folder: 'srmcl',
-            balance: {min: 0.1, max: 0.9, steps: 5},
-            inflation: {min: 1.1, max: 2.0, steps: 5},
+            #bal: {min: 0.1, max: 0.9, steps: 5},
+            infl: {min: 1.1, max: 2.0, steps: 5},
 
         },
         oclustr: {

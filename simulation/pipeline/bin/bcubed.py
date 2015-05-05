@@ -306,7 +306,10 @@ if __name__ == '__main__':
                     raise IOError('weight csv did not contain 2 columns')
                 if fields[0] in weights:
                     raise IOError('weight csv contains duplicate keys')
-                weights[fields[0]] = float(fields[1])
+                try:
+                    weights[fields[0]] = float(fields[1])
+                except ValueError as er:
+                    sys.stderr.write('Warning: caught conversion error for node weights. [{0}]\n'.format(er.message))
 
         pipeline_utils.write_to_stream(args.output, weighted_extended_bcubed(weights, truth, clustering))
 

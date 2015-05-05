@@ -37,8 +37,8 @@ def make_graph(outdir, c):
     source = hic_bam
     targets = appconfig.prepend_paths(outdir, ['edges.csv', 'nodes.csv'])
     action = exec_env.resolve_action({
-        'pbs': 'bin/pbsrun_GRAPH.sh $SOURCE.abspath $TARGETS.abspath',
-        'local': 'bin/bamToEdges.py $SOURCE.abspath $TARGETS.abspath'
+        'pbs': 'bin/pbsrun_GRAPH.sh -s $SOURCE.abspath $TARGETS.abspath',
+        'local': 'bin/bamToEdges.py -s $SOURCE.abspath $TARGETS.abspath'
     })
 
     return 'edges', 'nodes', env.Command(targets, source, action)
@@ -52,33 +52,53 @@ def make_cluster_input(outdir, c):
     target = appconfig.prepend_paths(outdir, config['cluster']['input'])
 
     action = exec_env.resolve_action({
-        'pbs': 'bin/pbsrun_MKMCL.sh {0[ctg_minlen]} $SOURCES.abspath $TARGET.abspath'.format(config),
-        'local': 'bin/makeMCLinput.py {0[ctg_minlen]} $SOURCES.abspath $TARGET.abspath'.format(config)
+        'pbs': 'bin/pbsrun_MKMETIS.sh {0[ctg_minlen]} $SOURCES.abspath $TARGET.abspath'.format(config),
+        'local': 'bin/edgeToMetis.py --fmt metis -m {0[ctg_minlen]} $SOURCES.abspath $TARGET.abspath'.format(config)
     })
 
     return 'output', env.Command(target, source, action)
 
-mcl_infl = config['cluster']['algorithms']['mcl']['infl']
-wrap.add('mcl_inflation', numpy.linspace(mcl_infl['min'], mcl_infl['max'], mcl_infl['steps']))
+params = config['cluster']['algorithms']['srmcl']
+wrap.add('inflation', numpy.linspace(params['infl']['min'], params['infl']['max'], params['infl']['steps']))
+#wrap.add('balance', numpy.linspace(params['bal']['min'], params['bal']['max'], params['bal']['steps']))
+# These are added for future sweep possibility. Defaults for now
+wrap.add('balance', [0.5])
+wrap.add('penalty', [1.25])
+wrap.add('redundancy', [0.6])
+wrap.add('quality', [0])
 
 @wrap.add_target('do_cluster')
 @name_targets
 def do_cluster(outdir, c):
     # TODO run over both weighted/unweighted?
     source = c['make_cluster_input']['output']
-    target = appconfig.prepend_paths(outdir, config['cluster']['output'])
+    target = appconfig.prepend_paths(outdir, config['cluster']['output'] + '.metis')
 
     action = exec_env.resolve_action({
-        'pbs': 'bin/pbsrun_MCL.sh {0[mcl_inflation]} $SOURCE.abspath $TARGET.abspath'.format(c),
-        'local': 'bin/mcl $SOURCE.abspath --abc -I {0[mcl_inflation]} -o $TARGET.abspath'.format(c)
+        'pbs': 'bin/pbsrun_SRMCL.sh -b {0[balance]} -i {0[inflation]} $SOURCE.abspath $TARGET.abspath'.format(c),
+        'local': 'bin/srmcl -b {0[balance]} -i {0[inflation]} -o $TARGET.abspath $SOURCE.abspath'.format(c)
     })
 
     return 'output', env.Command(target, source, action)
 
+@wrap.add_target('do_convert')
+@name_targets
+def do_cluster(outdir, c):
+    # TODO run over both weighted/unweighted?
+    sources = [config['cluster']['input'] + '.nodemap', c['do_cluster']['output'] + '.metis']
+    target = appconfig.prepend_paths(outdir, config['cluster']['output'])
+
+    action = exec_env.resolve_action({
+        'pbs': 'bin/metisClToMCL.py $SOURCES.abspath $TARGET.abspath'.format(c),
+        'local': 'bin/metisClToMCL.py $SOURCES.abspath $TARGET.abspath'.format(c)
+    })
+
+    return 'output', env.Command(target, sources, action)
+
 
 @wrap.add_target('do_score')
 def do_score(outdir, c):
-    cl_out = c['do_cluster']['output']
+    cl_out = c['do_convert']['output']
 
     ref_path = os.path.join(config['map_folder'], c['hic_path'])
     ttable = appconfig.search_up(ref_path, config['truth_table'])
