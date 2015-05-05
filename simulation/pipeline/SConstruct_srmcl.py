@@ -81,11 +81,12 @@ def do_cluster(outdir, c):
 
     return 'output', env.Command(target, source, action)
 
+
 @wrap.add_target('do_convert')
 @name_targets
 def do_cluster(outdir, c):
     # TODO run over both weighted/unweighted?
-    sources = [config['cluster']['input'] + '.nodemap', c['do_cluster']['output'] + '.metis']
+    sources = [config['cluster']['input'] + '.nodemap', str(c['do_cluster']['output']) + '.metis']
     target = appconfig.prepend_paths(outdir, config['cluster']['output'])
 
     action = exec_env.resolve_action({
