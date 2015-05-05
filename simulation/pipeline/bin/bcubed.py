@@ -135,7 +135,7 @@ def weighted_extended_bcubed_precision(w, c, g):
 
         weight_clust = float(sum([w[k] for k in clustering_objects]))
         pre_overall += float(pre) / weight_clust
-        print 'PRE: {:.4f}'.format(float(pre) / weight_clust)
+        #print 'PRE: {:.4f}'.format(float(pre) / weight_clust)
 
     print '{0} shared objects used in precision'.format(len(shared_obj))
     return pre_overall / len(shared_obj)
@@ -201,7 +201,7 @@ def weighted_extended_bcubed_recall(w, c, g):
 
         weight_class = float(sum([w[k] for k in class_objects]))
         rec_overall += float(rec) / weight_class
-        print 'REC: {:.4f}'.format(float(rec) / weight_class)
+        #print 'REC: {:.4f}'.format(float(rec) / weight_class)
 
     print '{0} shared objects used in recall'.format(len(shared_obj))
     return rec_overall / len(shared_obj)

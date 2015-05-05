@@ -108,8 +108,8 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='Create edge and node tables from a HiC bam file')
     #parser.add_argument('--wgs', dest='wgs2ctg', metavar='WGS_BAM', nargs=1, help='WGS reads to contigs bam file')
-    parser.add_argument('--add-selfloops', action='store_true', default=False,
-                        help='Add self-loops to all nodes to insuring edge lists contain all nodes')
+    parser.add_argument('-s', '--add-selfloops', action='store_true', default=False,
+                        help='Add self-loops to nodes')
     parser.add_argument('--graphml', nargs=1, help='Write graphml file')
     parser.add_argument('hic2ctg', metavar='HIC_BAM', nargs=1, help='HiC to contigs bam file')
     parser.add_argument('edge_csv', metavar='EDGE_CSV', nargs=1, help='Edges csv output file')
