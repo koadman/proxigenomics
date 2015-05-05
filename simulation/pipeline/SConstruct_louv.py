@@ -64,7 +64,7 @@ def do_cluster(outdir, c):
 
     action = exec_env.resolve_action({
         'pbs': 'bin/pbsrun_LOUVAIN.sh {0[otype]} $SOURCE.abspath $TARGET.abspath'.format(c),
-        'local': 'bin/louvain.py -otype {0[otype]} $SOURCE.abspath $TARGET.abspath'.format(c)
+        'local': 'bin/louvain.py --otype {0[otype]} $SOURCE.abspath $TARGET.abspath'.format(c)
     })
 
     return 'output', env.Command(target, source, action)
