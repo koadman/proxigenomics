@@ -48,15 +48,16 @@ def make_graph(outdir, c):
 @name_targets
 def make_cluster_input(outdir, c):
 
-    source = [str(c['make_graph']['edges']), str(c['make_graph']['nodes'])]
-    target = appconfig.prepend_paths(outdir, config['cluster']['input'])
+    sources = [str(c['make_graph']['edges']), str(c['make_graph']['nodes'])]
+    base_out = appconfig.prepend_paths(outdir, config['cluster']['input'])
+    targets = [base_out, base_out + '.nodemap']
 
     action = exec_env.resolve_action({
-        'pbs': 'bin/pbsrun_MKMETIS.sh {0[ctg_minlen]} $SOURCES.abspath $TARGET.abspath'.format(config),
-        'local': 'bin/edgeToMetis.py --fmt metis -m {0[ctg_minlen]} $SOURCES.abspath $TARGET.abspath'.format(config)
+        'pbs': 'bin/pbsrun_MKMETIS.sh {0[ctg_minlen]} $SOURCES.abspath $TARGETS.abspath'.format(config),
+        'local': 'bin/edgeToMetis.py --fmt metis -m {0[ctg_minlen]} $SOURCES.abspath $TARGETS.abspath'.format(config)
     })
 
-    return 'output', env.Command(target, source, action)
+    return 'output', 'nodemap', env.Command(targets, sources, action)
 
 params = config['cluster']['algorithms']['srmcl']
 wrap.add('inflation', numpy.linspace(params['infl']['min'], params['infl']['max'], params['infl']['steps']))
@@ -86,7 +87,7 @@ def do_cluster(outdir, c):
 @name_targets
 def do_cluster(outdir, c):
     # TODO run over both weighted/unweighted?
-    sources = [config['cluster']['input'] + '.nodemap', str(c['do_cluster']['output']) + '.metis']
+    sources = [c['make_cluster_input'], c['do_cluster']['output']]
     target = appconfig.prepend_paths(outdir, config['cluster']['output'])
 
     action = exec_env.resolve_action({
