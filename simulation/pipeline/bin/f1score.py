@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 from munkres import Munkres, make_cost_matrix
-from numpy import diag, average
+import numpy as np
 import truthtable as tt
 import pipeline_utils
 import argparse
@@ -27,7 +27,7 @@ def match_labels(contingency_table):
 
 def true_positives(contingency_table):
     """Taken as the diagonal of the matrix"""
-    return diag(contingency_table)
+    return np.diag(contingency_table)
 
 
 def false_negatives(contingency_table):
@@ -53,13 +53,13 @@ def false_positives(contingency_table):
 def recall_macro(contingency_table):
     tp = true_positives(contingency_table)
     fn = false_negatives(contingency_table)
-    return float(average(tp) / (average(tp) + average(fn)))
+    return float(np.average(tp) / (np.average(tp) + np.average(fn)))
 
 
 def precision_macro(contingency_table):
     tp = true_positives(contingency_table)
     fp = false_positives(contingency_table)
-    return float(average(tp) / (average(tp) + average(fp)))
+    return float(np.average(tp) / (np.average(tp) + np.average(fp)))
 
 
 def f1_score_macro(contingency_table):
@@ -67,7 +67,7 @@ def f1_score_macro(contingency_table):
     tp = true_positives(contingency_table)
     fn = false_negatives(contingency_table)
     fp = false_positives(contingency_table)
-    return float(2.0 * average(tp) / (2.0 * average(tp) + average(fn) + average(fp)))
+    return float(2.0 * np.average(tp) / (2.0 * np.average(tp) + np.average(fn) + np.average(fp)))
 
 
 def rearrange_columns(indices, contingency_table):
@@ -113,6 +113,20 @@ def add_padding_columns(dataFrame):
         i += 1
 
 
+def print_table(nparray):
+    """
+    Create a temporary version of the datatable which includes marginal sums of
+    columns and rows.
+    :param nparray: array to print
+    """
+    a = np.empty((nparray.shape[0], nparray.shape[1]+1))
+    a[:, 1:] = nparray
+    a[:, 0] = np.sum(nparray, axis=1)
+    b = np.empty((a.shape[0]+1, a.shape[1]))
+    b[1:, :] = a
+    b[0, :] = np.sum(a, axis=0)
+    print b
+
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='Calculate F1 metric')
@@ -138,14 +152,14 @@ if __name__ == '__main__':
     if over_clustered(ct):
         add_padding_columns(ct)
         print 'Squaring table with dummy classes'
-        print ct
+        print_table(ct)
         print
 
     # Write the table to stdout
     print 'Matching labels using Munkres, algorithm suffers from high polynomial order...'
     mct = match_labels(ct)
     print 'Aligned contigency table'
-    print mct
+    print_table(mct)
 
     # Calculate measure
     score = {'f1': f1_score_macro(mct),
