@@ -21,6 +21,7 @@ for path, dirs, files in os.walk(args.path[0]):
     factors = None
     score_vals = {}
     for fn in files:
+
         if fn.endswith(('.vm', '.f1', '.bc')):
 
             # variational elements
