@@ -2,10 +2,10 @@
 
 import os
 import argparse
-import fnmatch
 import yaml
 import pandas
 import sys
+import traceback
 
 parser = argparse.ArgumentParser(description='Recursively scan path and tabulate scoring data')
 parser.add_argument('path', nargs=1, help='Path to scan')
@@ -21,8 +21,7 @@ for path, dirs, files in os.walk(args.path[0]):
     factors = None
     score_vals = {}
     for fn in files:
-
-        if fnmatch.fnmatch(fn, 'cl_output.*'):
+        if fn.endswith(('.vm', '.f1', '.bc')):
 
             # variational elements
             factors = path.split('/')
@@ -46,8 +45,7 @@ for path, dirs, files in os.walk(args.path[0]):
                     to_keep = dict(('{0}.{1}'.format(score_method, k), v) for k, v in scores.iteritems())
                     score_vals.update(to_keep)
             except Exception as ex:
-                print ex
-                print path, fn
+                traceback.print_exc(ex)
                 raise ex
 
     if len(score_vals) > 0:
