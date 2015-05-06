@@ -49,7 +49,7 @@ def make_graph(outdir, c):
 def make_cluster_input(outdir, c):
 
     sources = [str(c['make_graph']['edges']), str(c['make_graph']['nodes'])]
-    base_out = appconfig.prepend_paths(outdir, config['cluster']['input'])
+    base_out = appconfig.prepend_paths(outdir, config['cluster']['input'])[0]
     targets = [base_out, base_out + '.nodemap']
 
     action = exec_env.resolve_action({
@@ -87,7 +87,7 @@ def do_cluster(outdir, c):
 @name_targets
 def do_cluster(outdir, c):
     # TODO run over both weighted/unweighted?
-    sources = [c['make_cluster_input'], c['do_cluster']['output']]
+    sources = [c['make_cluster_input']['nodemap'], c['do_cluster']['output']]
     target = appconfig.prepend_paths(outdir, config['cluster']['output'])
 
     action = exec_env.resolve_action({

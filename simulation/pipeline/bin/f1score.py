@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 from munkres import Munkres, make_cost_matrix
+import pandas as pd
 import numpy as np
 import truthtable as tt
 import pipeline_utils
@@ -113,19 +114,22 @@ def add_padding_columns(dataFrame):
         i += 1
 
 
-def print_table(nparray):
+def print_table(df):
     """
     Create a temporary version of the datatable which includes marginal sums of
-    columns and rows.
-    :param nparray: array to print
+    columns and rows. Uses the original column and row names.
+    :param df: pandas dataframe to print
     """
-    a = np.empty((nparray.shape[0], nparray.shape[1]+1))
-    a[:, 1:] = nparray
-    a[:, 0] = np.sum(nparray, axis=1)
-    b = np.empty((a.shape[0]+1, a.shape[1]))
+    a = np.empty((df.shape[0], df.shape[1]+1), dtype=int)
+    a[:, 1:] = df
+    a[:, 0] = np.sum(df, axis=1)
+    b = np.empty((a.shape[0]+1, a.shape[1]), dtype=int)
     b[1:, :] = a
     b[0, :] = np.sum(a, axis=0)
-    print b
+    print pd.DataFrame(b,
+                       columns=['Sum'] + df.columns.values.tolist(),
+                       index=['Sum'] + df.index.values.tolist())
+
 
 if __name__ == '__main__':
 
@@ -146,7 +150,7 @@ if __name__ == '__main__':
 
     print
     print 'Contigency table [rows=truth, cols=prediction] contains {0} elements'.format(ct.shape[0] * ct.shape[1])
-    print ct
+    print_table(ct)
     print
 
     if over_clustered(ct):
