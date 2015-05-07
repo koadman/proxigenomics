@@ -56,7 +56,7 @@ then
 	
 	echo "Submitting run"
 	trap 'rollback_rm_file $2; exit $?' INT TERM EXIT
-	qsub -V -W block=true -v INPUT=$1,OUTPUT=$2 $0
+	qsub -V -W block=true -v CMDOPT="$CMDOPT",INPUT=$1,OUTPUT=$2 $0
 	trap - INT TERM EXIT
 	echo "Finished"
 
