@@ -200,18 +200,9 @@ int main(int argc, char *argv[])
 	GraphType *noSingletonGraph ;
 	idxtype* nodeMap = lookForSingletons(&graph, &noOfSingletons);
 
-	/*if ( noOfSingletons > 0 )
-	{
-		getSubgraph(&graph, nodeMap, graph.nvtxs-noOfSingletons, 
-						wgtflag, &noSingletonGraph);
-		GKfree((void**)&(graph.xadj), (void**)&(graph.adjncy), LTERM);
-		if ( (wgtflag&1) > 0 )
-			GKfree( (void**)&(graph.adjwgt), LTERM);
-//		free(graph.gdata);
-		printf("Found %d singleton nodes in the", noOfSingletons);
-		printf(" input graph. Removing them.\n");
-	}*/
-
+    // Added mzd - if the graph is trivial (completely unconnected)
+    // just write out the trivial solution, which for metisCL format
+    // is a blank line per node.
     if ( noOfSingletons == graph.nvtxs ) {
         printf("Graph is composed entirely of singletons, solution is trivial\n");
         std::ofstream outfs;
@@ -222,6 +213,18 @@ int main(int argc, char *argv[])
         outfs.close();
         exit(0);
     }
+
+	if ( noOfSingletons > 0 )
+	{
+		getSubgraph(&graph, nodeMap, graph.nvtxs-noOfSingletons, 
+						wgtflag, &noSingletonGraph);
+		GKfree((void**)&(graph.xadj), (void**)&(graph.adjncy), LTERM);
+		if ( (wgtflag&1) > 0 )
+			GKfree( (void**)&(graph.adjwgt), LTERM);
+//		free(graph.gdata);
+		printf("Found %d singleton nodes in the", noOfSingletons);
+		printf(" input graph. Removing them.\n");
+	}
 
 
 	printf("Input graph information ---------------------------------------------------\n");
