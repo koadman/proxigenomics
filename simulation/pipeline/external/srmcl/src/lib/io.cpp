@@ -207,7 +207,6 @@ void ReadGraph(GraphType *graph, const char *filename, int *wgtflag,
     exit(0);
   }
 
-  // Read header
   do {
     fgets(line, MAXLINE, fpin);
   } while (line[0] == '%' && !feof(fpin));
@@ -220,9 +219,6 @@ void ReadGraph(GraphType *graph, const char *filename, int *wgtflag,
 
   fmt = ncon = 0;
   sscanf(line, "%d %d %d %d", &(graph->nvtxs), &(graph->nedges), &fmt, &ncon);
-  
-  // debug mzd
-  printf("nv=%d ne=%d\n", graph->nvtxs, graph->nedges);
   
   readew = (fmt%10 > 0);
   readvw = ((fmt/10)%10 > 0);
@@ -248,9 +244,8 @@ void ReadGraph(GraphType *graph, const char *filename, int *wgtflag,
 
   graph->nedges *=2;
   /* Venu: my addition */
-  if ( addSelfLoop > 0 ) {
-    graph->nedges += 2*graph->nvtxs;
-  }
+  if ( addSelfLoop > 0 )
+  	graph->nedges += graph->nvtxs;
 
   ncon = graph->ncon = (ncon == 0 ? 1 : ncon);
 
