@@ -42,7 +42,7 @@ def write_metis(G, metis_file, nodemap_file):
             # for all adjacent nodes, build the string of connected nodes with weights
             line = []
             for adj, adj_dat in G[nname].iteritems():
-                line.extend([str(node_map[adj]), str(adj_dat['weight'])])
+                line.extend([str(node_map[adj]), str(int(adj_dat['weight']))])
 
             h_metis.write(' '.join(line))
             h_metis.write('\n')
