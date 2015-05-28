@@ -10,6 +10,7 @@ import math
 import pysam
 import argparse
 import re
+import sys
 import networkx as nx
 
 
@@ -118,6 +119,9 @@ def split_name(query_name):
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='Create edge and node tables from a HiC bam file')
+    parser.add_argument('--recover-alts', action='store_true', default=False,
+                        help='Recover the alternate alignments from BAM')
+
     parser.add_argument('--afmt', choices=['bam', 'psl'], default='bam', help='Alignment file format (bam)')
     parser.add_argument('--minid', type=float, required=False, default=95.0,
                         help='Minimum percentage identity for alignment (95)')
@@ -154,6 +158,8 @@ if __name__ == '__main__':
             iter_bam = bam_file.fetch()
             for mr in iter_bam:
 
+                contig_set = set()
+
                 if mr.reference_id == -1:
                     continue
 
@@ -169,15 +175,38 @@ if __name__ == '__main__':
                     raise RuntimeError('Reads in alignment file do not conform to expected convention '
                                         '[a-zA-Z]+[0-9]+(fwd|ref)')
 
-                contig = bam_file.getrname(mr.reference_id)
+                # contig this alignment line refers to directly
+                contig_set.add(bam_file.getrname(mr.reference_id))
+
+                # if requested, add also alternate alignment contigs for linkage map
+                if args.recover_alts:
+                    try:
+                        # XA field contains alternate alignments for read, semi-colon delimited
+                        alts_field = mr.get_tag('XA')
+                        hit_list = alts_field.split(';')
+                        # for each, get the contig name (first element of comma-sep list)
+                        for hit in hit_list:
+                            hrec = hit.split(',')
+                            if len(hrec) != 4:
+                                continue
+                            contig_set.add(hrec[0])
+                    except KeyError:
+                        pass
+
+                ctg_assocs = [(ctg, rdir) for ctg in contig_set]
+
                 linkage = linkage_map.get(read)
                 if linkage is None:
-                    linkage_map[read] = [(contig, rdir)]
+                    linkage_map[read] = ctg_assocs
                 else:
-                    linkage.append((contig, rdir))
+                    linkage.update(ctg_assocs)
 
     # input is a PSL file
     elif args.afmt == 'psl':
+
+        if args.recover_alts:
+            print 'Recovering alternate alignments is onyl applicable to BAM file parsing'
+            sys.exit(1)
 
         # line marks a non-header line
         psl_dataline = re.compile(r'^[0-9]+\t')
