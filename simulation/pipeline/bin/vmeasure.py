@@ -5,6 +5,7 @@ import truthtable as tt
 import sys
 import numpy
 import pipeline_utils
+import argparse
 
 def entropy(ct):
     """Calculate the maximal entropy of classes C and clusterings K from
@@ -51,21 +52,26 @@ def v_measure(ct):
     return {'homogeneity': float(homogen), 'completeness': float(complet), 'v_measure': float(v_measure)}
 
 
-if len(sys.argv) != 4:
-    print 'Usage [truth] [prediction] [output]'
-    sys.exit(1)
+if __name__ == '__main__':
 
-truth = tt.read_truth(sys.argv[1])
-pred = tt.read_mcl(sys.argv[2])
+    parser = argparse.ArgumentParser(description='Calculate V_measure')
+    parser.add_argument('truth', metavar='TRUTH', nargs=1, help='Truth table (yaml format)')
+    parser.add_argument('pred', metavar='PREDICTION', nargs=1, help='Prediction table (mcl format)')
+    parser.add_argument('output', metavar='OUTPUT', nargs='?',
+                        type=argparse.FileType('w'), default=sys.stdout, help='Output file')
+    args = parser.parse_args()
 
-ct = tt.crosstab(truth.hard(), pred.hard())
+    truth = tt.read_truth(args.truth[0])
+    pred = tt.read_mcl(args.pred[0])
 
-# Write the resulting table to stdout
-print 'Contigency table [rows=truth, cols=prediction]'
-print ct
+    ct = tt.crosstab(truth.hard(), pred.hard())
 
-# Calculate measures
-score = v_measure(ct)
+    # Write the resulting table to stdout
+    print 'Contigency table [rows=truth, cols=prediction]'
+    print ct
 
-# Write the scores to the output file
-pipeline_utils.write_data(sys.argv[3], score)
+    # Calculate measures
+    score = v_measure(ct)
+
+    # Write the scores to the output file
+    pipeline_utils.write_to_stream(args.output, score)
