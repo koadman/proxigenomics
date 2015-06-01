@@ -49,8 +49,8 @@ def generate_wgs(outdir, c):
 @name_targets
 def generate_wgs(outdir, c):
 
-    src_dir = os.path.join(config['wgs_folder'], '/'.join(outdir.split('/')[1:]), config['wgs_asmdir'])
-    sources = ['{1}/{0[wgs_base]}.contigs.fasta'.format(c, src_dir)] + \
+    src_dir = os.path.join(config['wgs_folder'], '/'.join(outdir.split('/')[1:]))
+    sources = ['{1}/{2}/{0[wgs_base]}.contigs.fasta'.format(c, src_dir, config['wgs_asmdir'])] + \
               appconfig.get_wgs_reads(src_dir, config)
 
     target = os.path.join(outdir, 'lap_ctg.prob')
