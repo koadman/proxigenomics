@@ -36,7 +36,7 @@ wrap.add('wgs_xfold', config['wgs_xfold'])
 def generate_wgs(outdir, c):
 
     sources = ['{1[community][folder]}/{0[community]}/{0[refseq]}'.format(c, config)] + \
-              appconfig.get_wgs_reads(outdir, config)
+              appconfig.get_wgs_reads(config['wgs_folder'], config)
 
     target = os.path.join(outdir, 'lap_ref.prob')
 
@@ -48,8 +48,8 @@ def generate_wgs(outdir, c):
 @name_targets
 def generate_wgs(outdir, c):
 
-    sources = ['{od}/{0[wgs_base]}.contigs.fasta'.format(c, od=asm_dir)] + \
-              appconfig.get_wgs_reads(outdir, config)
+    sources = ['{1[wgs_folder]}/{0[wgs_base]}.contigs.fasta'.format(c, config)] + \
+              appconfig.get_wgs_reads(config['wgs_folder'], config)
 
     target = os.path.join(outdir, 'lap_ctg.prob')
 
