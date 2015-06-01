@@ -49,7 +49,7 @@ def generate_wgs(outdir, c):
 @name_targets
 def generate_wgs(outdir, c):
 
-    src_dir = os.path.join(config['wgs_folder'], '/'.join(outdir.split('/')[1:]))
+    src_dir = os.path.join(config['wgs_folder'], config['wgs_asmdir'], '/'.join(outdir.split('/')[1:]))
     sources = ['{1}/{0[wgs_base]}.contigs.fasta'.format(c, src_dir)] + \
               appconfig.get_wgs_reads(src_dir, config)
 
