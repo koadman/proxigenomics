@@ -5,7 +5,7 @@ import pysam
 import numpy as np
 import matplotlib.pyplot as plt
 import argparse
-
+import sys
 
 parser = argparse.ArgumentParser(description='Calculate assembly weighted entropy from reads to contig BAM')
 parser.add_argument('bam_file', metavar='BAM', nargs=1, help='BAM file of Reads to Contigs')
@@ -14,8 +14,9 @@ args = parser.parse_args()
 
 # determine the source purity of each contig
 with pysam.AlignmentFile(args.bam_file[0], 'rb') as sam_file:
-    extent = np.sum(sam_file.lengths, dtype=np.float64)
-    weight = dict([(rn, sam_file.lengths[sam_file.gettid(rn)] / extent) for rn in sam_file.references])
+#    extent = np.sum(sam_file.lengths, dtype=np.float64)
+#    weight = dict([(rn, sam_file.lengths[sam_file.gettid(rn)] / extent) for rn in sam_file.references])
+    lengths = dict([(rn, sam_file.lengths[sam_file.gettid(rn)]) for rn in sam_file.references])
 
     purity = dict.fromkeys(sam_file.references)
     for rd in sam_file.fetch():
@@ -30,7 +31,9 @@ with pysam.AlignmentFile(args.bam_file[0], 'rb') as sam_file:
 ctg_entropy = {}
 for ctg, rd_counts in purity.iteritems():
     if rd_counts is None:
-        print '{0} had no read information'.format(ctg)
+        sys.stderr.write('{0} had no read information\n'.format(ctg))
+        # remove contig's contribution from remainder of calculation
+        del lengths[ctg]
     else:
         tot_rd = float(sum(rd_counts.values()))
         xi = np.array(rd_counts.values())
@@ -38,9 +41,12 @@ for ctg, rd_counts in purity.iteritems():
         ent = -np.sum(pi * np.log2(pi))
         ctg_entropy[ctg] = ent
 
+# total extent of assembly, minus those ctg that had no reads mapped
+extent = np.sum(lengths.values(), dtype=np.float64)
+
 asm_entropy = 0
 for ctg, Si in ctg_entropy.iteritems():
-    asm_entropy += weight[ctg] * Si
+    asm_entropy += lengths[ctg]/extent * Si
 
 print 'Weighted assembly entropy: {0}'.format(asm_entropy)
 
