@@ -5,21 +5,32 @@ import matplotlib.pyplot as plt
 import argparse
 import sys
 
-def get_pairs(sname):
+def get_pairs(sname, trim_ch):
     """
     Build a dictionary keyed by insert name of mapped positions
     :param sname: sequence name
     :return: dictionary of insert positions
     """
     pairs = {}
-    for aln in bam_file.fetch(sname):
-        nm, dir = aln.qname[:-3], aln.qname[-3:]
-        if nm not in pairs:
-            pairs[nm] = {}
-        pairs[nm][dir] = aln.pos
+
+    if trim_ch > 0:
+        for aln in bam_file.fetch(sname):
+            nm, dir = aln.qname[:-trim_ch], aln.qname[-trim_ch:]
+            if nm not in pairs:
+                pairs[nm] = {}
+            pairs[nm][dir] = aln.pos
+    else:
+        for aln in bam_file.fetch(sname):
+            nm = aln.qname
+            if nm not in pairs:
+                pairs[nm] = {'fwd': aln.pos}
+            else:
+                pairs[nm]['rev'] = aln.pos
+
     return pairs
 
 parser = argparse.ArgumentParser(description='Create a HiC contact map from mapped reads')
+parser.add_argument('--trim', default=0, type=int, help='Trim N chars from end of read names')
 parser.add_argument('--plot', default=False, action='store_true', help='Plot resulting matrix')
 parser.add_argument('--bin-size', type=int, default=25000, help='Bin size in bp (25000)')
 parser.add_argument('--pseudo-bidir', default=False, action='store_true', help='Produce pseudo-bidirectional distances')
