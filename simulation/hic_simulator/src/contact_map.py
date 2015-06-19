@@ -2,9 +2,13 @@
 import argparse
 import pysam
 import numpy as np
-import matplotlib.pyplot as plt
 import pandas as pd
 import sys
+
+# matplotlib without xserver
+import matplotlib as mpl
+mpl.use('Agg')
+import matplotlib.pyplot as plt
 
 
 class ContactMap:
