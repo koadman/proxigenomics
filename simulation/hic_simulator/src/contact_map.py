@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 
 
 class ContactMap:
-    MIN_CONTACT_VALUE = 0.1
+    MIN_CONTACT_VALUE = 0.01
 
     def __init__(self, bam, bin_size=50000, simu_reads=False):
         self.bam = bam
@@ -47,12 +47,14 @@ class ContactMap:
         return self.bam.references[tid]
 
     def build_pairs(self):
+
+        n = 0
+        rate = self.total_reads / 1000
         if self.simu_reads:
-            n = 0
             for k, v in self.offsets.iterrows():
                 for r in self.bam.fetch(v['name']):
                     n += 1
-                    if n % 100 == 0:
+                    if n % rate == 0:
                         msg = 'Processing {0}/{1} {2}'.format(k+1, self.total_seq, v['name'])
                         progress(n, self.total_reads, msg)
 
@@ -62,17 +64,18 @@ class ContactMap:
                         self.pairs[rn] = {'fwd': [], 'rev': []}
                     self.pairs[rn][rdir].append(ix)
         else:
-            n = 0
             for k, v in self.offsets.iterrows():
                 for r in self.bam.fetch(v['name']):
                     n += 1
-                    if n % 100 == 0:
+                    if n % rate == 0:
                         msg = 'Processing {0}/{1} {2}'.format(k+1, self.total_seq, v['name'])
                         progress(n, self.total_reads, msg)
 
                     # try to skip useless reads, unpaired/unmapped, etc.
                     # this does not seem to capture all useless
-                    if r.is_unmapped or not r.is_paired or r.mate_is_unmapped:
+                    #if r.is_unmapped or not r.is_paired or r.mate_is_unmapped:
+                    #    continue
+                    if r.is_secondary:
                         continue
 
                     # simply record all positions, we'll later ignore any
@@ -93,16 +96,19 @@ class ContactMap:
         return np.zeros((self.bin_count, self.bin_count), dtype=dt)
 
     def calculate_map(self):
+
         print 'Beginning calculation of contact map'
         self.raw_map = self._init_map()
 
-        n = 0
         total_pairs = len(self.pairs)
+        n = 0
+        rate = total_pairs / 1000
+
         _map = self.raw_map
         if self.simu_reads:
             for v in self.pairs.values():
                 n += 1
-                if n % 100 == 0:
+                if n % rate == 0:
                     progress(n, total_pairs, 'Accumulating')
 
                 for ir in v['fwd']:
@@ -116,7 +122,7 @@ class ContactMap:
             skipped = 0
             for v in self.pairs.values():
                 n += 1
-                if n % 100 == 0:
+                if n % rate == 0:
                     progress(n, total_pairs, 'Accumulating')
                 if len(v) == 2:
                     ir, ic = v
@@ -137,6 +143,10 @@ class ContactMap:
         elif self.raw_map is None:
             print 'Raw map has not been calculated and must be calculated first'
             self.calculate_map()
+
+        #
+        # TODO need to apply this individually. It will avoid fudge-factor background
+        #
 
         # simple within-contig normalisation
         # this will not adjust weights inter-contigs
