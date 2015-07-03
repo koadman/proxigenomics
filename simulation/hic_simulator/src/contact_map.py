@@ -61,7 +61,6 @@ class ContactMap:
         self.offsets.index.name = 'tid'
         self.pairs = {}
 
-
     def build_pairs(self):
 
         # Set the parser behaviour depending on input reads
@@ -71,7 +70,7 @@ class ContactMap:
             _parser = generic_parser
 
         n = 0
-        print_rate = self.total_reads if len(self.total_reads) < 1000 else self.total_reads / 1000
+        print_rate = self.total_reads if self.total_reads < 1000 else self.total_reads / 1000
 
         # build a dictionary of all pairs.
         for k, v in self.offsets.iterrows():
@@ -303,7 +302,7 @@ if __name__ == '__main__':
         contacts.build_pairs()
         contacts.calculate_map()
 
-        contacts.calculate_block_map()
+        #contacts.calculate_block_map()
 
         print 'Writing raw output'
         contacts.write_map('{0}.raw.cm'.format(args.output[0]), normalised=False)
