@@ -145,7 +145,6 @@ if __name__ == '__main__':
     g = nx.Graph()
     linkage_map = {}
 
-
     # input is a BAM file
     if args.afmt == 'bam':
 
@@ -205,7 +204,7 @@ if __name__ == '__main__':
     elif args.afmt == 'psl':
 
         if args.recover_alts:
-            print 'Recovering alternate alignments is onyl applicable to BAM file parsing'
+            print 'Recovering alternate alignments is only applicable to BAM file parsing'
             sys.exit(1)
 
         # line marks a non-header line
