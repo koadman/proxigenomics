@@ -199,7 +199,7 @@ if __name__ == '__main__':
                 if linkage is None:
                     linkage_map[read] = ctg_assocs
                 else:
-                    linkage.update(ctg_assocs)
+                    linkage.extend(ctg_assocs)
 
     # input is a PSL file
     elif args.afmt == 'psl':
