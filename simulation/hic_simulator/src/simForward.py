@@ -1,15 +1,17 @@
 #!/usr/bin/env python
-from collections import OrderedDict
-from optparse import OptionParser
-import re
-import sys
-import time
 
 from Bio import Alphabet
 from Bio import SeqIO
+
+from collections import OrderedDict
+from optparse import OptionParser
+
 from Bio.Restriction import *
-from Bio.Seq import Seq
+
 import numpy
+import re
+import time
+import sys
 
 #
 # Globals
@@ -20,12 +22,56 @@ GLOBAL_CUT4 = Restriction.NlaIII
 GLOBAL_CUT6_1 = Restriction.ClaI
 GLOBAL_CUT6_2 = Restriction.SalI
 
-# parameter value for geometric distribution
-GLOBAL_GEOM_PROB = 1.0e-5
+# Mixed geom/unif model
+MIXED_GEOM_PROB = 6.0e-6
 
 # Random State from which to draw numbers
 # this is initialized at start time
-random_state = None
+RANDOM_STATE = None
+
+
+class EmpiricalDistribution:
+    """
+    Defining an empirical distribution, we can then use it to draw random
+    numbers.
+    """
+    def __init__(self, shape, length, bins=1000):
+        self.shape = shape
+        self.length = length
+        self.scale = 1.0/length
+        self.bins = bins
+        self.xsample = numpy.linspace(0, self.length, self.bins, endpoint=True, dtype=numpy.float64)
+        self.ysample = self._cdf(self.xsample)
+
+    def _cdf(self, x):
+        """
+        The CDF is the crucial element of this method. Currently, it is hard-coded as
+        a linear combination of geometric and uniform distributions. This could easily
+        be changed or the class made generic by passing CDF as a function.
+        :param x:
+        :return:
+        """
+        return 0.5 * (1.0 - (1.0 - self.shape)**x + self.scale * x)
+
+    def rand(self):
+        """
+        Using the inverse CDF method, draw a random number for the distribution. This
+        method looks up the nearest value of random value x in a sampled representation
+        and then interpolates between bin edges. Edge case for the first and last bin
+        is to merely use that bin.
+
+        :return: random value following distribution
+        """
+        xv = self.ysample
+        yv = self.xsample
+        x = RANDOM_STATE.uniform()
+        ix = numpy.searchsorted(xv, x)
+        if ix >= self.bins:
+            ix -= 1
+        elif ix == 0:
+            ix += 1
+        # interp value
+        return yv[ix-1] + (yv[ix] - yv[ix-1]) * ((x - xv[ix-1]) / (xv[ix] - xv[ix-1]))
 
 
 def find_restriction_sites(enzyme, seq):
@@ -41,33 +87,21 @@ def find_priming_sites(oligo, seq):
     """
     array = []
     for m in re.finditer(oligo, str(seq)):
-	array.append(m.end())
+        array.append(m.end())
     rc_oligo = Seq(oligo)
     rc_oligo.reverse_complement()
     for m in re.finditer(str(rc_oligo), str(seq)):
-	array.append(m.end())    
+        array.append(m.end())
     return array
-
-
-def draw_delta(min_length, max_length):
-    """Draws from a distribution only accepting values between min and max."""
-    # as this relates to a circular chromosome, the min and max could be considered one value.
-    # could do this modulo length of chromosome.
-
-    delta = random_state.geometric(p=GLOBAL_GEOM_PROB, size=1)
-    while delta < min_length or delta > max_length:
-        delta = random_state.geometric(p=GLOBAL_GEOM_PROB, size=1)
-    return int(delta)
 
 
 def make_read(seq, fwd_read, length):
     """From sequence, make a forward or reverse read. If the read is longer than the total sequence
     return the entire sequence."""
-    read = None
 
     # edge case - return whole sequence of read length > sequence
     if length >= len(seq):
-        read = seq;
+        read = seq
         if not fwd_read:
             read = read.reverse_complement(id=True, description=True)
         return read
@@ -82,10 +116,10 @@ def make_read(seq, fwd_read, length):
     return read
 
 
-def write_reads(handle, sequences, output_format, dummyQ=False):
+def write_reads(handle, sequences, output_format, dummy_q=False):
     """Append sequence to file in fastq format. Currently no effort is spent
     to stream these records"""
-    if dummyQ:
+    if dummy_q:
         for s in sequences:
             s.letter_annotations['phred_quality'] = [50] * len(s)
 
@@ -108,7 +142,7 @@ class Part:
 
 
 class Cell:
-    'Represents a cell in the community'
+    """Represents a cell in the community"""
 
     def __init__(self, name, abundance):
         self.name = name
@@ -155,7 +189,7 @@ class Cell:
         return len(self.replicon_registry)
 
     def select_replicon(self, x):
-        'From a cell, return the index of a replicon by sampling CDF at given value x'
+        """From a cell, return the index of a replicon by sampling CDF at given value x"""
         idx = numpy.searchsorted(self.cdf, x) - 1
         if idx < 0:  # edge case when sample value is exactly zero.
             return 0
@@ -168,14 +202,14 @@ class Cell:
         # Keep trying until we pick a different rep.
         rep = skip_this
         while rep is skip_this:
-            ri = self.select_replicon(random_state.uniform())
+            ri = self.select_replicon(RANDOM_STATE.uniform())
             rep = self.replicon_registry.get(self.index_to_name[ri])
 
         return rep
 
 
 class Replicon:
-    'Represents a replicon which holds a reference to its containing cell'
+    """Represents a replicon which holds a reference to its containing cell"""
 
     def __init__(self, name, parent_cell, sequence):
         self.name = name
@@ -188,11 +222,16 @@ class Replicon:
             '6cut_2': numpy.array(find_restriction_sites(GLOBAL_CUT6_2, sequence.seq))
         }
 
+        # initialise an empirical distribution for this sequence.
+        self.emp_dist = EmpiricalDistribution(MIXED_GEOM_PROB, self.length())
+
     def __repr__(self):
         return repr((self.name, self.parent_cell, self.sequence))
 
     def __str__(self):
         return str(self.parent_cell) + '.' + self.name
+
+
 
     def length(self):
         return len(self.sequence)
@@ -205,7 +244,6 @@ class Replicon:
         Those with fwd=False will be reverse complemented.
         """
         # Likely to have a off-by-one error in this code.
-        ss = None
         if fwd:
             ss = self.sequence[pos1:pos2]
             ss.description = str(pos1) + "..." + str(pos2) + ":" + str(fwd)
@@ -216,13 +254,13 @@ class Replicon:
         return ss
 
     def random_cut_site(self, cut_type):
-        'Return a uniformly random cut-site'
+        """Return a uniformly random cut-site"""
         cs = self.cut_sites[cut_type]
-        idx = random_state.randint(low=0, high=len(cs))
+        idx = RANDOM_STATE.randint(low=0, high=len(cs))
         return cs[idx]
 
-    def nearest_cut_site_above(self, cutType, pos):
-        cs = self.cut_sites[cutType]
+    def nearest_cut_site_above(self, cut_type, pos):
+        cs = self.cut_sites[cut_type]
         idx = numpy.searchsorted(cs, pos)
         if idx == len(cs):
             return cs[0]
@@ -267,7 +305,13 @@ class Replicon:
         
         return location
         """
-        delta = draw_delta(3, self.length() - 3)
+        delta = self.emp_dist.rand()
+        min_len, max_len = 3, self.length()-3
+        while delta < min_len or delta > max_len:
+            # redraw if too small or large
+            delta = self.emp_dist.rand()
+
+        #delta = draw_delta(3, self.length() - 3)
         # TODO The edge cases might have off-by-one errors, does it matter?'
         loc = origin + delta
         if loc > self.length() - 1:
@@ -296,6 +340,7 @@ class Community:
         self.index_to_name = None
         self.cell_registry = OrderedDict()
         self.interrep_prob = interrep_prob
+
         # Read in the sequences
         sequences = SeqIO.to_dict(SeqIO.parse(open(seq_filename), 'fasta', Alphabet.generic_dna))
 
@@ -322,7 +367,7 @@ class Community:
             cell.init_prob()
 
     def register_replicon(self, name, parent_cell, sequence):
-        'Add a new cell to the community cell registry'
+        """Add a new cell to the community cell registry"""
         replicon = self.replicon_registry.get(name)
         if replicon is None:
             replicon = Replicon(name, parent_cell, sequence)
@@ -331,7 +376,7 @@ class Community:
         return replicon
 
     def register_cell(self, cell_name, cell_abundance):
-        'Add a new replicon to the community replicon registry'
+        """Add a new replicon to the community replicon registry"""
         parent_cell = self.cell_registry.get(cell_name)
         if parent_cell is None:
             parent_cell = Cell(cell_name, cell_abundance)
@@ -341,7 +386,7 @@ class Community:
 
     # Total abundance of all cells in registry.
     def __update_total_abundance(self):
-        'Recalculate the total relative abundance specified for the community by referring to the registry'
+        """Recalculate the total relative abundance specified for the community by referring to the registry"""
         ab = 0
         for ca in self.cell_registry.values():
             ab += ca.abundance
@@ -365,7 +410,7 @@ class Community:
         self.cdf = numpy.hstack((0, numpy.cumsum(self.pdf)))
 
     def select_replicon(self, x):
-        'From the entire community, return the index of a replicon by sampling CDF at given value x'
+        """From the entire community, return the index of a replicon by sampling CDF at given value x"""
         idx = numpy.searchsorted(self.cdf, x) - 1
         if idx < 0:  # edge case when sample value is exactly zero.
             return 0
@@ -377,18 +422,18 @@ class Community:
         
         return the index"""
         if skip_index is None:
-            return self.select_replicon(random_state.uniform())
+            return self.select_replicon(RANDOM_STATE.uniform())
         else:
             ri = skip_index
             while ri == skip_index:
-                ri = self.select_replicon(random_state.uniform())
+                ri = self.select_replicon(RANDOM_STATE.uniform())
             return ri
 
     def is_intrarep_event(self):
         """Choose if the mate is intra or inter replicon associated. This is a simple
         binary paritioning with a chosen threshold frequency.
         """
-        return random_state.uniform() > self.interrep_prob
+        return RANDOM_STATE.uniform() > self.interrep_prob
 
     def get_replicon_by_index(self, index):
         return self.replicon_registry.get(self.index_to_name[index])
@@ -403,32 +448,32 @@ class Community:
         Returns tuple (pos=int, strand=bool)
         """
         replicon = self.get_replicon_by_index(replicon_index)
-        return int(random_state.uniform() * replicon.length()), True
+        return int(RANDOM_STATE.uniform() * replicon.length()), True
 
-    def constrained_read_location(self, replicon_index, first_location, forward):
-        """Return a location (position and strand) on a replicon where the position is
-        constrained to follow a prescribed distribution relative to the position of the
-        first location.
-        
-        Strand is always same as first.
-        
-        return location (pos=int, strand=bool)
-        """
-        replicon = self.get_replicon_by_index(replicon_index)
-        delta = draw_delta(500, replicon.length() - 500)
-        if forward:
-            # TODO The edge cases might have off-by-one errors, does it matter?'
-            loc = first_location + delta
-            if loc > replicon.length() - 1:
-                loc -= replicon.length()
-        else:
-            loc = first_location - delta
-            if loc < 0:
-                loc = replicon.length() - loc
-        return loc, forward
+    # def constrained_read_location(self, replicon_index, first_location, forward):
+    #     """Return a location (position and strand) on a replicon where the position is
+    #     constrained to follow a prescribed distribution relative to the position of the
+    #     first location.
+    #
+    #     Strand is always same as first.
+    #
+    #     return location (pos=int, strand=bool)
+    #     """
+    #     replicon = self.get_replicon_by_index(replicon_index)
+    #     delta = draw_delta(500, replicon.length() - 500)
+    #     if forward:
+    #         # TODO The edge cases might have off-by-one errors, does it matter?'
+    #         loc = first_location + delta
+    #         if loc > replicon.length() - 1:
+    #             loc -= replicon.length()
+    #     else:
+    #         loc = first_location - delta
+    #         if loc < 0:
+    #             loc = replicon.length() - loc
+    #     return loc, forward
 
 
-def make_unconstrained_partA():
+def make_unconstrained_part_a():
     rep = comm.get_replicon_by_index(comm.pick_replicon())
     pos6c = rep.random_cut_site('6cut_1')
     # pos6c = rep.random_cut_site('515F')
@@ -437,20 +482,20 @@ def make_unconstrained_partA():
     return Part(seq, pos6c, pos4c, True, rep)
 
 
-def make_unconstrained_partB(partA):
-    rep = partA.replicon.parent_cell.pick_inter_rep(partA.replicon)
+def make_unconstrained_part_b(part_a):
+    rep = part_a.replicon.parent_cell.pick_inter_rep(part_a.replicon)
     pos6c = rep.random_cut_site('6cut_2')
     pos4c = rep.nearest_cut_site_below('4cut', pos6c)
     seq = rep.subseq(pos4c, pos6c, True)
     return Part(seq, pos4c, pos6c, True, rep)
 
 
-def make_constrained_partB(partA):
-    loc = partA.replicon.constrained_upstream_location(partA.pos1)
-    pos6c = partA.replicon.nearest_cut_site_by_distance('6cut_2', loc)
-    pos4c = partA.replicon.nearest_cut_site_below('4cut', pos6c)
-    seq = partA.replicon.subseq(pos4c, pos6c, True)
-    return Part(seq, pos4c, pos6c, True, partA.replicon)
+def make_constrained_part_b(part_a):
+    loc = part_a.replicon.constrained_upstream_location(part_a.pos1)
+    pos6c = part_a.replicon.nearest_cut_site_by_distance('6cut_2', loc)
+    pos4c = part_a.replicon.nearest_cut_site_below('4cut', pos6c)
+    seq = part_a.replicon.subseq(pos4c, pos6c, True)
+    return Part(seq, pos4c, pos6c, True, part_a.replicon)
 
 
 #
@@ -471,6 +516,10 @@ parser.add_option('-r', '--seed', dest='seed',
                   help="Random seed for initialising number generator", metavar='INT', type='int')
 parser.add_option('-o', '--output', dest='output_file',
                   help='Output Hi-C reads file', metavar='FILE')
+parser.add_option('-f', '--ofmt', dest='output_format', default='fastq',
+                  help='Output format', choices=['fasta', 'fastq'], metavar='output_format [fasta, fastq]')
+#parser.add_option('--split-reads', dest='split', default=False, action='store_true',
+#                  help='Split output reads into separate R1/R2 files')
 (options, args) = parser.parse_args()
 
 if options.num_frag is None:
@@ -492,7 +541,8 @@ if options.output_file is None:
 # Main routine
 #
 
-random_state = numpy.random.RandomState(options.seed)
+# set state for random number generation
+RANDOM_STATE = numpy.random.RandomState(options.seed)
 
 # Initialize community object
 print "Initializing community"
@@ -514,44 +564,45 @@ with open(options.output_file, 'wb') as h_output:
         # 1) pick a replicon at random
         # 2) pick a 6cutter site at random on replicon
         # 3) flip a coin for strand
-        partA = make_unconstrained_partA()
+        part_a = make_unconstrained_part_a()
 
         # Create PartB
         # Steps
         # 1) choose if intra or inter replicon
         # 2) if intER create partB as above
         # 3) if intRA select from geometric
-        partB = None
-        if partA.replicon.is_alone() or comm.is_intrarep_event():
-            partB = make_constrained_partB(partA)
+        if part_a.replicon.is_alone() or comm.is_intrarep_event():
+            # ligation is between two fragments on same replicon
+            part_b = make_constrained_part_b(part_a)
         else:
-            partB = make_unconstrained_partB(partA)
+            # ligation crosses replicons
+            part_b = make_unconstrained_part_b(part_a)
 
         # Join parts
         # PartA + PartB
-        fragment = partA.seq + partB.seq
+        fragment = part_a.seq + part_b.seq
         if len(fragment) < 200 or len(fragment) > 1000:
             # only accept fragments within a size range
             skip_count += 1
             continue
 
-        if partB.pos1 < partA.pos2 and partA.pos2 < partB.pos2:
+        if part_b.pos1 < part_a.pos2 and part_a.pos2 < part_b.pos2:
             overlap_count += 1
             continue
 
-        if partA.pos1 < partB.pos2 and partB.pos2 < partA.pos2:
+        if part_a.pos1 < part_b.pos2 and part_b.pos2 < part_a.pos2:
             overlap_count += 1
             continue
 
         read1 = make_read(fragment, True, options.read_length)
-        read1.id = "frg" + str(frag_count) + "fwd"
-        read1.description = partA.seq.id + " " + partA.seq.description
+        read1.id = 'frg{0}fwd'.format(frag_count)
+        read1.description = '{0} {1}'.format(part_a.seq.id, part_a.seq.description)
 
         read2 = make_read(fragment, False, options.read_length)
-        read2.id = "frg" + str(frag_count) + "rev"
-        read2.description = partB.seq.id + " " + partB.seq.description
+        read2.id = 'frg{0}rev'.format(frag_count)
+        read2.description = '{0} {1}'.format(part_b.seq.id, part_b.seq.description)
 
-        write_reads(h_output, [read1, read2], "fastq", dummyQ=True)
+        write_reads(h_output, [read1, read2], options.output_format, dummy_q=True)
 
         frag_count += 1
 

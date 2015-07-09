@@ -3,6 +3,7 @@ import sys
 import os.path
 import glob
 import fnmatch
+import types
 
 
 def read(file_name):
@@ -22,7 +23,20 @@ def read(file_name):
         sys.exit(e.errno)
 
 
+def prepend_paths(path, fnames):
+    if isinstance(fnames, types.StringTypes):
+        fnames = [fnames]
+    return [os.path.join(path, fn) for fn in fnames]
+
+
 def find_files(path, pattern, remove_top=True):
+    """
+    Search the given path, top down for the file pattern.
+    :param path: top of directory tree to search
+    :param pattern: the file name pattern to match
+    :param remove_top: optionally remove the top path element
+    :return: list of file paths
+    """
     matches = []
     for root, dirs, files in os.walk(path):
         for f in fnmatch.filter(files, pattern):
@@ -33,6 +47,55 @@ def find_files(path, pattern, remove_top=True):
             else:
                 matches.append(os.path.join(root, f))
     return matches
+
+
+def search_up(path, filename):
+    """
+    Search up a directory path until a file by the given name is
+    found. The method stops as the first occurence, that is the
+    lowest point in the path containing a file by the given name.
+    :param path: the path to search upwards
+    :param filename: the file to find
+    :return: the containing path with the filename as a string
+    :raises: RuntimeError if a folder contains more than one file of the same name. This should never happen.
+    """
+    while path != '':
+        filepath = [fn for fn in os.listdir(path) if fn == filename]
+        nfiles = len(filepath)
+        if nfiles > 1:
+            raise RuntimeError('duplicate file names in same directory {0}'.format(p))
+        elif len(filepath) == 1:
+            return os.path.join(path, filepath[0])
+        path = os.path.dirname(path)
+    return None
+
+
+def get_precedents(root, filename, strip_file=True, prepend_root=True):
+    """
+    Search a given directory tree top to bottom and return file resources matching
+    the given name. Optionally, return the root path and file name itself.
+    target actions.
+    :param root: the root path to begin the search
+    :param filename: the file name to find
+    :param strip_file: remove the filename from found path elements
+    :param prepend_root: include the root element in the return paths
+    :return: the list of paths
+    """
+
+    # build a function to use in preparing elements to match
+    # requested options.
+    if strip_file:
+        f1 = lambda x: os.path.dirname(x)
+    else:
+        f1 = lambda x: x
+
+    if prepend_root:
+        f2 = lambda x: os.path.join(root, f1(x))
+    else:
+        f2 = lambda x: f1(x)
+
+    paths = [f2(pn) for pn in find_files(root, filename)]
+    return paths
 
 
 def get_files(path, suffix):
@@ -60,3 +123,24 @@ def get_wgs_reads(path, config):
     :return: list of read files (R1, R2)
     """
     return [os.path.join(path, '{0}{1}.fq'.format(config['wgs_base'], n)) for n in range(1, 3)]
+
+
+class ExecutionEnvironment:
+    # first is default
+    __defined_types = ['pbs', 'local']
+
+    def __init__(self, args):
+        self.exec_type = args.get('exec_type', self.__defined_types[0])
+        if self.exec_type not in self.__defined_types:
+            raise RuntimeError('Unknown execution type specified. '
+                               'Select one of {0} [default: {1}]'.format(
+                self.__defined_types, self.__defined_types[0]))
+
+    def resolve_action(self, action_dict):
+        """
+        Simple method to resolve the action associated with a particular
+        execution environment.
+        :param action_dict: the set of actions to choose from.
+        :return: the action associated with the value of global execution_type
+        """
+        return action_dict[self.exec_type]

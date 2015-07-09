@@ -118,7 +118,7 @@ def write_truth(simple, minlen, mincov, alignment_list, file_name):
             t = truth.get(aln.query_name)
             if t is None:
                 t = {}
-                truth[aln.query_name] = t
+                truth.put(aln.query_name, t)
             t[aln.ref_name] = aln.align_length
 
     if simple:
@@ -221,12 +221,17 @@ def parse_psl(psl_file):
     :param psl_file: PSL format alignment file
     :return: dictionary of Alignment objects
     """
+    all_hits = 0
+    rejected = 0
     align_repo = OrderedDict()
     with open(psl_file, 'r') as h_in:
         for l in h_in:
+            all_hits += 1
             # skip header fields
             if not psl_dataline.match(l):
                 continue
+
+            all_hits += 1
 
             fields = l.rsplit()
 
@@ -234,7 +239,6 @@ def parse_psl(psl_file):
             rname = fields[13]
             alen = int(fields[12]) - int(fields[11]) + 1
             qlen = int(fields[10])
-            perid = (1.0 - float(fields[1]) / float(fields[0])) * 100
 
             # Taken from BLAT perl script for calculating percentage identity
             matches = int(fields[0])
@@ -246,6 +250,7 @@ def parse_psl(psl_file):
             # ignore alignment records which fall below mincov or minid
             # wrt the length of the alignment vs query sequence.
             if float(alen)/float(qlen) < args.mincov or perid < args.minid:
+                rejected += 1
                 continue
 
             aln = Alignment(qname, rname, alen, qlen, perid)
@@ -253,6 +258,10 @@ def parse_psl(psl_file):
                 align_repo[aln].add_bases(alen)
             else:
                 align_repo[aln] = aln
+
+        print 'Rejected {0}/{1} alignments due to constraints on ID {2} and Coverage {3}'.format(
+            rejected, all_hits, args.minid, args.mincov)
+
     return align_repo
 
 if __name__ == '__main__':
@@ -296,7 +305,7 @@ if __name__ == '__main__':
     if args.ofmt == 'flat':
         print 'Soft results always enabled for flat output format'
 
-    print 'Read {0} alignments'.format(len(align_repo))
+    print 'Accepted {0} alignments'.format(len(align_repo))
 
     #
     # We need to decide on assignment.

@@ -1,9 +1,11 @@
 #!/usr/bin/env python
 
 from munkres import Munkres, make_cost_matrix
-from numpy import diag, average
+import pandas as pd
+import numpy as np
 import truthtable as tt
 import pipeline_utils
+import argparse
 import sys
 
 def cost_matrix(contingency_table):
@@ -26,7 +28,7 @@ def match_labels(contingency_table):
 
 def true_positives(contingency_table):
     """Taken as the diagonal of the matrix"""
-    return diag(contingency_table)
+    return np.diag(contingency_table)
 
 
 def false_negatives(contingency_table):
@@ -52,13 +54,13 @@ def false_positives(contingency_table):
 def recall_macro(contingency_table):
     tp = true_positives(contingency_table)
     fn = false_negatives(contingency_table)
-    return float(average(tp) / (average(tp) + average(fn)))
+    return float(np.average(tp) / (np.average(tp) + np.average(fn)))
 
 
 def precision_macro(contingency_table):
     tp = true_positives(contingency_table)
     fp = false_positives(contingency_table)
-    return float(average(tp) / (average(tp) + average(fp)))
+    return float(np.average(tp) / (np.average(tp) + np.average(fp)))
 
 
 def f1_score_macro(contingency_table):
@@ -66,7 +68,7 @@ def f1_score_macro(contingency_table):
     tp = true_positives(contingency_table)
     fn = false_negatives(contingency_table)
     fp = false_positives(contingency_table)
-    return float(2.0 * average(tp) / (2.0 * average(tp) + average(fn) + average(fp)))
+    return float(2.0 * np.average(tp) / (2.0 * np.average(tp) + np.average(fn) + np.average(fp)))
 
 
 def rearrange_columns(indices, contingency_table):
@@ -112,32 +114,61 @@ def add_padding_columns(dataFrame):
         i += 1
 
 
-if len(sys.argv) != 4:
-    print 'Usage: [truth] [prediction] [output]'
-    exit(1)
+def print_table(df):
+    """
+    Create a temporary version of the datatable which includes marginal sums of
+    columns and rows. Uses the original column and row names.
+    :param df: pandas dataframe to print
+    """
+    a = np.empty((df.shape[0], df.shape[1]+1), dtype=int)
+    a[:, 1:] = df
+    a[:, 0] = np.sum(df, axis=1)
+    b = np.empty((a.shape[0]+1, a.shape[1]), dtype=int)
+    b[1:, :] = a
+    b[0, :] = np.sum(a, axis=0)
+    print pd.DataFrame(b,
+                       columns=['Sum'] + df.columns.values.tolist(),
+                       index=['Sum'] + df.index.values.tolist())
 
-truth = tt.read_truth(sys.argv[1])
-pred = tt.read_mcl(sys.argv[2])
 
-ct = tt.crosstab(truth.hard(), pred.hard())
+if __name__ == '__main__':
 
-print 'Contigency table [rows=truth, cols=prediction]'
-print ct
+    parser = argparse.ArgumentParser(description='Calculate F1 metric')
+    parser.add_argument('-s', '--min-score', type=int, help='minimum truth object score', default=0)
+    parser.add_argument('truth', nargs=1, help='truth table in yaml format')
+    parser.add_argument('pred', nargs=1, help='prediction in MCL format')
+    parser.add_argument('output', nargs='?', type=argparse.FileType('w'), default=sys.stdout, help='Output file')
+    args = parser.parse_args()
 
-if over_clustered(ct):
-    add_padding_columns(ct)
-    print 'Squaring table with dummy classes'
-    print ct
+    print 'Reading truth table...'
+    truth = tt.read_truth(args.truth[0], args.min_score)
+    print 'Reading prediction...'
+    pred = tt.read_mcl(args.pred[0])
 
-# Write the table to stdout
-mct = match_labels(ct)
-print 'Aligned contigency table'
-print mct
+    print 'Creating contingency table...'
+    ct = tt.crosstab(truth.hard(), pred.hard())
 
-# Calculate measure
-score = {'f1': f1_score_macro(mct),
-         'recall': recall_macro(mct),
-         'prec': precision_macro(mct)}
+    print
+    print 'Contigency table [rows=truth, cols=prediction] contains {0} elements'.format(ct.shape[0] * ct.shape[1])
+    print_table(ct)
+    print
 
-# Write measure to file
-pipeline_utils.write_data(sys.argv[3], score)
+    if over_clustered(ct):
+        add_padding_columns(ct)
+        print 'Squaring table with dummy classes'
+        print_table(ct)
+        print
+
+    # Write the table to stdout
+    print 'Matching labels using Munkres, algorithm suffers from high polynomial order...'
+    mct = match_labels(ct)
+    print 'Aligned contigency table'
+    print_table(mct)
+
+    # Calculate measure
+    score = {'f1': f1_score_macro(mct),
+             'recall': recall_macro(mct),
+             'prec': precision_macro(mct)}
+
+    # Write measure to file
+    pipeline_utils.write_to_stream(args.output, score)

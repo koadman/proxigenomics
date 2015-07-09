@@ -1,11 +1,7 @@
 #!/bin/bash
 
-#
-# Map sequences in simulation
-#
-
 #PBS -q smallq
-#PBS -l select=1:ncpus=2:mem=32gb
+#PBS -l select=1:ncpus=1:mem=32gb
 #PBS -e logs/
 #PBS -o logs/
 #PBS -N MCLJOB
@@ -16,7 +12,7 @@ then
 	source $BINDIR/bash_init.sh
 fi
 
-MCLEXE=$HOME/bin/mcl
+MCLEXE=bin/mcl
 
 if [ -z "$PBS_ENVIRONMENT" ] # SUBMIT MODE
 then
@@ -38,7 +34,7 @@ else # EXECUTION MODE
 
 	if [ -s $INPUT ]
 	then
-		$MCLEXE $INPUT -te 2 --abc -I $INFLATION -o $OUTPUT
+		$MCLEXE $INPUT --abc -I $INFLATION -o $OUTPUT
 	else
 		echo "Input had no data" > $OUTPUT
 	fi

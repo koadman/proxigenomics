@@ -21,6 +21,8 @@ wrap.add('wgs_base', [config['wgs_base']],  create_dir=False)
 # Variation
 genomes = appconfig.find_files(config['community']['folder'], config['community']['seq'])
 commPaths = [os.path.dirname(pn) for pn in genomes]
+# For testing - constraint on branch length
+#commPaths = [pn for pn in commPaths if float(os.path.basename(pn)) > 0.4 and float(os.path.basename(pn)) < 1]
 wrap.add('community', commPaths)
 
 tableFolder = os.path.join(config['reference']['folder'], config['reference']['table_folder'])
@@ -36,6 +38,7 @@ def generate_wgs(outdir, c):
     source = '{1[community][folder]}/{0[community]}/{0[refseq]}'.format(c, config)
     action = 'bin/pbsrun_ART.sh {0[seed]} {0[wgs_insert_length]} {0[wgs_insert_sd]} ' \
              '{0[wgs_read_length]} {0[wgs_xfold]} $SOURCE.abspath {od}/{0[wgs_base]}'.format(c, od=outdir)
+
     return 'r1', 'r2', env.Command(target, source, action)
 
 
@@ -46,6 +49,7 @@ def assemble_wgs(work_dir, c):
     target = '{od}/{0[wgs_base]}.contigs.fasta'.format(c, od=asm_dir)
     source = [str(c['generate_wgs']['r1']), str(c['generate_wgs']['r2'])]
     action = 'bin/a5submit.sh -mwf -t {0[wgs_base]} $SOURCES.abspath {od}'.format(c, od=asm_dir)
+
     return 'ctg', env.Command(target, source, action)
 
 
@@ -54,6 +58,7 @@ def index_ctg(outdir, c):
     source = str(c['assemble_wgs']['ctg'])
     target = source + '.bwt'
     action = 'bin/pbsrun_INDEX.sh $SOURCE.abspath'.format(c)
+
     return env.Command(target, source, action)
 
 wrap.add_controls(Environment())

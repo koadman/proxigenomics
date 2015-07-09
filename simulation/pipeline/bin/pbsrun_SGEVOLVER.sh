@@ -23,9 +23,9 @@ SGPARMS=$HICPIPE/bin/sgevolver/prepParams.py
 
 if [ -z "$PBS_ENVIRONMENT" ] # SUBMIT MODE
 then
-	if [ $# -ne 6 ]
+	if [ $# -ne 7 ]
 	then
-		echo "Usage: [seed] [scale] [length] [tree] [input seq] [output seqs]"
+		echo "Usage: [seed] [tree scale] [sg scale] [length] [tree] [input seq] [output seqs]"
 		exit 1
 	fi
 
@@ -37,10 +37,10 @@ then
 
 	echo "Submitting run"
 
-	trap 'rollback_rm_file $6; exit $?' INT TERM EXIT
+	trap 'rollback_rm_file $7; exit $?' INT TERM EXIT
 	# get the absolute path for output
-	OUT_ABS=`readlink -f $6`
-	qsub -W block=true -v SEED=$1,SCALE="$2",LENGTH=$3,TREE=$4,INPUT_SEQ=$5,OUTPUT_SEQ=$OUT_ABS $0
+	OUT_ABS=`readlink -f $7`
+	qsub -W block=true -v SEED=$1,TR_SCALE="$2",SG_SCALE="$3",LENGTH=$4,TREE=$5,INPUT_SEQ=$6,OUTPUT_SEQ=$OUT_ABS $0
 	trap - INT TERM EXIT
 	echo "Finished"
 
@@ -57,7 +57,7 @@ else # EXECUTION MODE
     cd $OUTDIR
 
     # create runtime parameter file
-    $SGPARMS --tree `basename $TREE` --seq `basename $INPUT_SEQ` --seq-len $LENGTH --tree-scale $SCALE
+    $SGPARMS --tree `basename $TREE` --seq `basename $INPUT_SEQ` --seq-len $LENGTH --tree-scale $TR_SCALE --sg-scale $SG_SCALE
 
 
     $SGBIN $INPUT_SEQ $SEED

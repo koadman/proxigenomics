@@ -5,7 +5,7 @@
 #
 
 #PBS -q smallq
-#PBS -l select=1:ncpus=2:mem=32gb
+#PBS -l select=1:ncpus=1:mem=32gb
 #PBS -e logs/
 #PBS -o logs/
 #PBS -N GRAPHJOB
@@ -20,24 +20,45 @@ BAMTOEDGES=bin/bamToEdges.py
 
 if [ -z "$PBS_ENVIRONMENT" ] # SUBMIT MODE
 then
-	
-	if [ $# -ne 4 ]
+
+    while getopts ":s" opt
+	do
+		case $opt in
+			s)
+				SELFLOOP=1
+				;;
+			\?)
+				echo "Invalid option: -$OPTARG"
+				;;
+		esac
+	done
+
+	shift $(( OPTIND-1 ))
+
+	if [ $# -ne 3 ]
 	then
-		echo "Usage: [hic2ctg.bam] [wgs2ctg.bam] [edge out] [node out]"
+		echo "Usage: [options] [hic2ctg.bam] [edge out] [node out]"
+		echo "options:"
+		echo "  -s   add self-loops for all nodes"
 		exit 1
 	fi
 
 	echo "Submitting run"
-	TARGET=( $3 $4 )
+	TARGET=( $2 $3 )
 	trap 'rollback_rm_files ${TARGET[@]}; exit $?' INT TERM EXIT
-	qsub -W block=true -v HIC2CTG=$1,WGS2CTG=$2,EDGES=$3,NODES=$4 $0
+	qsub -W block=true -v SELFLOOP=$SELFLOOP,HIC2CTG=$1,EDGES=$2,NODES=$3 $0
 	trap - INT TERM EXIT
 	echo "Finished"
 
 else # EXECUTION MODE
 	echo "Running"
 	cd $PBS_O_WORKDIR
-	
-	$BAMTOEDGES ${HIC2CTG} ${WGS2CTG%.bam}.idxstats $EDGES $NODES
+
+    if [ -z $SELFLOOP ]
+    then
+    	$BAMTOEDGES --add-selfloops $HIC2CTG $EDGES $NODES
+    else
+    	$BAMTOEDGES --add-selfloops $HIC2CTG $EDGES $NODES
+    fi
 	
 fi

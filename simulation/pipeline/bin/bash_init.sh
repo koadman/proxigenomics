@@ -1,3 +1,4 @@
+source /etc/profile.d/modules.sh
 
 set -o pipefail
 set -e

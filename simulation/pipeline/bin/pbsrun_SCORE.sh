@@ -5,7 +5,7 @@
 #
 
 #PBS -q smallq
-#PBS -l select=1:ncpus=2:mem=32gb
+#PBS -l select=1:ncpus=1:mem=32gb
 #PBS -e logs/
 #PBS -o logs/
 #PBS -N SCOREJOB
@@ -16,9 +16,9 @@ then
 	source $BINDIR/bash_init.sh
 fi
 
-JOINTRUTH=bin/mclJoinWithTruth.py
 F1SCORE=bin/f1score.py
 VMEASURE=bin/vmeasure.py
+BCUBED=bin/bcubed.py
 
 if [ -z "$PBS_ENVIRONMENT" ] # SUBMIT MODE
 then
@@ -29,7 +29,7 @@ then
 	fi
 	echo "Submitting run"
 
-    TARGETS=( ${CLUSTERING}.f1, ${CLUSTERING}.vm )
+    TARGETS=( ${CLUSTERING}.f1, ${CLUSTERING}.vm, ${CLUSTERING}.bc )
 	trap 'rollback_rm_files "${TARGETS[@]}"; exit $?' INT TERM EXIT
 	qsub -W block=true -v TRUTH=$1,CLUSTERING=$2 $0
 	trap - INT TERM EXIT
@@ -39,6 +39,8 @@ else # EXECUTION MODE
 	echo "Running"
 	cd $PBS_O_WORKDIR
 
-	$F1SCORE $TRUTH $CLUSTERING ${CLUSTERING}.f1
+	$F1SCORE -s 1500 $TRUTH $CLUSTERING ${CLUSTERING}.f1
 	$VMEASURE $TRUTH $CLUSTERING ${CLUSTERING}.vm
+	$BCUBED -o ${CLUSTERING}.bc $TRUTH $CLUSTERING
+
 fi

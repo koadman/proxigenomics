@@ -7,7 +7,8 @@ parser = argparse.ArgumentParser(description='Prepare the parameter file for run
 parser.add_argument('--tree', required=True, nargs=1, help='Phylogenetic tree')
 parser.add_argument('--seq', required=True, nargs=1, help='Raw ancestral sequence')
 parser.add_argument('--seq-len', required=True, type=int, nargs=1, help='Length of generated sequences (bp)')
-parser.add_argument('--tree-scale', default=1, type=float, nargs=1, help="Tree scale factor")
+parser.add_argument('--tree-scale', default=1, type=float, nargs=1, help='Scale factor applied to tree branch lengths')
+parser.add_argument('--sg-scale', default=0.1, type=float, nargs=1, help='Scale factor applied on top of tree-scale and used in inde/inv/ht events')
 parser.add_argument('--fmt', choices=['newick', 'nexus', 'nexml', 'phyloxml', 'cdao'],
                     default='newick', nargs=1, help='Tree format')
 parser.add_argument('-o', dest='output', default='.', nargs=1, help='Output path')
@@ -38,6 +39,10 @@ try:
         h_out.write('$seq_length={0};\n'.format(args.seq_len[0]))
         h_out.write('$tree_scale={0};\n'.format(args.tree_scale[0]))
         h_out.write('$nt_sub_scale={0};\n'.format(args.tree_scale[0]))
+        h_out.write('$small_ht_rate={0};\n'.format(args.tree_scale[0]*args.sg_scale[0]))
+        h_out.write('$large_ht_rate={0};\n'.format(args.tree_scale[0]*args.sg_scale[0]))
+        h_out.write('$indel_rate={0};\n'.format(args.tree_scale[0]*args.sg_scale[0]))
+        h_out.write('$inv_rate={0};\n'.format(args.tree_scale[0]*args.sg_scale[0]))
         h_out.write('#\n# extra constants\n#\n')
         h_out.write('$tools_dir="";\n' \
                     '$mauve_dir="";\n' \
@@ -45,13 +50,9 @@ try:
                     '$lagan_dir="";\n' \
                     '$tba_dir="";\n' \
                     '$gamma_shape=1;\n' \
-                    '$indel_rate=0.1;\n' \
-                    '$small_ht_rate=0.05;\n' \
                     '$small_ht_size=200;\n' \
-                    '$large_ht_rate=0.005;\n' \
                     '$large_ht_min=10000;\n' \
                     '$large_ht_max=60000;\n' \
-                    '$inv_rate=0.005;\n' \
                     '$inv_size=50000;\n' \
                     '$nt_a_freq=0.25;\n' \
                     '$nt_c_freq=0.25;\n' \
