@@ -8,15 +8,17 @@ import sys
 import traceback
 
 parser = argparse.ArgumentParser(description='Recursively scan path and tabulate scoring data')
-parser.add_argument('path', nargs=1, help='Path to scan')
-parser.add_argument('csv', nargs=1, help='Output CSV')
+parser.add_argument('--suffix', nargs='*', default=['.vm', '.f1', '.bc'],
+                    help='One or more filename suffixes to target in recursive search [(.vm, .f1, .bc)]')
+parser.add_argument('-p', '--path', metavar='DIR', help='Input path to scan')
+parser.add_argument('-o', '--output', metavar='FILE', help='Output table')
 args = parser.parse_args()
 
 score_cols = None
 lead_cols = None
 score_table = []
 
-for path, dirs, files in os.walk(args.path[0]):
+for path, dirs, files in os.walk(args.path):
 
     factors = None
     score_vals = {}
@@ -55,4 +57,4 @@ for path, dirs, files in os.walk(args.path[0]):
         score_table.append(factors + [score_vals.get(sc, 'NA') for sc in score_cols])
 
 df = pandas.DataFrame(score_table, columns=lead_cols + score_cols)
-df.to_csv(args.csv[0])
+df.to_csv(args.output)
