@@ -2,6 +2,8 @@
 import argparse
 import pysam
 import numpy as np
+import networkx as nx
+import community as com
 import math
 import sys
 from Bio import SeqIO
@@ -35,6 +37,36 @@ def dump_pairs(filename, pairs):
         od = OrderedDict(sorted(ndict.items()))
         yaml.dump(od, out_h)
 
+
+def inverse_edge_weights(g):
+    for u, v in g.edges():
+        g.edge[u][v]['weight'] = 1.0/g[u][v]['weight']
+
+
+def decompose_graph(g):
+    """
+    Using the Louvain algorithm for community detection, as
+    implemented in the community module, determine the partitioning
+    which maximises the modularity. For each individual partition
+    create the sub-graph of g
+
+    :param g: the graph to decompose
+    :return: the set of sub-graphs which form the best partitioning of g
+    """
+    decomposed = []
+    part = com.best_partition(g)
+    part_labels = np.unique(part.values())
+
+    # for each partition, create the sub-graph
+    for pi in part_labels:
+        # start with a complete copy of the graph
+        gi = g.copy()
+        # build the list of nodes not in this partition and remove them
+        to_remove = [n for n in g.nodes_iter() if part[n] != pi]
+        gi.remove_nodes_from(to_remove)
+        decomposed.append(gi)
+
+    return decomposed
 
 """
 Simulator reads have 'fwd' and 'rev' appended to their pair names
@@ -180,7 +212,7 @@ class Grouping:
         # when measuring separation.
         self.centers = []
         for n, num_bins in enumerate(self.bins):
-            if num_bins == -1:
+            if num_bins == Grouping.MASK:
                 self.centers.append(None)
             else:
                 self.centers.append(np.array([
@@ -327,6 +359,76 @@ class FragmentMap:
                 continue
             _order[i] = shuf[n]
             n += 1
+
+    def create_contig_graph(self):
+        """
+        Create a graph where contigs are nodes and edges linking
+        nodes are weighted by the cumulative weight of contacts shared
+        between them, normalized by the product of the number of fragments
+        involved.
+
+        :return: graph of contigs
+        """
+        _order = self.order.order
+        _bins = self.groupings.bins
+
+        g = nx.Graph()
+        g.add_nodes_from(_order)
+
+        for i in xrange(len(_order)):
+            if _bins[i] == Grouping.MASK:
+                continue
+            for j in xrange(i+1, len(_order)):
+                if _bins[j] == Grouping.MASK:
+                    continue
+                sm = self.get_submatrix(i, j) + 1
+                n_frg = len(self.groupings.map[i]) * len(self.groupings.map[j])
+                # networkx written to graphml will choke on numpy floats
+                w = float(np.sum(sm)) / n_frg
+                g.add_edge(i, j, weight=w)
+        return g
+
+    def order_contigs(self):
+        """
+        Attempt to determine an initial starting order of contigs based
+        only upon the cross terms (linking contacts) between each using
+        graphical techniques.
+
+        Beginning with a graph of contigs, where edges are weighted by
+        contact weight, it is decomposed using Louvain modularity. Taking
+        inverse edge weights, the shortest path of the minimum spanning
+        tree of each subgraph is used to define an order. The subgraph
+        orderings are then concatenated together to define a full
+        ordering of the sample.
+
+        Those with no edges, are included by appear in an indeterminate
+        order.
+
+        :return: order of contigs
+        """
+        g = self.create_contig_graph()
+        decomposed_subgraphs = decompose_graph(g)
+
+        new_order = []
+        for gi in decomposed_subgraphs:
+            inverse_edge_weights(gi)
+            mst = nx.minimum_spanning_tree(gi)
+            paths = nx.shortest_path(mst, weight='weight')
+            max_len = 0
+            for i, ti in enumerate(paths):
+                for j, si in enumerate(paths[ti]):
+                    l = len(paths[ti][si])
+                    if l > max_len:
+                        max_len = l
+                        max_idx = (ti, si)
+
+            if max_len != gi.order():
+                # A spanning tree should be able to traverse all nodes... I hope!
+                raise RuntimeError('Not all nodes were traversed in the path')
+
+            new_order.extend(paths[max_idx[0]][max_idx[1]])
+
+        return new_order
 
     def get_submatrix(self, i, j):
         """
@@ -704,7 +806,13 @@ if __name__ == '__main__':
                 fm.raw_map, fm.groupings.total_bins(), remove_diag=args.remove_diag)
 
     with open(args.output[0] + '.log', 'w') as log_h:
-        starting_order = fm.order.order.tolist()
+
+        print 'Starting order    ', fm.order.order.tolist()
+
+        init_order = fm.order_contigs()
+        fm.set_order(init_order)
+        print 'Initial reordering', init_order
+
         max_n = args.max_iter
         max_lL = None
         max_order = None
