@@ -2,6 +2,7 @@
 
 from Bio import Alphabet
 from Bio import SeqIO
+from Bio.Seq import Seq
 
 from collections import OrderedDict
 from optparse import OptionParser
@@ -12,6 +13,11 @@ import numpy
 import re
 import time
 import sys
+
+from distutils.version import StrictVersion
+if StrictVersion(numpy.__version__) < StrictVersion("1.9.0"):
+	sys.stderr.write("Error: numpy version 1.9.0 or later required\n")
+	sys.exit(-1)
 
 #
 # Globals
