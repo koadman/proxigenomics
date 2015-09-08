@@ -487,7 +487,7 @@ class Community:
 
 def make_unconstrained_part_a():
     rep = comm.get_replicon_by_index(comm.pick_replicon())
-    pos6c = rep.random_cut_site('6cut_1')
+    pos6c = rep.random_cut_site('4cut')
     # pos6c = rep.random_cut_site('515F')
     frag_len = int(numpy.random.normal(SHEARING_MEAN, SHEARING_SD)/2)
     if pos6c + frag_len > rep.length():
@@ -499,19 +499,24 @@ def make_unconstrained_part_a():
 
 def make_unconstrained_part_b(part_a):
     rep = part_a.replicon.parent_cell.pick_inter_rep(part_a.replicon)
-    pos6c = rep.random_cut_site('6cut_2')
+    pos6c = rep.random_cut_site('4cut')
 #    pos4c = rep.nearest_cut_site_below('4cut', pos6c) # use to model a 4-cutter RAD-seq
     frag_len = int(numpy.random.normal(SHEARING_MEAN, SHEARING_SD)/2)
     if pos6c < frag_len:
 	frag_len = pos6c - 1 # FIXME: this needs to loop around. VERY IMPORTANT for small plasmids
-    seq = rep.subseq(pos6c-frag_len, pos6c, True)
-    return Part(seq, pos6c-frag_len, pos6c, True, rep)
+    pos4c = pos6c - frag_len
+    seq = rep.subseq(pos4c, pos6c, True)
+    return Part(seq, pos4c, pos6c, True, rep)
 
 
 def make_constrained_part_b(part_a):
     loc = part_a.replicon.constrained_upstream_location(part_a.pos1)
-    pos6c = part_a.replicon.nearest_cut_site_by_distance('6cut_2', loc)
-    pos4c = part_a.replicon.nearest_cut_site_below('4cut', pos6c)
+    pos6c = part_a.replicon.nearest_cut_site_by_distance('4cut', loc)
+#    pos4c = part_a.replicon.nearest_cut_site_below('4cut', pos6c)
+    frag_len = int(numpy.random.normal(SHEARING_MEAN, SHEARING_SD)/2)
+    if pos6c < frag_len:
+	frag_len = pos6c - 1 # FIXME: this needs to loop around. VERY IMPORTANT for small plasmids
+    pos4c = pos6c - frag_len
     seq = part_a.replicon.subseq(pos4c, pos6c, True)
     return Part(seq, pos4c, pos6c, True, part_a.replicon)
 
@@ -597,8 +602,8 @@ with open(options.output_file, 'wb') as h_output:
             part_b = make_unconstrained_part_b(part_a)
 
         # Join parts
-        # PartA + PartB
-        fragment = part_a.seq + part_b.seq
+        # part B is upstream of cut site, A is downstream
+        fragment = part_b.seq + part_a.seq
         if len(fragment) < 200 or len(fragment) > 1000:
             # only accept fragments within a size range
             skip_count += 1
