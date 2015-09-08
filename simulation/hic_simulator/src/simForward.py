@@ -17,6 +17,7 @@ import sys
 from distutils.version import StrictVersion
 if StrictVersion(numpy.__version__) < StrictVersion("1.9.0"):
 	sys.stderr.write("Error: numpy version 1.9.0 or later required\n")
+	sys.stderr.write("If numpy is installed in both your home & system directory, you may need to run with python -S\n")
 	sys.exit(-1)
 
 #
