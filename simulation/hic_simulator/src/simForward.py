@@ -16,10 +16,11 @@ import sys
 
 # numpy version 1.8.2 is apparently incompatible
 from distutils.version import StrictVersion
+
 if StrictVersion(numpy.__version__) < StrictVersion("1.9.0"):
-	sys.stderr.write("Error: numpy version 1.9.0 or later required\n")
-	sys.stderr.write("If numpy is installed in both your home & system directory, you may need to run with python -S\n")
-	sys.exit(-1)
+    sys.stderr.write("Error: numpy version 1.9.0 or later required\n")
+    sys.stderr.write("If numpy is installed in both your home & system directory, you may need to run with python -S\n")
+    sys.exit(-1)
 
 #
 # Globals
@@ -42,15 +43,17 @@ RANDOM_STATE = None
 SHEARING_MEAN = 400
 SHEARING_SD = 50
 
+
 class EmpiricalDistribution:
     """
     Defining an empirical distribution, we can then use it to draw random
     numbers.
     """
+
     def __init__(self, shape, length, bins=1000):
         self.shape = shape
         self.length = length
-        self.scale = 1.0/length
+        self.scale = 1.0 / length
         self.bins = bins
         self.xsample = numpy.linspace(0, self.length, self.bins, endpoint=True, dtype=numpy.float64)
         self.ysample = self._cdf(self.xsample)
@@ -63,7 +66,7 @@ class EmpiricalDistribution:
         :param x:
         :return:
         """
-        return 0.5 * (1.0 - (1.0 - self.shape)**x + self.scale * x)
+        return 0.5 * (1.0 - (1.0 - self.shape) ** x + self.scale * x)
 
     def rand(self):
         """
@@ -83,7 +86,7 @@ class EmpiricalDistribution:
         elif ix == 0:
             ix += 1
         # interp value
-        return yv[ix-1] + (yv[ix] - yv[ix-1]) * ((x - xv[ix-1]) / (xv[ix] - xv[ix-1]))
+        return yv[ix - 1] + (yv[ix] - yv[ix - 1]) * ((x - xv[ix - 1]) / (xv[ix] - xv[ix - 1]))
 
 
 def find_restriction_sites(enzyme, seq):
@@ -244,7 +247,6 @@ class Replicon:
         return str(self.parent_cell) + '.' + self.name
 
 
-
     def length(self):
         return len(self.sequence)
 
@@ -318,12 +320,12 @@ class Replicon:
         return location
         """
         delta = self.emp_dist.rand()
-        min_len, max_len = 3, self.length()-3
+        min_len, max_len = 3, self.length() - 3
         while delta < min_len or delta > max_len:
             # redraw if too small or large
             delta = self.emp_dist.rand()
 
-        #delta = draw_delta(3, self.length() - 3)
+        # delta = draw_delta(3, self.length() - 3)
         # TODO The edge cases might have off-by-one errors, does it matter?'
         loc = origin + delta
         if loc > self.length() - 1:
@@ -462,48 +464,48 @@ class Community:
         replicon = self.get_replicon_by_index(replicon_index)
         return int(RANDOM_STATE.uniform() * replicon.length()), True
 
-    # def constrained_read_location(self, replicon_index, first_location, forward):
-    #     """Return a location (position and strand) on a replicon where the position is
-    #     constrained to follow a prescribed distribution relative to the position of the
-    #     first location.
-    #
-    #     Strand is always same as first.
-    #
-    #     return location (pos=int, strand=bool)
-    #     """
-    #     replicon = self.get_replicon_by_index(replicon_index)
-    #     delta = draw_delta(500, replicon.length() - 500)
-    #     if forward:
-    #         # TODO The edge cases might have off-by-one errors, does it matter?'
-    #         loc = first_location + delta
-    #         if loc > replicon.length() - 1:
-    #             loc -= replicon.length()
-    #     else:
-    #         loc = first_location - delta
-    #         if loc < 0:
-    #             loc = replicon.length() - loc
-    #     return loc, forward
+        # def constrained_read_location(self, replicon_index, first_location, forward):
+        # """Return a location (position and strand) on a replicon where the position is
+        #     constrained to follow a prescribed distribution relative to the position of the
+        #     first location.
+        #
+        #     Strand is always same as first.
+        #
+        #     return location (pos=int, strand=bool)
+        #     """
+        #     replicon = self.get_replicon_by_index(replicon_index)
+        #     delta = draw_delta(500, replicon.length() - 500)
+        #     if forward:
+        #         # TODO The edge cases might have off-by-one errors, does it matter?'
+        #         loc = first_location + delta
+        #         if loc > replicon.length() - 1:
+        #             loc -= replicon.length()
+        #     else:
+        #         loc = first_location - delta
+        #         if loc < 0:
+        #             loc = replicon.length() - loc
+        #     return loc, forward
 
 
 def make_unconstrained_part_a():
     rep = comm.get_replicon_by_index(comm.pick_replicon())
     pos6c = rep.random_cut_site('4cut')
     # pos6c = rep.random_cut_site('515F')
-    frag_len = int(numpy.random.normal(SHEARING_MEAN, SHEARING_SD)/2)
+    frag_len = int(numpy.random.normal(SHEARING_MEAN, SHEARING_SD) / 2)
     if pos6c + frag_len > rep.length():
-	frag_len = pos6c - rep.length() # FIXME: this needs to loop around. VERY IMPORTANT for small plasmids
-#    pos4c = rep.nearest_cut_site_above('4cut', pos6c) # use to model a 4-cutter RAD-seq
-    seq = rep.subseq(pos6c, (pos6c+frag_len), True)
-    return Part(seq, pos6c, pos6c+frag_len, True, rep)
+        frag_len = pos6c - rep.length()  # FIXME: this needs to loop around. VERY IMPORTANT for small plasmids
+    # pos4c = rep.nearest_cut_site_above('4cut', pos6c) # use to model a 4-cutter RAD-seq
+    seq = rep.subseq(pos6c, (pos6c + frag_len), True)
+    return Part(seq, pos6c, pos6c + frag_len, True, rep)
 
 
 def make_unconstrained_part_b(part_a):
     rep = part_a.replicon.parent_cell.pick_inter_rep(part_a.replicon)
     pos6c = rep.random_cut_site('4cut')
-#    pos4c = rep.nearest_cut_site_below('4cut', pos6c) # use to model a 4-cutter RAD-seq
-    frag_len = int(numpy.random.normal(SHEARING_MEAN, SHEARING_SD)/2)
+    # pos4c = rep.nearest_cut_site_below('4cut', pos6c) # use to model a 4-cutter RAD-seq
+    frag_len = int(numpy.random.normal(SHEARING_MEAN, SHEARING_SD) / 2)
     if pos6c < frag_len:
-	frag_len = pos6c - 1 # FIXME: this needs to loop around. VERY IMPORTANT for small plasmids
+        frag_len = pos6c - 1  # FIXME: this needs to loop around. VERY IMPORTANT for small plasmids
     pos4c = pos6c - frag_len
     seq = rep.subseq(pos4c, pos6c, True)
     return Part(seq, pos4c, pos6c, True, rep)
@@ -512,10 +514,10 @@ def make_unconstrained_part_b(part_a):
 def make_constrained_part_b(part_a):
     loc = part_a.replicon.constrained_upstream_location(part_a.pos1)
     pos6c = part_a.replicon.nearest_cut_site_by_distance('4cut', loc)
-#    pos4c = part_a.replicon.nearest_cut_site_below('4cut', pos6c)
-    frag_len = int(numpy.random.normal(SHEARING_MEAN, SHEARING_SD)/2)
+    # pos4c = part_a.replicon.nearest_cut_site_below('4cut', pos6c)
+    frag_len = int(numpy.random.normal(SHEARING_MEAN, SHEARING_SD) / 2)
     if pos6c < frag_len:
-	frag_len = pos6c - 1 # FIXME: this needs to loop around. VERY IMPORTANT for small plasmids
+        frag_len = pos6c - 1  # FIXME: this needs to loop around. VERY IMPORTANT for small plasmids
     pos4c = pos6c - frag_len
     seq = part_a.replicon.subseq(pos4c, pos6c, True)
     return Part(seq, pos4c, pos6c, True, part_a.replicon)
@@ -525,6 +527,8 @@ def make_constrained_part_b(part_a):
 # Commandline interface
 #
 parser = OptionParser()
+parser.add_option('--old-naming', dest='old_naming', default=False, action='store_true',
+                  help='Original naming convention of reads is required for some parsing tools in pipeline')
 parser.add_option('--site-dup', dest='site_dup', default=False, action='store_true',
                   help='Hi-C style ligation junction site duplication')
 parser.add_option('-n', '--num-frag', dest='num_frag',
@@ -543,7 +547,7 @@ parser.add_option('-o', '--output', dest='output_file',
                   help='Output Hi-C reads file', metavar='FILE')
 parser.add_option('-f', '--ofmt', dest='output_format', default='fastq',
                   help='Output format', choices=['fasta', 'fastq'], metavar='output_format [fasta, fastq]')
-#parser.add_option('--split-reads', dest='split', default=False, action='store_true',
+# parser.add_option('--split-reads', dest='split', default=False, action='store_true',
 #                  help='Split output reads into separate R1/R2 files')
 (options, args) = parser.parse_args()
 
@@ -572,6 +576,17 @@ RANDOM_STATE = numpy.random.RandomState(options.seed)
 # Initialize community object
 print "Initializing community"
 comm = Community(options.inter_prob, options.comm_table, options.genome_seq)
+
+# this logic should only be required until such time as scripts
+# which were dependent on the old naming scheme are updated.
+# The old scheme entailed explicitly mentioning the direction of reads
+# in the name, which most Illumina aware tools expect one ID per read-pair
+if options.old_naming:
+    fwd_fmt = 'frg{0}fwd'
+    rev_fmt = 'frg{0}rev'
+else:
+    fwd_fmt = 'frg{0} fwd'
+    rev_fmt = 'frg{0} rev'
 
 # Open output file for writing reads
 with open(options.output_file, 'wb') as h_output:
@@ -627,11 +642,11 @@ with open(options.output_file, 'wb') as h_output:
             continue
 
         read1 = make_read(fragment, True, options.read_length)
-        read1.id = 'frg{0} fwd'.format(frag_count)
+        read1.id = fwd_fmt.format(frag_count)
         read1.description = '{0} {1}'.format(part_a.seq.id, part_a.seq.description)
 
         read2 = make_read(fragment, False, options.read_length)
-        read2.id = 'frg{0} rev'.format(frag_count)
+        read2.id = rev_fmt.format(frag_count)
         read2.description = '{0} {1}'.format(part_b.seq.id, part_b.seq.description)
 
         write_reads(h_output, [read1, read2], options.output_format, dummy_q=True)
