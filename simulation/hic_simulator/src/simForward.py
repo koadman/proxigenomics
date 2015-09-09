@@ -2,6 +2,7 @@
 
 from Bio import Alphabet
 from Bio import SeqIO
+from Bio.Seq import Seq
 
 from collections import OrderedDict
 from optparse import OptionParser
@@ -159,7 +160,7 @@ class Cell:
         return self.name
 
     def init_prob(self):
-        """Initialize the probabilities for replicon selection from within a cell. 
+        """Initialize the probabilities for replicon selection from within a cell.
         Afterwards, produce a CDF which will be used for random sampling.
         """
         # Number of replicons in cell
@@ -302,7 +303,7 @@ class Replicon:
         """Return a location (position and strand) on this replicon where the position is
         constrained to follow a prescribed distribution relative to the position of the
         first location.
-        
+
         return location
         """
         delta = self.emp_dist.rand()
@@ -322,13 +323,13 @@ class Replicon:
 
 class Community:
     """Represents the community, maintaining a registry of cells and replicons.
-    
+
     Both cells and replicons are expected to be uniquely named across the commmunity. This constraint comes
     from the requirement that a multi-fasta file contain unique sequence identifiers.
-    
+
     A table is used for a basic community definition, with the following three column format. Lines beginning
     with # and empty lines are ignored.
-    
+
     [replicon name] [cell name] [abundance]
     """
 
@@ -419,7 +420,7 @@ class Community:
     def pick_replicon(self, skip_index=None):
         """Random selection of replicon from community. If skipIndex supplied, do not return
         the replicon with this index.
-        
+
         return the index"""
         if skip_index is None:
             return self.select_replicon(RANDOM_STATE.uniform())
@@ -444,7 +445,7 @@ class Community:
     def unconstrained_read_location(self, replicon_index):
         """Return a location (position and strand) on a replicon where the position is
         uniformly sampled across the replicons sequence.
-        
+
         Returns tuple (pos=int, strand=bool)
         """
         replicon = self.get_replicon_by_index(replicon_index)
@@ -502,6 +503,8 @@ def make_constrained_part_b(part_a):
 # Commandline interface
 #
 parser = OptionParser()
+parser.add_option('--site-dup', dest='site_dup', default=False, action='store_true',
+                  help='Hi-C style ligation junction site duplication')
 parser.add_option('-n', '--num-frag', dest='num_frag',
                   help='Number of Hi-C fragments to generate reads', metavar='INT', type='int')
 parser.add_option('-l', '--read-length', dest='read_length',
@@ -556,6 +559,9 @@ with open(options.output_file, 'wb') as h_output:
     overlap_count = 0
     frag_count = 0
 
+    # junction with recognition site duplication
+    hic_junction = 'xxx' + GLOBAL_CUT4.site + 'yyy' + GLOBAL_CUT4.site + 'zzz'
+
     while frag_count < options.num_frag:
         # Fragment creation
 
@@ -578,9 +584,13 @@ with open(options.output_file, 'wb') as h_output:
             # ligation crosses replicons
             part_b = make_unconstrained_part_b(part_a)
 
-        # Join parts
-        # PartA + PartB
-        fragment = part_a.seq + part_b.seq
+        # Join parts A and B
+        if options.site_dup:
+            fragment = part_a.seq + hic_junction + part_b.seq
+        else:
+            # meta3C does not create duplicated sites
+            fragment = part_a.seq + part_b.seq
+
         if len(fragment) < 200 or len(fragment) > 1000:
             # only accept fragments within a size range
             skip_count += 1
