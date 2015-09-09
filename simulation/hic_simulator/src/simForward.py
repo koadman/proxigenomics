@@ -14,6 +14,13 @@ import re
 import time
 import sys
 
+# numpy version 1.8.2 is apparently incompatible
+from distutils.version import StrictVersion
+if StrictVersion(numpy.__version__) < StrictVersion("1.9.0"):
+	sys.stderr.write("Error: numpy version 1.9.0 or later required\n")
+	sys.stderr.write("If numpy is installed in both your home & system directory, you may need to run with python -S\n")
+	sys.exit(-1)
+
 #
 # Globals
 #
@@ -30,6 +37,10 @@ MIXED_GEOM_PROB = 6.0e-6
 # this is initialized at start time
 RANDOM_STATE = None
 
+# Average & SD size that fragments are sheared (or tagmented) to during
+# adapter ligation
+SHEARING_MEAN = 400
+SHEARING_SD = 50
 
 class EmpiricalDistribution:
     """
@@ -476,25 +487,36 @@ class Community:
 
 def make_unconstrained_part_a():
     rep = comm.get_replicon_by_index(comm.pick_replicon())
-    pos6c = rep.random_cut_site('6cut_1')
+    pos6c = rep.random_cut_site('4cut')
     # pos6c = rep.random_cut_site('515F')
-    pos4c = rep.nearest_cut_site_above('4cut', pos6c)
-    seq = rep.subseq(pos6c, pos4c, True)
-    return Part(seq, pos6c, pos4c, True, rep)
+    frag_len = int(numpy.random.normal(SHEARING_MEAN, SHEARING_SD)/2)
+    if pos6c + frag_len > rep.length():
+	frag_len = pos6c - rep.length() # FIXME: this needs to loop around. VERY IMPORTANT for small plasmids
+#    pos4c = rep.nearest_cut_site_above('4cut', pos6c) # use to model a 4-cutter RAD-seq
+    seq = rep.subseq(pos6c, (pos6c+frag_len), True)
+    return Part(seq, pos6c, pos6c+frag_len, True, rep)
 
 
 def make_unconstrained_part_b(part_a):
     rep = part_a.replicon.parent_cell.pick_inter_rep(part_a.replicon)
-    pos6c = rep.random_cut_site('6cut_2')
-    pos4c = rep.nearest_cut_site_below('4cut', pos6c)
+    pos6c = rep.random_cut_site('4cut')
+#    pos4c = rep.nearest_cut_site_below('4cut', pos6c) # use to model a 4-cutter RAD-seq
+    frag_len = int(numpy.random.normal(SHEARING_MEAN, SHEARING_SD)/2)
+    if pos6c < frag_len:
+	frag_len = pos6c - 1 # FIXME: this needs to loop around. VERY IMPORTANT for small plasmids
+    pos4c = pos6c - frag_len
     seq = rep.subseq(pos4c, pos6c, True)
     return Part(seq, pos4c, pos6c, True, rep)
 
 
 def make_constrained_part_b(part_a):
     loc = part_a.replicon.constrained_upstream_location(part_a.pos1)
-    pos6c = part_a.replicon.nearest_cut_site_by_distance('6cut_2', loc)
-    pos4c = part_a.replicon.nearest_cut_site_below('4cut', pos6c)
+    pos6c = part_a.replicon.nearest_cut_site_by_distance('4cut', loc)
+#    pos4c = part_a.replicon.nearest_cut_site_below('4cut', pos6c)
+    frag_len = int(numpy.random.normal(SHEARING_MEAN, SHEARING_SD)/2)
+    if pos6c < frag_len:
+	frag_len = pos6c - 1 # FIXME: this needs to loop around. VERY IMPORTANT for small plasmids
+    pos4c = pos6c - frag_len
     seq = part_a.replicon.subseq(pos4c, pos6c, True)
     return Part(seq, pos4c, pos6c, True, part_a.replicon)
 
@@ -560,7 +582,7 @@ with open(options.output_file, 'wb') as h_output:
     frag_count = 0
 
     # junction with recognition site duplication
-    hic_junction = 'xxx' + GLOBAL_CUT4.site + 'yyy' + GLOBAL_CUT4.site + 'zzz'
+    hic_junction = GLOBAL_CUT4.site + GLOBAL_CUT4.site
 
     while frag_count < options.num_frag:
         # Fragment creation
@@ -605,11 +627,11 @@ with open(options.output_file, 'wb') as h_output:
             continue
 
         read1 = make_read(fragment, True, options.read_length)
-        read1.id = 'frg{0}fwd'.format(frag_count)
+        read1.id = 'frg{0} fwd'.format(frag_count)
         read1.description = '{0} {1}'.format(part_a.seq.id, part_a.seq.description)
 
         read2 = make_read(fragment, False, options.read_length)
-        read2.id = 'frg{0}rev'.format(frag_count)
+        read2.id = 'frg{0} rev'.format(frag_count)
         read2.description = '{0} {1}'.format(part_b.seq.id, part_b.seq.description)
 
         write_reads(h_output, [read1, read2], options.output_format, dummy_q=True)

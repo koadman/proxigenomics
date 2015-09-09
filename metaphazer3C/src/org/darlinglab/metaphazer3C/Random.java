@@ -11,9 +11,16 @@ public class Random {
 		return sampleCategorical(freqs);
 	}
 	public static int sampleCategorical(float[] freqs){
-		float r = randy.nextFloat();
-		float sum = 0;
-		for( float f : freqs){ sum += f; }
+		double[] d = new double[freqs.length];
+		for(int i=0; i<freqs.length; i++){
+			d[i] = freqs[i];
+		}
+		return sampleCategorical(d);
+	}
+	public static int sampleCategorical(double[] freqs){
+		double r = randy.nextDouble();
+		double sum = 0;
+		for( double f : freqs){ sum += f; }
 		r /= sum;
 		sum = 0;
 		for(int i=0; i<freqs.length; i++){
