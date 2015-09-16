@@ -1,0 +1,71 @@
+seed: 2136841
+truth_table: truth.yaml
+
+reference: {
+    folder: ref_data,
+    raw_seq: NC_000913.raw,
+    tree_folder: trees,
+    tree_suffix: nwk,
+    seq_len: 3000000,
+    table_folder: tables,
+    # Branch length scale factor now specified as regular scalars and converted internally to powers of base.
+    tree_scale: {min: 0.025, max: 1.0 , steps: 10},
+    # Scale indel/inv/ht events by an additional factor above tree_scale
+    sg_scale: 1e-4
+}
+
+community: {
+    folder: comm_data,
+    seq: genomes.fasta
+}
+
+wgs_base: wgs
+wgs_folder: wgs_data
+wgs_asmdir: asm
+wgs_xfold: [10, 50, 100, 200]
+wgs_read_length: 150
+wgs_insert_length: 450
+wgs_insert_sd: 100
+
+hic_base: hic
+hic_folder: hic_data
+hic_inter_prob: 0.9
+hic_read_length: 150
+hic_n_frag: [10000, 20000, 50000, 100000]
+
+ctg_ofmt: yaml
+ctg_afmt: psl
+ctg_mincov: 0.8
+ctg_minid: 95.0
+ctg_minlen: 1000
+
+map_folder: map_data
+
+cluster: {
+    folder: cluster_data,
+    input: cl_input,
+    output: cl_output,
+
+    algorithms: {
+        mcl: {
+            folder: 'mcl',
+            infl: {min: 1.1, max: 2.0, steps: 5}
+        },
+        srmcl: {
+            folder: 'srmcl',
+            infl: {min: 1.1, max: 2.0, steps: 5},
+            #bal: {min: 0.1, max: 0.9, steps: 5},
+        },
+        oclustr: {
+            folder: 'oclustr'
+        },
+        louvain: {
+            folder: 'louvain',
+            otype: {soft, hard, induced}
+        }
+    }
+}
+
+hic2ctg: hic2ctg.bam
+ctg2ref: ctg2ref.psl
+wgs2ctg: wgs2ctg.bam
