@@ -1,0 +1,5 @@
+# exponential decrease in abundance. 10^n, where n is an index derived from enumerating taxons.
+A A 1
+B B 0.1
+C C 0.01
+D D 0.001
