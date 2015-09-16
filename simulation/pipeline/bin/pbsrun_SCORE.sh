@@ -39,7 +39,9 @@ else # EXECUTION MODE
 	echo "Running"
 	cd $PBS_O_WORKDIR
 
-	$F1SCORE -s 1500 $TRUTH $CLUSTERING ${CLUSTERING}.f1
+        # skipping F1 due to computability problems -- runtimes for complicated assemblies
+	#$F1SCORE -s 1500 $TRUTH $CLUSTERING ${CLUSTERING}.f1
+	touch ${CLUSTERING}.f1
 	$VMEASURE $TRUTH $CLUSTERING ${CLUSTERING}.vm
 	$BCUBED -o ${CLUSTERING}.bc $TRUTH $CLUSTERING
 
