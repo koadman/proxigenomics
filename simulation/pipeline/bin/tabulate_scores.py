@@ -10,13 +10,16 @@ import traceback
 parser = argparse.ArgumentParser(description='Recursively scan path and tabulate scoring data')
 parser.add_argument('--suffix', nargs='*', default=['.vm', '.f1', '.bc'],
                     help='One or more filename suffixes to target in recursive search [(.vm, .f1, .bc)]')
-parser.add_argument('-p', '--path', metavar='DIR', help='Input path to scan')
-parser.add_argument('-o', '--output', metavar='FILE', help='Output table')
+parser.add_argument('-p', '--path', metavar='DIR', required=True, help='Input path to scan')
+parser.add_argument('-o', '--output', metavar='FILE', required=True, help='Output table')
 args = parser.parse_args()
 
+print args
 score_cols = None
 lead_cols = None
 score_table = []
+
+suffixes = tuple(args.suffix)
 
 for path, dirs, files in os.walk(args.path):
 
@@ -24,7 +27,7 @@ for path, dirs, files in os.walk(args.path):
     score_vals = {}
     for fn in files:
 
-        if fn.endswith(('.vm', '.f1', '.bc')):
+        if fn.endswith(suffixes):
 
             # variational elements
             factors = path.split('/')
@@ -41,13 +44,18 @@ for path, dirs, files in os.walk(args.path):
             try:
                 with open(os.path.join(path, fn), 'r') as h_in:
                     score_method = os.path.splitext(fn)[1][1:]
-                    scores = yaml.load(h_in)
+                    #scores = yaml.load(h_in)
+                    scores = {}
+                    for line in h_in:
+                        if line.startswith('Eigen value'):
+                            scores['val'] = line.split()[3]
                     if scores is None:
                         sys.stderr.write('{0}/{1} was empty\n'.format(path, fn))
                         continue
                     to_keep = dict(('{0}.{1}'.format(score_method, k), v) for k, v in scores.iteritems())
                     score_vals.update(to_keep)
             except Exception as ex:
+                print '{0}/{1}'.format(path, fn)
                 traceback.print_exc(ex)
                 raise ex
 
