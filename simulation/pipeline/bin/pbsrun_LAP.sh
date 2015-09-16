@@ -8,7 +8,7 @@
 #PBS -l select=1:ncpus=2:mem=32gb
 #PBS -e logs/
 #PBS -o logs/
-#PBS -N LASTJOB
+#PBS -N LAPJOB
 
 if [ -z "$PBS_ENVIRONMENT" ]
 then
@@ -16,7 +16,7 @@ then
 	source $BINDIR/bash_init.sh
 fi
 
-BT2_HOME=$HOME/software/bowtie2-2.2.2/
+export BT2_HOME=$HOME/software/bowtie2-2.2.2/
 LAP_CALC=$HOME/git/lap_release_1.1/aligner/calc_prob.py
 
 if [ -z "$PBS_ENVIRONMENT" ] # SUBMIT MODE
