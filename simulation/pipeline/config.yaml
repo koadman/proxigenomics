@@ -19,6 +19,8 @@ community: {
     seq: genomes.fasta
 }
 
+lap_folder: lap_data
+
 wgs_base: wgs
 wgs_folder: wgs_data
 wgs_asmdir: asm
