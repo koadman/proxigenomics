@@ -3,7 +3,7 @@
 CC = g++
 
 # What optimization level to use
-OPTFLAGS = -O2 -fPIC
+OPTFLAGS = -O0 -fPIC -g
 
 # What options to be used by the compiler
 #COPTIONS= -Wno-write-strings -g
