@@ -36,9 +36,8 @@ wrap.add('wgs_xfold', config['wgs_xfold'])
 def generate_wgs(outdir, c):
     target = appconfig.get_wgs_reads(outdir, config)
     source = '{1[community][folder]}/{0[community]}/{0[refseq]}'.format(c, config)
-    action = 'bin/pbsrun_ART.sh {0[seed]} {0[wgs_insert_length]} {0[wgs_insert_sd]} ' \
-             '{0[wgs_read_length]} {0[wgs_xfold]} $SOURCE.abspath {od}/{0[wgs_base]}'.format(c, od=outdir)
-
+    action = 'bin/pbsrun_METAART.sh {0[seed]} {0[wgs_insert_length]} {0[wgs_insert_sd]} ' \
+             '{0[wgs_read_length]} {0[wgs_xfold]} {0[comm_table]} $SOURCE.abspath {od}/{0[wgs_base]}'.format(c, od=outdir)
     return 'r1', 'r2', env.Command(target, source, action)
 
 
@@ -60,5 +59,6 @@ def index_ctg(outdir, c):
     action = 'bin/pbsrun_INDEX.sh $SOURCE.abspath'.format(c)
 
     return env.Command(target, source, action)
+
 
 wrap.add_controls(Environment())
