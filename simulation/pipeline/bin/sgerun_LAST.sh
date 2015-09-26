@@ -15,9 +15,9 @@ then
 	source $BINDIR/bash_init.sh
 fi
 
-LASTAL=externals/last/bin/lastal
-LASTDB=externals/last/bin/lastdb
-MAFCONV=externals/last/bin/maf-convert
+LASTAL=external/last/bin/lastal
+LASTDB=external/last/bin/lastdb
+MAFCONV=external/last/bin/maf-convert
 
 if [ -z "$JOB_ID" ] # SUBMIT MODE
 then
