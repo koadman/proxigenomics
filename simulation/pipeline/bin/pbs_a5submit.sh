@@ -16,7 +16,6 @@
 #
 # PBS configuration choices can go here.
 #
-#PBS -l walltime=200:00:00
 #PBS -e logs/
 #PBS -o logs/
 #PBS -N A5JOB
@@ -45,8 +44,8 @@ then
 	TAG=a5
 	NCPU=2
 	MEM=32gb
-	QUEUE=smallq
-
+	QUEUE=batch
+	OVERWRITE="false"
 
 	while getopts ":mt:wfn:M:q:" opt
 	do
@@ -55,7 +54,8 @@ then
 				METAGENOME="--metagenome"
 				;;
 			w)
-				WAITOPT="-W block=true"
+				WAITOPT="-I -x"
+				#WAITOPT="-W block=true"
 				;;
 			f)
 				OVERWRITE="true"
@@ -130,7 +130,8 @@ then
 		fi
 	
 		# Queue submission
-		qsub -q $QUEUE -l select=1:ncpus=$NCPU:mem=$MEM $WAITOPT -v NCPU=$NCPU,TAG=$TAG,OVERWRITE=$OVERWRITE,OPTIONS=$METAGENOME,READ1=$R1,READ2=$R2,OUTDIR=$3 $0
+		CMD=`readlink -f $0`
+		qsub -q $QUEUE -l select=1:ncpus=$NCPU:mem=$MEM $WAITOPT -v NCPU=$NCPU,TAG=$TAG,OVERWRITE=$OVERWRITE,OPTIONS=$METAGENOME,READ1=$R1,READ2=$R2,OUTDIR=$3 $CMD
 		
 	# Set up paths for libfile submission
 	else
@@ -149,7 +150,8 @@ then
 		fi
 
 		# Queue submission
-		qsub -q $QUEUE -l select=1:ncpus=$NCPU:mem=$MEM $WAITOPT -v NCPU=$NCPU,TAG=$TAG,OVERWRITE=$OVERWRITE,OPTIONS=$METAGENOME,LIBFILE=$LIBFILE,OUTDIR=$2 $0
+		CMD=`readlink -f $0`
+		qsub -q $QUEUE -l select=1:ncpus=$NCPU:mem=$MEM $WAITOPT -v NCPU=$NCPU,TAG=$TAG,OVERWRITE=$OVERWRITE,OPTIONS=$METAGENOME,LIBFILE=$LIBFILE,OUTDIR=$2 $CMD
 	fi
 else
 	##############
