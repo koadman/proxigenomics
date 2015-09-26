@@ -15,9 +15,9 @@ then
 	source $BINDIR/bash_init.sh
 fi
 
-LASTAL=$PWD/externals/last/bin/lastal
-LASTDB=$PWD/externals/last/bin/lastdb
-MAFCONV=$PWD/externals/last/bin/maf-convert
+LASTAL=externals/last/bin/lastal
+LASTDB=externals/last/bin/lastdb
+MAFCONV=externals/last/bin/maf-convert
 
 if [ -z "$JOB_ID" ] # SUBMIT MODE
 then
@@ -29,10 +29,10 @@ then
 
 	echo "Submitting run"
 	TARGET=( ${1}.prj ${3} )
-	trap 'rollback_rm_files ${TARGET[@]}; exit $?' INT TERM EXIT
+	#trap 'rollback_rm_files ${TARGET[@]}; exit $?' INT TERM EXIT
 	CMD=`readlink -f $0`
-	qsub -sync yes -b n -v SUBJECT=$1,QUERY=$2,OUTPUT=$3 $CMD
-	trap - INT TERM EXIT
+	qsub -sync yes -V -v SUBJECT=$1,QUERY=$2,OUTPUT=$3 $CMD
+	#trap - INT TERM EXIT
 	echo "Finished"
 
 else # EXECUTION MODE
