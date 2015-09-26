@@ -4,12 +4,14 @@ import os
 import os.path
 import appconfig
 
-
 config = appconfig.read('config.yaml')
 
 nest = Nest()
 wrap = SConsWrap(nest, config['map_folder'])
 env = Environment(ENV=os.environ)
+
+# Used for resolving what type of execution environment will be used.
+exec_env = appconfig.ExecutionEnvironment(ARGUMENTS, supported_env=['pbs', 'sge'])
 
 # Constant
 wrap.add('refseq', [config['community']['seq']], create_dir=False)
@@ -44,8 +46,10 @@ def make_ctg2ref(outdir, c):
     source = [subject, query]
     target = os.path.join(outdir, config['ctg2ref'])
 
-    action = 'bin/pbsrun_LAST.sh $SOURCES.abspath $TARGET.abspath'
-
+    action = exec_env.resolve_action({
+        'pbs': 'bin/pbsrun_LAST.sh $SOURCES.abspath $TARGET.abspath',
+        'sge': 'bin/sgerun_LAST.sh $SOURCES.abspath $TARGET.abspath'
+    })
 
     return 'output', env.Command(target, source, action)
 
@@ -55,9 +59,16 @@ def make_truth(outdir, c):
     source = str(c['make_ctg2ref']['output'])
     target = os.path.join(outdir, config['truth_table'])
 
-    action = 'bin/pbsrun_MKTRUTH.sh ' \
-                 '{1[ctg_afmt]} {1[ctg_ofmt]} {1[ctg_minlen]} {1[ctg_mincov]} {1[ctg_minid]} ' \
-                 '$SOURCES.abspath $TARGET.abspath'.format(c, config)
+    action = exec_env.resolve_action({
+
+        'pbs': 'bin/pbsrun_MKTRUTH.sh '
+               '{1[ctg_afmt]} {1[ctg_ofmt]} {1[ctg_minlen]} {1[ctg_mincov]} {1[ctg_minid]} '
+               '$SOURCES.abspath $TARGET.abspath'.format(c, config),
+
+        'sge': 'bin/sgerun_MKTRUTH.sh '
+               '{1[ctg_afmt]} {1[ctg_ofmt]} {1[ctg_minlen]} {1[ctg_mincov]} {1[ctg_minid]} '
+               '$SOURCES.abspath $TARGET.abspath'.format(c, config)
+    })
 
     return 'output', env.Command(target, source, action)
 
@@ -83,7 +94,10 @@ def make_wgs2ctg(outdir, c):
     target = os.path.join(outdir, config['wgs2ctg'])
     source = [subject] + query
 
-    action = 'bin/pbsrun_MAP.sh $SOURCES.abspath $TARGET.abspath'
+    action = exec_env.resolve_action({
+        'pbs': 'bin/pbsrun_MAP.sh $SOURCES.abspath $TARGET.abspath',
+        'sge': 'bin/sgerun_MAP.sh $SOURCES.abspath $TARGET.abspath'
+    })
 
     return 'output', env.Command(target, source, action)
 
@@ -105,7 +119,10 @@ def make_hic2ctg(outdir, c):
     source = [subject, query]
     target = os.path.join(outdir, config['hic2ctg'])
 
-    action = 'bin/pbsrun_MAP.sh $SOURCES.abspath $TARGET.abspath'
+    action = exec_env.resolve_action({
+        'pbs': 'bin/pbsrun_MAP.sh $SOURCES.abspath $TARGET.abspath',
+        'sge': 'bin/sgerun_MAP.sh $SOURCES.abspath $TARGET.abspath'
+    })
 
     return 'output', env.Command(target, source, action)
 
@@ -119,7 +136,10 @@ wrap.add('hic_min_qual', [0, 30, 60])
 def filter_hic(outdir, c):
     source = str(c['make_hic2ctg']['output'])
     target = os.path.join(outdir, config['hic2ctg'])
-    action = 'bin/pbsrun_BAMFILTER.sh {0[hic_min_cov]} {0[hic_min_qual]} $SOURCE $TARGET'.format(c)
+    action = exec_env.resolve_action({
+        'pbs': 'bin/pbsrun_BAMFILTER.sh {0[hic_min_cov]} {0[hic_min_qual]} $SOURCE $TARGET'.format(c),
+        'sge': 'bin/sgerun_BAMFILTER.sh {0[hic_min_cov]} {0[hic_min_qual]} $SOURCE $TARGET'.format(c)
+    })
     return 'output', env.Command(target, source, action)
 
 

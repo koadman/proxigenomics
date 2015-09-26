@@ -4,23 +4,22 @@
 # Align query to subject
 #
 
-#PBS -q smallq
-#PBS -l select=1:ncpus=1:mem=32gb
-#PBS -e logs/
-#PBS -o logs/
-#PBS -N LASTJOB
+#$ -e logs/
+#$ -o logs/
+#$ -cwd
+#$ -N LASTJOB
 
-if [ -z "$PBS_ENVIRONMENT" ]
+if [ -z "$JOB_ID" ]
 then
 	BINDIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 	source $BINDIR/bash_init.sh
 fi
 
-LASTAL=$HOME/bin/lastal
-LASTDB=$HOME/bin/lastdb
-MAFCONV=$HOME/bin/maf-convert.py
+LASTAL=$PWD/externals/last/bin/lastal
+LASTDB=$PWD/externals/last/bin/lastdb
+MAFCONV=$PWD/externals/last/bin/maf-convert
 
-if [ -z "$PBS_ENVIRONMENT" ] # SUBMIT MODE
+if [ -z "$JOB_ID" ] # SUBMIT MODE
 then
 	if [ $# -ne 3 ]
 	then
@@ -31,13 +30,13 @@ then
 	echo "Submitting run"
 	TARGET=( ${1}.prj ${3} )
 	trap 'rollback_rm_files ${TARGET[@]}; exit $?' INT TERM EXIT
-	qsub -W block=true -v SUBJECT=$1,QUERY=$2,OUTPUT=$3 $0
+	CMD=`readlink -f $0`
+	qsub -sync yes -b n -v SUBJECT=$1,QUERY=$2,OUTPUT=$3 $CMD
 	trap - INT TERM EXIT
 	echo "Finished"
 
 else # EXECUTION MODE
 	echo "Running"
-	cd $PBS_O_WORKDIR
 
     if [ ! -e ${SUBJECT}.prj ]
     then

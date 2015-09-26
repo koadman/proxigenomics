@@ -2,7 +2,7 @@ CXXFLAGS = -O3
 all:
 	@cd src && $(MAKE) CXXFLAGS="$(CXXFLAGS)"
 
-prefix = /usr/local
+prefix = .
 exec_prefix = $(prefix)
 bindir = $(exec_prefix)/bin
 install: all

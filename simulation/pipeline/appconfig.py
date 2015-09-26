@@ -63,7 +63,7 @@ def search_up(path, filename):
         filepath = [fn for fn in os.listdir(path) if fn == filename]
         nfiles = len(filepath)
         if nfiles > 1:
-            raise RuntimeError('duplicate file names in same directory {0}'.format(p))
+            raise RuntimeError('duplicate file names in same directory {0}'.format(path))
         elif len(filepath) == 1:
             return os.path.join(path, filepath[0])
         path = os.path.dirname(path)
@@ -126,15 +126,16 @@ def get_wgs_reads(path, config):
 
 
 class ExecutionEnvironment:
-    # first is default
-    __defined_types = ['pbs', 'local']
 
-    def __init__(self, args):
-        self.exec_type = args.get('exec_type', self.__defined_types[0])
-        if self.exec_type not in self.__defined_types:
+    def __init__(self, args, supported_env=['local']):
+
+        # defaults to first type in list of supported environments
+        self.exec_type = args.get('exec_type', supported_env[0])
+
+        if self.exec_type not in supported_env:
             raise RuntimeError('Unknown execution type specified. '
                                'Select one of {0} [default: {1}]'.format(
-                self.__defined_types, self.__defined_types[0]))
+                supported_env, supported_env[0]))
 
     def resolve_action(self, action_dict):
         """
