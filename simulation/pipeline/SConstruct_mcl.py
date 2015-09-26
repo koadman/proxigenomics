@@ -15,7 +15,7 @@ wrap = SConsWrap(nest, os.path.join(config['cluster']['folder'],
 env = Environment(ENV=os.environ)
 
 # Used for resolving what type of execution environment will be used.
-exec_env = appconfig.ExecutionEnvironment(ARGUMENTS)
+exec_env = appconfig.ExecutionEnvironment(ARGUMENTS, supported_env=['pbs', 'local'])
 
 # Variation
 

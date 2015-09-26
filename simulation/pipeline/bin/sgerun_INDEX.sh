@@ -9,7 +9,7 @@
 #$ -cwd
 #$ -N INDEXJOB
 
-BWA=$HOME/git/proxigenomics/simulation/pipeline/external/bwa-0.7.9a
+BWA=$PWD/external/bwa
 
 if [ -z "$JOB_ID" ] # SUBMIT MODE
 then
@@ -20,7 +20,6 @@ then
 	fi
 	echo "Submitting run"
 	CMD=`readlink -f $0`
-	echo "CMD $CMD"
 	qsub -sync yes -b n -v FASTA=$1 $CMD
 	echo "Finished"
 
