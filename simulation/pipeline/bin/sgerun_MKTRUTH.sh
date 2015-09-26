@@ -29,7 +29,7 @@ then
 	echo "Submitting run"
 	trap 'rollback_rm_file $7; exit $?' INT TERM EXIT
 	CMD=`readlink -f $0`
-	qsub -sync yes -b n -v AFMT=$1,OFMT=$2,MINLEN=$3,MINCOV=$4,MINID=$5,INPUT=$6,OUTPUT=$7 $CMD
+	qsub -sync yes -V -v AFMT=$1,OFMT=$2,MINLEN=$3,MINCOV=$4,MINID=$5,INPUT=$6,OUTPUT=$7 $CMD
 	trap - INT TERM EXIT
 	echo "Finished"
 
