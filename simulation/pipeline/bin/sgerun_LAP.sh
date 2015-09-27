@@ -36,5 +36,5 @@ else # EXECUTION MODE
 	echo "Running"
 
 	# calc probs
-	$LAP_CALC -a $ASM -1 $R1 -2 $R2 -q -I 0 -o fr -X 650 -m 450 -t 100 -p $NSLOTS > $OUTPUT
+	$LAP_CALC -T /tmp -a $ASM -1 $R1 -2 $R2 -q -I 0 -o fr -X 650 -m 450 -t 100 -p $NSLOTS > $OUTPUT
 fi
