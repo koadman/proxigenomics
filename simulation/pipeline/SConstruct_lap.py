@@ -10,6 +10,9 @@ nest = Nest()
 wrap = SConsWrap(nest, config['lap_folder'])
 env = Environment(ENV=os.environ)
 
+# Used for resolving what type of execution environment will be used.
+exec_env = appconfig.ExecutionEnvironment(ARGUMENTS, supported_env=['pbs', 'sge'])
+
 # Constants
 wrap.add('seed', [config['seed']], create_dir=False)
 wrap.add('refseq', [config['community']['seq']], create_dir=False)
@@ -41,8 +44,11 @@ def generate_wgs(outdir, c):
 
     target = os.path.join(outdir, 'lap_ref.prob')
 
-    action = 'bin/pbsrun_LAP.sh $SOURCES.abspath $TARGET.abspath'.format(c, od=outdir)
-    print sources, target
+    action = exec_env.resolve_action({
+        'pbs': 'bin/pbsrun_LAP.sh $SOURCES.abspath $TARGET.abspath'.format(c, od=outdir),
+        'sge': 'bin/sgerun_LAP.sh $SOURCES.abspath $TARGET.abspath'.format(c, od=outdir)
+    })
+
     return 'lap_ref', env.Command(target, sources, action)
 
 @wrap.add_target('reads2ctg')
@@ -55,11 +61,11 @@ def generate_wgs(outdir, c):
 
     target = os.path.join(outdir, 'lap_ctg.prob')
 
-    action = 'bin/pbsrun_LAP.sh $SOURCES.abspath $TARGET.abspath'.format(c, od=outdir)
-    print sources, target
-    return 'lap_ctg', env.Command(target, sources, action)
+    action = exec_env.resolve_action({
+        'pbs': 'bin/pbsrun_LAP.sh $SOURCES.abspath $TARGET.abspath'.format(c, od=outdir),
+        'sge': 'bin/sgerun_LAP.sh $SOURCES.abspath $TARGET.abspath'.format(c, od=outdir)
+    })
 
-import sys
-sys.exit(1)
+    return 'lap_ctg', env.Command(target, sources, action)
 
 wrap.add_controls(Environment())
