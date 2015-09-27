@@ -68,4 +68,18 @@ def generate_wgs(outdir, c):
 
     return 'lap_ctg', env.Command(target, sources, action)
 
+@wrap.add_target('sumprob')
+@name_targets
+def sumprob(outdir, c):
+
+    sources = [str(c['reads2ref']['lap_ref']), str(c['reads2ctg']['lap_ctg'])]
+    targets = [os.path.join(outdir, 'lap_ref.sum'), os.path.join(outdir, 'lap_ctg.sum')]
+
+    action = exec_env.resolve_action({
+        'pbs': 'bin/pbsrun_LAPSUM.sh $SOURCES.abspath $TARGETS.abspath'.format(c, od=outdir),
+        'sge': 'bin/sgerun_LAPSUM.sh $SOURCES.abspath $TARGETS.abspath'.format(c, od=outdir)
+    })
+
+    return 'sum_ref', 'sub_ctg', env.Command(targets, sources, action)
+
 wrap.add_controls(Environment())
