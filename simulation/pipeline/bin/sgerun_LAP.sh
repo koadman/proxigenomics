@@ -28,7 +28,7 @@ then
 
 	echo "Submitting run"
 	#trap 'rollback_rm_file $4; exit $?' INT TERM EXIT
-	qsub -sync yes -V -v ASM=$1,R1=$2,R2=$3,OUTPUT=$4 $0
+	qsub -sync yes -V -pe smp 4 -v ASM=$1,R1=$2,R2=$3,OUTPUT=$4 $0
 	#trap - INT TERM EXIT
 	echo "Finished"
 
@@ -36,5 +36,5 @@ else # EXECUTION MODE
 	echo "Running"
 
 	# calc probs
-	$LAP_CALC -a $ASM -1 $R1 -2 $R2 -q -I 0 -o fr -X 600 -m 450 -t 100 -p 2 > $OUTPUT
+	$LAP_CALC -a $ASM -1 $R1 -2 $R2 -q -I 0 -o fr -X 650 -m 450 -t 100 -p $NSLOTS > $OUTPUT
 fi
