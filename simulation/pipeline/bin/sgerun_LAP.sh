@@ -15,7 +15,7 @@ then
 	source $BINDIR/bash_init.sh
 fi
 
-export BT2_HOME=$ITHREE_GIT/software/bowtie2-2.2.2/
+export BT2_HOME=$ITHREE_GIT/software/bowtie2-2.2.6
 LAP_CALC=$HOME/git/lap_release_1.1/aligner/calc_prob.py
 
 if [ -z "$JOB_ID" ] # SUBMIT MODE
