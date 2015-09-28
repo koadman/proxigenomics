@@ -15,7 +15,7 @@ wrap = SConsWrap(nest, os.path.join(config['cluster']['folder'],
 env = Environment(ENV=os.environ)
 
 # Used for resolving what type of execution environment will be used.
-exec_env = appconfig.ExecutionEnvironment(ARGUMENTS, supported_env=['pbs', 'local'])
+exec_env = appconfig.ExecutionEnvironment(ARGUMENTS, supported_env=['pbs', 'sge', 'local'])
 
 # Variation
 
@@ -38,6 +38,7 @@ def make_graph(outdir, c):
     targets = appconfig.prepend_paths(outdir, ['edges.csv', 'nodes.csv'])
     action = exec_env.resolve_action({
         'pbs': 'bin/pbsrun_GRAPH.sh $SOURCE.abspath $TARGETS.abspath',
+        'sge': 'bin/sgerun_GRAPH.sh $SOURCE.abspath $TARGETS.abspath',
         'local': 'bin/bamToEdges.py $SOURCE.abspath $TARGETS.abspath'
     })
 
@@ -53,6 +54,7 @@ def make_cluster_input(outdir, c):
 
     action = exec_env.resolve_action({
         'pbs': 'bin/pbsrun_MKMCL.sh {0[ctg_minlen]} $SOURCES.abspath $TARGET.abspath'.format(config),
+        'sge': 'bin/sgerun_MKMCL.sh {0[ctg_minlen]} $SOURCES.abspath $TARGET.abspath'.format(config),
         'local': 'bin/makeMCLinput.py {0[ctg_minlen]} $SOURCES.abspath $TARGET.abspath'.format(config)
     })
 
@@ -70,6 +72,7 @@ def do_cluster(outdir, c):
 
     action = exec_env.resolve_action({
         'pbs': 'bin/pbsrun_MCL.sh {0[mcl_inflation]} $SOURCE.abspath $TARGET.abspath'.format(c),
+        'sge': 'bin/sgerun_MCL.sh {0[mcl_inflation]} $SOURCE.abspath $TARGET.abspath'.format(c),
         'local': 'bin/mcl $SOURCE.abspath --abc -I {0[mcl_inflation]} -o $TARGET.abspath'.format(c)
     })
 
@@ -92,6 +95,7 @@ def do_score(outdir, c):
 
     action = exec_env.resolve_action({
         'pbs': 'bin/pbsrun_SCORE.sh $SOURCES.abspath',
+        'sge': 'bin/sgerun_SCORE.sh $SOURCES.abspath',
         'local': 'bin/all_scores.sh $SOURCES.abspath'
     })
 
