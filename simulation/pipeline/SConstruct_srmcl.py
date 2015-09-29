@@ -15,7 +15,7 @@ wrap = SConsWrap(nest, os.path.join(config['cluster']['folder'],
 env = Environment(ENV=os.environ)
 
 # Used for resolving what type of execution environment will be used.
-exec_env = appconfig.ExecutionEnvironment(ARGUMENTS)
+exec_env = appconfig.ExecutionEnvironment(ARGUMENTS, supported_env=['pbs', 'sge', 'local'])
 
 # Variation
 
@@ -38,6 +38,7 @@ def make_graph(outdir, c):
     targets = appconfig.prepend_paths(outdir, ['edges.csv', 'nodes.csv'])
     action = exec_env.resolve_action({
         'pbs': 'bin/pbsrun_GRAPH.sh -s $SOURCE.abspath $TARGETS.abspath',
+        'sge': 'bin/sgerun_GRAPH.sh -s $SOURCE.abspath $TARGETS.abspath',
         'local': 'bin/bamToEdges.py -s $SOURCE.abspath $TARGETS.abspath'
     })
 
@@ -54,6 +55,7 @@ def make_cluster_input(outdir, c):
 
     action = exec_env.resolve_action({
         'pbs': 'bin/pbsrun_MKMETIS.sh {0[ctg_minlen]} $SOURCES.abspath $TARGETS.abspath'.format(config),
+        'sge': 'bin/sgerun_MKMETIS.sh {0[ctg_minlen]} $SOURCES.abspath $TARGETS.abspath'.format(config),
         'local': 'bin/edgeToMetis.py --fmt metis -m {0[ctg_minlen]} $SOURCES.abspath $TARGETS.abspath'.format(config)
     })
 
@@ -77,6 +79,7 @@ def do_cluster(outdir, c):
 
     action = exec_env.resolve_action({
         'pbs': 'bin/pbsrun_SRMCL.sh -b {0[balance]} -i {0[inflation]} $SOURCE.abspath $TARGET.abspath'.format(c),
+        'sge': 'bin/sgerun_SRMCL.sh -b {0[balance]} -i {0[inflation]} $SOURCE.abspath $TARGET.abspath'.format(c),
         'local': 'bin/srmcl -b {0[balance]} -i {0[inflation]} -o $TARGET.abspath $SOURCE.abspath'.format(c)
     })
 
@@ -92,6 +95,7 @@ def do_cluster(outdir, c):
 
     action = exec_env.resolve_action({
         'pbs': 'bin/metisClToMCL.py $SOURCES.abspath $TARGET.abspath'.format(c),
+        'sge': 'bin/metisClToMCL.py $SOURCES.abspath $TARGET.abspath'.format(c),
         'local': 'bin/metisClToMCL.py $SOURCES.abspath $TARGET.abspath'.format(c)
     })
 
@@ -114,6 +118,7 @@ def do_score(outdir, c):
 
     action = exec_env.resolve_action({
         'pbs': 'bin/pbsrun_SCORE.sh $SOURCES.abspath',
+        'sge': 'bin/sgerun_SCORE.sh $SOURCES.abspath',
         'local': 'bin/all_scores.sh $SOURCES.abspath'
     })
 
