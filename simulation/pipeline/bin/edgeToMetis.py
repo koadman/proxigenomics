@@ -50,10 +50,29 @@ def write_metis(G, metis_file, nodemap_file):
             h_map.write('{idx} {name}\n'.format(idx=nid, name=nname))
 
 
+def check_weights(edgeTable):
+    """
+    Check that weights in edge table are representable by integers without loss of effective
+    precision. Throws a RuntimeError if the conditions are unacceptable.
+    :param edgeTable:
+    """
+
+    w_max = edgeTable.RAWWEIGHT.max()
+    w_min = edgeTable.RAWWEIGHT.min()
+
+    if w_max < 1.0:
+        raise RuntimeError('Warning: Metis file format only supports integer weightings. Maximum weight is less than 1')
+
+    elif w_min > 0.0 and w_min < 1.0:
+        raise RuntimeError('Warning: Metis file format only supports integer weightings. Minimum weight is between 0 and 1.')
+
+
 parser = argparse.ArgumentParser(description='Create graph format files from node and edge data')
 parser.add_argument('-m', '--minlen', type=int, default=500, help='Minimum contig length')
 parser.add_argument('-f', '--fmt', dest='format', default='metis', choices=['metis', 'graphml'],
                     help='Output graph format')
+parser.add_argument('--scale-weights', type=float, metavar='FLOAT',
+                    help='Scale factor for weights for metis (integer weights only)')
 parser.add_argument('edges', metavar='EDGE_CSV', nargs=1, help='Edge csv file')
 parser.add_argument('nodes', metavar='NODE_CSV', nargs=1, help='Node csv file')
 parser.add_argument('output', metavar='GRAPH_OUT', nargs=1, help='Output file')
@@ -68,9 +87,21 @@ try:
     minLength = args.minlen
 
     # load table of edges
-    edgeTable = pandas.read_csv(args.edges[0], sep=' ')
-    nodeTable = pandas.read_csv(args.nodes[0], sep=' ')
+    edgeTable = pandas.read_csv(args.edges[0], sep=' ', dtype={'SOURCE': str, 'TARGET': str, 'RAWWEIGHT': float})
+    nodeTable = pandas.read_csv(args.nodes[0], sep=' ', dtype={'ID': str, 'LENGTH': int})
 
+    if args.scale_weights:
+        edgeTable.RAWWEIGHT *= args.scale_weights
+
+    for w in edgeTable.RAWWEIGHT:
+        if w < 1.0:
+            print 'Warning: metis format edge weights must be integer values. {0} will be set to 1'.format(w)
+    
+    check_weights(edgeTable)
+
+    # upgrade all edges with weights less than 1 to 1.
+    edgeTable.loc[edgeTable.RAWWEIGHT < 1.0, 'RAWWEIGHT'] = 1.0
+    
     # Remove sequences below length threshold
     filteredIDs = nodeTable[nodeTable.LENGTH > minLength].ID
     filteredEdges = edgeTable[edgeTable.TARGET.isin(filteredIDs) & edgeTable.SOURCE.isin(filteredIDs)]
