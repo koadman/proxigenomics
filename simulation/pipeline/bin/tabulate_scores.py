@@ -7,9 +7,24 @@ import pandas
 import sys
 import traceback
 
+
+def read_yaml(h_in):
+    return yaml.load(h_in)
+
+
+def read_adhoc(h_in):
+    scores = {}
+    for line in h_in:
+        if line.startswith('Eigen value'):
+            scores['val'] = line.split()[3]
+    return scores
+
+
 parser = argparse.ArgumentParser(description='Recursively scan path and tabulate scoring data')
 parser.add_argument('--suffix', nargs='*', default=['.vm', '.f1', '.bc'],
                     help='One or more filename suffixes to target in recursive search [(.vm, .f1, .bc)]')
+parser.add_argument('-y', '--yaml-vals', action="store_true", default=False,
+                    help='Scores are stored in YAML format files')
 parser.add_argument('-p', '--path', metavar='DIR', required=True, help='Input path to scan')
 parser.add_argument('-o', '--output', metavar='FILE', required=True, help='Output table')
 args = parser.parse_args()
@@ -21,6 +36,11 @@ score_table = []
 
 suffixes = tuple(args.suffix)
 
+if args.yaml:
+    read_vals = read_yaml
+else:
+    read_vals = read_adhoc
+
 for path, dirs, files in os.walk(args.path):
 
     factors = None
@@ -30,7 +50,7 @@ for path, dirs, files in os.walk(args.path):
         if fn.endswith(suffixes):
 
             # variational elements
-            factors = path.split('/')
+            factors = path.split(os.path.sep)
 
             # leading columns are just indexed
             if lead_cols is None:
@@ -44,11 +64,7 @@ for path, dirs, files in os.walk(args.path):
             try:
                 with open(os.path.join(path, fn), 'r') as h_in:
                     score_method = os.path.splitext(fn)[1][1:]
-                    #scores = yaml.load(h_in)
-                    scores = {}
-                    for line in h_in:
-                        if line.startswith('Eigen value'):
-                            scores['val'] = line.split()[3]
+                    scores = read_vals(h_in)
                     if scores is None:
                         sys.stderr.write('{0}/{1} was empty\n'.format(path, fn))
                         continue
@@ -60,6 +76,7 @@ for path, dirs, files in os.walk(args.path):
                 raise ex
 
     if len(score_vals) > 0:
+        print score_vals.keys()
         if score_cols is None:
             score_cols = sorted(score_vals.keys())
         score_table.append(factors + [score_vals.get(sc, 'NA') for sc in score_cols])
