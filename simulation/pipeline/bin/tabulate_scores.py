@@ -36,7 +36,7 @@ score_table = []
 
 suffixes = tuple(args.suffix)
 
-if args.yaml:
+if args.yaml_vals:
     read_vals = read_yaml
 else:
     read_vals = read_adhoc
@@ -76,7 +76,6 @@ for path, dirs, files in os.walk(args.path):
                 raise ex
 
     if len(score_vals) > 0:
-        print score_vals.keys()
         if score_cols is None:
             score_cols = sorted(score_vals.keys())
         score_table.append(factors + [score_vals.get(sc, 'NA') for sc in score_cols])
