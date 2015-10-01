@@ -1,13 +1,24 @@
+#!/usr/bin/env python
+
 import inspect
 import os
-
+import logging
 import gridjug
 import jug
+
+logger = logging.getLogger()
+logger.setLevel(logging.DEBUG)
+fh = logging.FileHandler('log.txt')
+fh.setLevel(logging.DEBUG)
+logger.addHandler(fh)
+
 
 # http://stackoverflow.com/a/50905/2366781
 THIS_DIR = os.path.dirname(
     os.path.abspath(inspect.getfile(inspect.currentframe()))
 )
+
+print THIS_DIR
 
 PRIMES_JUGFILE = os.path.join(THIS_DIR, 'primes.py')
 
