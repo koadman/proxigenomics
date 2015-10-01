@@ -14,10 +14,10 @@ wrap = SConsWrap(nest, os.path.join(config['cluster']['folder'],
 env = Environment(ENV=os.environ)
 
 # Used for resolving what type of execution environment will be used.
-exec_env = appconfig.ExecutionEnvironment(ARGUMENTS)
+exec_env = appconfig.ExecutionEnvironment(ARGUMENTS, supported_env=['pbs', 'sge', 'local'])
 
 # don't include root as we don't want it embedded in this nest hierarchy
-hic_paths = appconfig.get_precedents(config['map_folder'], config['hic2ctg'], prepend_root=False)
+hic_paths = appconfig.get_precedents(config['map_folder'], config['hic2ctg'], prepend_root=False, tips_only=True)
 wrap.add('hic_path', hic_paths)
 
 @wrap.add_target('make_graph')
@@ -32,6 +32,7 @@ def make_graph(outdir, c):
 
     action = exec_env.resolve_action({
         'pbs': 'bin/pbsrun_GRAPH.sh $SOURCE.abspath $TARGETS.abspath',
+        'sge': 'bin/sgerun_GRAPH.sh $SOURCE.abspath $TARGETS.abspath',
         'local': 'bin/bamToEdges.py $SOURCE.abspath $TARGETS.abspath'
     })
 
@@ -46,7 +47,8 @@ def make_cluster_input(outdir, c):
     target = appconfig.prepend_paths(outdir, config['cluster']['input'])
 
     action = exec_env.resolve_action({
-        'pbs': 'bin/edgeToMetis.py -m {0[ctg_minlen]} -f graphml $SOURCES.abspath $TARGET.abspath'.format(config),
+        'pbs':   'bin/edgeToMetis.py -m {0[ctg_minlen]} -f graphml $SOURCES.abspath $TARGET.abspath'.format(config),
+        'sge':   'bin/edgeToMetis.py -m {0[ctg_minlen]} -f graphml $SOURCES.abspath $TARGET.abspath'.format(config),
         'local': 'bin/edgeToMetis.py -m {0[ctg_minlen]} -f graphml $SOURCES.abspath $TARGET.abspath'.format(config)
     })
 
@@ -61,6 +63,7 @@ def do_cluster(outdir, c):
 
     action = exec_env.resolve_action({
         'pbs': 'bin/pbsrun_OCLUSTR.sh -i $SOURCE.abspath $TARGET.abspath',
+        'sge': 'bin/sgerun_OCLUSTR.sh -i $SOURCE.abspath $TARGET.abspath',
         'local': 'bin/oclustr.py $SOURCE.abspath $TARGET.abspath'
     })
 
@@ -83,6 +86,7 @@ def do_score(outdir, c):
 
     action =  exec_env.resolve_action({
         'pbs': 'bin/pbsrun_SCORE.sh $SOURCES.abspath',
+        'sge': 'bin/sgerun_SCORE.sh $SOURCES.abspath',
         'local': 'bin/all_scores.sh $SOURCES.abspath'
     })
 

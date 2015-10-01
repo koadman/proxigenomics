@@ -69,8 +69,30 @@ def search_up(path, filename):
         path = os.path.dirname(path)
     return None
 
+import os
+import numpy as np
 
-def get_precedents(root, filename, strip_file=True, prepend_root=True):
+def path_depth(path):
+    """
+    Calculate the depth of a path by the number of separated path elements, ignoring
+    empty elements IE, //, or preceeding, trailing /.
+    :param path: path to check
+    :return: integer depth
+    """
+    return len([pi for pi in path.split(os.path.sep) if pi])
+
+def deepest_paths_only(plist):
+    """
+    Keep only the paths in the list which are equal to the maximum path depth of all paths in
+    the list.
+    :param plist: list of paths
+    :return: deepest paths only
+    """
+    depths = np.array([path_depth(pi) for pi in plist])
+    return np.array(plist)[depths == depths.max()].tolist()
+
+
+def get_precedents(root, filename, strip_file=True, prepend_root=True, tips_only=False):
     """
     Search a given directory tree top to bottom and return file resources matching
     the given name. Optionally, return the root path and file name itself.
@@ -79,6 +101,7 @@ def get_precedents(root, filename, strip_file=True, prepend_root=True):
     :param filename: the file name to find
     :param strip_file: remove the filename from found path elements
     :param prepend_root: include the root element in the return paths
+    :param tips_only: only paths of maximum depth
     :return: the list of paths
     """
 
@@ -95,6 +118,10 @@ def get_precedents(root, filename, strip_file=True, prepend_root=True):
         f2 = lambda x: f1(x)
 
     paths = [f2(pn) for pn in find_files(root, filename)]
+
+    if tips_only:
+        paths = deepest_paths_only(paths)
+
     return paths
 
 
