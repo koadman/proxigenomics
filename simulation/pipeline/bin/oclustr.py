@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+
 import numpy as np
 import networkx as nx
 import argparse
@@ -70,7 +71,7 @@ class Cover:
         """
         v_adj = self.hubs[v]
         # vertices with more than one owner
-        return [ui for ui in v_adj if self.hubs.degree(ui) > 1]
+        return set([ui for ui in v_adj if self.hubs.degree(ui) > 1])
 
     def unshared(self, v):
         """
@@ -81,7 +82,7 @@ class Cover:
         """
         v_adj = self.hubs[v]
         # vertices with only 1 owner
-        return [ui for ui in v_adj if self.hubs.degree(ui) <= 1]
+        return set([ui for ui in v_adj if self.hubs.degree(ui) <= 1])
 
     def is_useful(self, v):
         """
@@ -318,11 +319,16 @@ def ocluster(g, debug=False):
         for ui in v_adj:
             if C.hubs.node[ui]['hub'] and not C.hubs.node[ui]['analyzed']:
                 if not C.is_useful(ui):
-                    print '\t\tOverlapping hub {0} was not useful as a ws_star'.format(ui)
+                    print '\t\tOverlapped hub {0} was not useful'.format(ui)
                     demoted.append(ui)
                     unshared = C.unshared(ui)
-                    linked[vi].update(unshared)
-                    print '\t\tThere were {0} unshared nodes to relink'.format(len(unshared))
+                    if ui in linked and len(linked[ui]) > 0:
+                        print '\t\t\tForwarding {0} linked nodes from {1} to {2}'.format(len(linked[ui]), ui, vi)
+                        unshared.update(linked[ui])
+                        linked[ui].clear()
+                    if len(unshared) > 0:
+                        linked[vi].update(unshared)
+                        print '\t\tThere were {0} unshared nodes to relink'.format(len(unshared))
                     u_adj = set(C.hubs[ui])
                     for wi in u_adj:
                         C.hubs.remove_edge(ui, wi)
@@ -332,6 +338,7 @@ def ocluster(g, debug=False):
 
     # Add re-link nodes that have become unconnected, attach them
     # to the grandparent hub of their demoted parent hub.
+    print 'Relinking satellites'
     for li in linked:
         for vi in linked[li]:
             if not C.hubs.node[li]['hub']:
