@@ -264,7 +264,7 @@ def ocluster(g, debug=False):
     C = Cover(g)
 
     # add isolated nodes first
-    C.hubs.add_nodes_from(set(v for v in g.nodes_iter() if g.degree(v) == 0), hub=False, isolate=True)
+    C.hubs.add_nodes_from(set(v for v in g.nodes_iter() if g.degree(v) == 0), hub=True, isolate=True)
     print 'There were {0} isolated vertices'.format(len(C.hubs))
 
     # traverse the set of vertices in descending order of relevance
@@ -383,3 +383,4 @@ if __name__ == '__main__':
             for vi in desc_deg:
                 out.write('{0} {1}\n'.format(vi, ' '.join(cover.hubs[vi])))
             print 'Final solution: {0} stars and {1} satellites'.format(len(hub_dict), sum(hub_dict.values()))
+
