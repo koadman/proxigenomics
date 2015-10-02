@@ -20,11 +20,12 @@ community: {
 }
 
 lap_folder: lap_data
+quast_folder: quast_data
 
 wgs_base: wgs
 wgs_folder: wgs_data
 wgs_asmdir: asm
-wgs_xfold: [10, 50, 100, 200]
+wgs_xfold: [10, 50, 100]   #, 200]
 wgs_read_length: 150
 wgs_insert_length: 450
 wgs_insert_sd: 100
