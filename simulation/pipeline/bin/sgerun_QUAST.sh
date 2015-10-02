@@ -36,5 +36,9 @@ else # EXECUTION MODE
 	echo "Ref $REF"
 	echo "Ctg $CTG"
 
-	$METAQUAST -t $NSLOTS -R $REF -o `dirname $OUTPUT` $CTG
+	ODIR=`dirname $OUTPUT`
+	$METAQUAST -t $NSLOTS -R $REF -o $ODIR/work $CTG & \
+		cp $ORIR/work/combined_quast_output/report.tsv $ODIR & \
+		tar czf quast.tar.gz $ODIR/work
+
 fi
