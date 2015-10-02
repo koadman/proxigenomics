@@ -36,10 +36,9 @@ wrap.add('wgs_xfold', config['wgs_xfold'])
 @name_targets
 def generate_wgs(outdir, c):
 
-    src_dir = os.path.join(config['wgs_folder'], '/'.join(outdir.split('/')[1:]))
-    sources = ['{1[community][folder]}/{0[community]}/{0[refseq]}'.format(c, config)] + \
-              appconfig.get_wgs_reads(src_dir, config)
-
+    asm_path = os.path.join(config['wgs_folder'], '/'.join(outdir.split('/')[1:]), config['wgs_asmdir'])
+    ctg_file = '{0}/{1}.contigs.fasta'.format(asm_path, config['wgs_base'])
+    sources = ['{1[community][folder]}/{0[community]}/{0[refseq]}'.format(c, config), ctg_file]
     target = os.path.join(outdir, 'quast/report.tsv')
 
     action = exec_env.resolve_action({
