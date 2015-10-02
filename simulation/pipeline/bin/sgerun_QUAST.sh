@@ -19,15 +19,15 @@ METAQUAST=external/quast/metaquast.py
 
 if [ -z "$JOB_ID" ] # SUBMIT MODE
 then
-	if [ $# -ne 2 ]
+	if [ $# -ne 3 ]
 	then
-		echo "Usage: <REFSEQ> <CONTIGS>"
+		echo "Usage: <REFSEQ> <CONTIGS> <OUTPUT REPORT PATH>"
 		exit 1
 	fi
 
 	echo "Submitting run"
 	#trap 'rollback_rm_file $4; exit $?' INT TERM EXIT
-	qsub -sync yes -V -pe smp 4 -v REF=$1,CTG=$2 $0
+	qsub -sync yes -V -pe smp 4 -v REF=$1,CTG=$2,OUTPUT=$3 $0
 	#trap - INT TERM EXIT
 	echo "Finished"
 
@@ -36,5 +36,5 @@ else # EXECUTION MODE
 	echo "Ref $REF"
 	echo "Ctg $CTG"
 
-	$METAQUAST -t $NSLOTS -R $REF -o `dirname $CTG`/quast $CTG
+	$METAQUAST -t $NSLOTS -R $REF -o `dirname $OUTPUT` $CTG
 fi
