@@ -15,6 +15,7 @@ then
 	source $BINDIR/bash_init.sh
 fi
 
+SPLITFASTA=bin/split_fasta.py
 METAQUAST=external/quast/metaquast.py
 
 if [ -z "$JOB_ID" ] # SUBMIT MODE
@@ -37,8 +38,16 @@ else # EXECUTION MODE
 	echo "Ctg $CTG"
 
 	ODIR=`dirname $OUTPUT`
-	$METAQUAST -t $NSLOTS -R $REF -o $ODIR/work $CTG & \
-		cp $ORIR/work/combined_quast_output/report.tsv $ODIR & \
+
+	# split reference fasta so that genomes are treated as species for error testing
+	mkdir -p $ODIR/refs
+	$SPLITFASTA -f $REF $ODIR/refs
+
+	# get the resulting files (they are named by their ids)
+	REF_FILES=`find $ODIR/refs -type f -name "*.fasta" | sort | tr '\n' ',' | sed 's/,$//'`
+
+	$METAQUAST -t $NSLOTS -R $REF_FILES -o $ODIR/work $CTG && \
+		cp $ORIR/work/combined_quast_output/report.tsv $ODIR && \
 		tar czf quast.tar.gz $ODIR/work
 
 fi
