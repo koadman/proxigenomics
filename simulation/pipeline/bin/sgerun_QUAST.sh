@@ -37,15 +37,19 @@ else # EXECUTION MODE
 	echo "Ref $REF"
 	echo "Ctg $CTG"
 
-	ODIR=`dirname $OUTPUT`
+	# refering to report.html in summary directory,
+	# we have gone down two levels in hierarchy because
+	# we need to refer to a final target file for SCONS.
+	# this happens to be "summary/report.html"
+	SUMDIR=${OUTPUT%/*}
+	TOPDIR=${SUMDIR%/*}
 
 	# split reference fasta so that genomes are treated as species for error testing
-	mkdir -p $ODIR/refs
-	$SPLITFASTA -f $REF $ODIR/refs
+	mkdir -p $TOPDIR/refs
+	$SPLITFASTA -f $REF $TOPDIR/refs
 
 	# get the resulting files (they are named by their ids)
-	REF_FILES=`find $ODIR/refs -type f -name "*.fasta" | sort | tr '\n' ',' | sed 's/,$//'`
+	REF_FILES=`find $TOPDIR/refs -type f -name "*.fasta" | sort | tr '\n' ',' | sed 's/,$//'`
 
-	$METAQUAST -t $NSLOTS -R $REF_FILES -o $ODIR/work $CTG
-
+	$METAQUAST -t $NSLOTS -R $REF_FILES -o $TOPDIR $CTG
 fi
