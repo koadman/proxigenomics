@@ -46,8 +46,6 @@ else # EXECUTION MODE
 	# get the resulting files (they are named by their ids)
 	REF_FILES=`find $ODIR/refs -type f -name "*.fasta" | sort | tr '\n' ',' | sed 's/,$//'`
 
-	$METAQUAST -t $NSLOTS -R $REF_FILES -o $ODIR/work $CTG && \
-		cp $ORIR/work/combined_quast_output/report.tsv $ODIR && \
-		tar czf quast.tar.gz $ODIR/work
+	$METAQUAST -t $NSLOTS -R $REF_FILES -o $ODIR/work $CTG
 
 fi
