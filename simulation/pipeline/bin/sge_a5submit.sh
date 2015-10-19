@@ -1,4 +1,7 @@
 #!/bin/bash
+
+unset module
+
 #
 # Simple script to submit A5 jobs to PBS queue at UTS
 #
@@ -29,7 +32,7 @@ export ITHREE_GIT=$HOME/git/ithree
 A5EXE=$PROXIHOME/simulation/pipeline/external/a5_miseq_linux_20140604/bin/a5_pipeline.pl
 
 #
-# Check if invocation was via PBS queue.
+# Check if invocation was via SGE queue.
 # 
 # If this is not being run from the queue then
 # act as a regular shell script and provide a 
@@ -45,7 +48,7 @@ then
 
 	# defaults
 	TAG=a5
-	NCPU=4
+	NCPU=1
 	MEM=32gb
 	QUEUE=all.q
 	OVERWRITE="false"
@@ -142,7 +145,7 @@ then
 	
 		# Queue submission
 		CMD=`readlink -f $0`
-		qsub -q $QUEUE -pe smp $NCPU $WAITOPT -v NCPU=$NCPU,TAG=$TAG,OVERWRITE=$OVERWRITE,OPTIONS=$METAGENOME,READ1=$R1,READ2=$R2,OUTDIR=$3 $CMD
+		qsub -q $QUEUE -pe smp $NCPU $WAITOPT -V -v NCPU=$NCPU,TAG=$TAG,OVERWRITE=$OVERWRITE,OPTIONS=$METAGENOME,READ1=$R1,READ2=$R2,OUTDIR=$3 $CMD
 		
 	# Set up paths for libfile submission
 	else
@@ -162,7 +165,7 @@ then
 
 		# Queue submission
 		CMD=`readlink -f $0`
-		qsub -q $QUEUE -pe smp $NCPU $WAITOPT -v NCPU=$NCPU,TAG=$TAG,OVERWRITE=$OVERWRITE,OPTIONS=$METAGENOME,LIBFILE=$LIBFILE,OUTDIR=$2 $CMD
+		qsub -q $QUEUE -pe smp $NCPU $WAITOPT -V -v NCPU=$NCPU,TAG=$TAG,OVERWRITE=$OVERWRITE,OPTIONS=$METAGENOME,LIBFILE=$LIBFILE,OUTDIR=$2 $CMD
 	fi
 else
 	##############
@@ -182,9 +185,9 @@ else
 	if [ -z "$LIBFILE" ]
 	then
 		# Read-set invocation
-		$A5EXE --threads=$NCPU $OPTIONS $READ1 $READ2 $TAG
+		$A5EXE --metagenome --threads=$NCPU $OPTIONS $READ1 $READ2 $TAG
 	else
 		# Libfile invocation
-		$A5EXE --threads=$NCPU $OPTIONS $LIBFILE $TAG
+		$A5EXE --metagenome --threads=$NCPU $OPTIONS $LIBFILE $TAG
 	fi
 fi
