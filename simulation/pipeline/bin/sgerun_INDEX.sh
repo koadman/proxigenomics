@@ -9,7 +9,7 @@
 #$ -cwd
 #$ -N INDEXJOB
 
-BWA=$PWD/external/bwa
+BWA=$PWD/external/a5_miseq_linux_20140604/bin/bwa
 
 if [ -z "$JOB_ID" ] # SUBMIT MODE
 then
