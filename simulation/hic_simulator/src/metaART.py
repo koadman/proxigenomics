@@ -5,6 +5,7 @@ import argparse
 import os
 import subprocess
 import sys
+import numpy
 from numpy import random
 
 TMP_INPUT = 'seq.tmp'
@@ -36,6 +37,8 @@ if __name__ == '__main__':
 
     seq_index = SeqIO.index(args.fasta, 'fasta')
     numpy.random.seed(args.seed)
+    all_R1 = open('{0}1.fq'.format(args.output_base), 'w')
+    all_R2 = open('{0}2.fq'.format(args.output_base), 'w')
 
     # generate N simulated communities
     for n in range(1,args.num_samples):
@@ -44,7 +47,7 @@ if __name__ == '__main__':
         profile = {}
         ra_sum = 0
         for seq_id in seq_index:
-            profile[seq_id] = log(numpy.random.normal(args.lognorm_ra_mu, args.lognorm_ra_sigma))
+            profile[seq_id] = numpy.random.lognormal(args.lognorm_ra_mu, args.lognorm_ra_sigma)
             ra_sum += profile[seq_id]
 
         for seq_id in seq_index:
@@ -84,6 +87,12 @@ if __name__ == '__main__':
                     if r1_n != r2_n:
                         print 'Error: paired-end counts do not match {0} vs {1}'.format(r1_n, r2_n)
                         sys.exit(1)
+
+                    with open(R1_FILE, 'r') as tmp_h:
+                        all_R1.write(tmp_h.read())
+
+                    with open(R2_FILE, 'r') as tmp_h:
+                        all_R2.write(tmp_h.read())
 
                     with open(R1_FILE, 'r') as tmp_h:
                         output_R1.write(tmp_h.read())
