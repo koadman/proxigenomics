@@ -25,9 +25,9 @@ commPaths = [os.path.dirname(pn) for pn in genomes]
 #commPaths = [pn for pn in commPaths if float(os.path.basename(pn)) > 0.4 and float(os.path.basename(pn)) < 1]
 wrap.add('community', commPaths)
 
-tableFolder = os.path.join(config['reference']['folder'], config['reference']['table_folder'])
-tablePaths = appconfig.get_files(tableFolder, 'table')
-wrap.add('comm_table', tablePaths, label_func=os.path.basename)
+wrap.add('lognorm_rel_abundance_mu', config['reference']['lognorm_rel_abundance_mu'])
+wrap.add('lognorm_rel_abundance_sigma', config['reference']['lognorm_rel_abundance_sigma'])
+wrap.add('num_samples', config['reference']['samples'])
 
 wrap.add('wgs_xfold', config['wgs_xfold'])
 
@@ -37,7 +37,8 @@ def generate_wgs(outdir, c):
     target = appconfig.get_wgs_reads(outdir, config)
     source = '{1[community][folder]}/{0[community]}/{0[refseq]}'.format(c, config)
     action = 'bin/sgerun_METAART.sh {0[seed]} {0[wgs_insert_length]} {0[wgs_insert_sd]} ' \
-             '{0[wgs_read_length]} {0[wgs_xfold]} {0[comm_table]} $SOURCE.abspath {0[wgs_base]} {od}'.format(c, od=outdir)
+             '{0[wgs_read_length]} {0[wgs_xfold]} {0[num_samples]} $SOURCE.abspath {0[wgs_base]} {od}'.format(c, od=outdir) \
+             '{0[lognorm_rel_abundance_mu]} {0[lognorm_rel_abundance_sigma]} '
     return 'r1', 'r2', env.Command(target, source, action)
 
 
