@@ -15,8 +15,8 @@ then
 	source $BINDIR/bash_init.sh
 fi
 
-BWA=external/bwa
-SAMTOOLS=external/samtools
+BWA=external/a5_miseq_linux_20140604/bin/bwa
+SAMTOOLS=external/a5_miseq_linux_20140604/bin/samtools
 
 if [ -z "$JOB_ID" ] # SUBMIT MODE
 then
@@ -37,7 +37,7 @@ then
     	BASE=${3%.bam}
     	TARGET=( ${BASE}.sam ${BASE}.bam ${BASE}.bai ${BASE}.idxstats ${BASE}.flagstats )
     	trap 'rollback_rm_files ${TARGET[@]}; exit $?' INT TERM EXIT
-	    qsub -sync yes -V -pe smp 4 -v SUBJECT=$1,QUERY1=$2,QUERY2="",OUTPUT=$3 $CMD
+	    qsub -sync yes -V -v SUBJECT=$1,QUERY1=$2,QUERY2="",OUTPUT=$3 $CMD
     	trap - INT TERM EXIT
     elif [ $# -eq 4 ]
     then
@@ -45,7 +45,7 @@ then
     	BASE=${4%.bam}
     	TARGET=( ${BASE}.sam ${BASE}.bam ${BASE}.bai ${BASE}.idxstats ${BASE}.flagstats )
         trap 'rollback_rm_files ${TARGET[@]}; exit $?' INT TERM EXIT
-        qsub -sync yes -V -pe smp 4 -v SUBJECT=$1,QUERY1=$2,QUERY2=$3,OUTPUT=$4 $CMD
+        qsub -sync yes -V -v SUBJECT=$1,QUERY1=$2,QUERY2=$3,OUTPUT=$4 $CMD
     	trap - INT TERM EXIT
     fi
 	echo "Finished"
