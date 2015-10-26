@@ -41,7 +41,7 @@ def make_wgs2ctg(outdir, c):
         # TODO find a better way to obtain the path to WGS reads
         query = appconfig.get_wgs_reads_by_sample(
                     os.path.join(os.path.abspath(config['wgs_folder']),
-                    com, mu, sigma, str(c['wgs_xfold'])), str(c['num_samples'])
+                    com, mu, sigma, str(c['wgs_xfold'])), str(c['num_samples']),
                     config)
 
         subject = os.path.join(os.path.abspath(config['wgs_folder']),
@@ -76,7 +76,7 @@ def make_deconvolve(outdir, c):
         # TODO find a better way to obtain the path to WGS reads
         query = appconfig.get_wgs_reads_by_sample(
                     os.path.join(os.path.abspath(config['wgs_folder']),
-                    com, mu, sigma, str(c['wgs_xfold'])), str(c['num_samples'])
+                    com, mu, sigma, str(c['wgs_xfold'])), str(c['num_samples']),
                     config)
         query_sequences = query_sequences + " " + query
 
