@@ -42,17 +42,17 @@ def generate_set(outdir, c):
     seq = os.path.join(seqFolder, '{0[basis_seq]}'.format(c))
     sources = [tree, seq]
     target = '{od}/{0[genomes]}'.format(c, od=outdir)
-    action = 'bin/pbsrun_SGEVOLVER.sh ' \
+    action = 'bin/sgerun_SGEVOLVER.sh ' \
              '{0[seed]} {0[branch_length]} {0[sg_scale]} {0[seq_len]} $SOURCES.abspath $TARGET.abspath'.format(c)
     return 'hr', env.Command(target, sources, action)
 
 
-@wrap.add_target('reconstruct')
-def reconstruct(outdir, c):
-    base = 'reconstruct'
-    source = '{od}/{0[genomes]}'.format(c, od=outdir)
-    target = '{od}/{base}/ani/perc_ids.tab'.format(od=outdir,base=base)
-    action = 'bin/pbsrun_MKTREE.sh $SOURCE.abspath {od}/{base}'.format(c, od=outdir, base=base)
-    return 'recon', env.Command(target, source, action)
+#@wrap.add_target('reconstruct')
+#def reconstruct(outdir, c):
+#    base = 'reconstruct'
+#    source = '{od}/{0[genomes]}'.format(c, od=outdir)
+#    target = '{od}/{base}/ani/perc_ids.tab'.format(od=outdir,base=base)
+#    action = 'bin/sgerun_MKTREE.sh $SOURCE.abspath {od}/{base}'.format(c, od=outdir, base=base)
+#    return 'recon', env.Command(target, source, action)
 
 wrap.add_controls(Environment())
