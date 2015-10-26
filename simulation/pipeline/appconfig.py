@@ -151,7 +151,7 @@ def get_wgs_reads(path, config):
     """
     return [os.path.join(path, '{0}{1}.fq'.format(config['wgs_base'], n)) for n in range(1, 3)]
 
-def get_wgs_reads_by_sample(path, config, sample):
+def get_wgs_reads_by_sample(path, sample, config):
     """
     Return the pair of generated WGS files for a given community
     :param path: containing path of WGS reads
