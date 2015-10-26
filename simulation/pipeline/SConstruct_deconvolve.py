@@ -45,7 +45,7 @@ def make_wgs2ctg(outdir, c):
                     config)
 
         subject = os.path.join(os.path.abspath(config['wgs_folder']),
-                    com, mu, sigma, str(c['num_samples']), str(c['wgs_xfold'])), config['wgs_asmdir'],
+                    com, mu, sigma, str(c['num_samples']), str(c['wgs_xfold']), config['wgs_asmdir'],
                     '{0[wgs_base]}.contigs.fasta'.format(config))
 
         target = os.path.join(outdir, config['wgs2ctg'])
@@ -67,7 +67,7 @@ def make_deconvolve(outdir, c):
     sigma = c['lognorm_rel_abundance_sigma']
 
     subject = os.path.join(os.path.abspath(config['wgs_folder']),
-                com, mu, sigma, str(c['num_samples']), str(c['wgs_xfold'])), config['wgs_asmdir'],
+                com, mu, sigma, str(c['num_samples']), str(c['wgs_xfold']), config['wgs_asmdir'],
                 '{0[wgs_base]}.contigs.fasta'.format(config))
 
 
