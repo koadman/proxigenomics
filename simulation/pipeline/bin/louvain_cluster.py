@@ -30,6 +30,50 @@ def decompose_graph(g):
     return decomposed
 
 
+def cluster(g, no_iso, soft=True):
+
+    # remove isolated nodes
+    if no_iso:
+        singletons = [n for n, degree in g.degree().items() if degree < 1]
+        print 'Removed {0} isolated nodes from graph'.format(len(singletons))
+        g.remove_nodes_from(singletons)
+        print_info(g)
+
+    subgraphs = list(nx.connected_component_subgraphs(g))
+    print 'The graph comprises {0} connected components'.format(len(subgraphs))
+    print 'Components with more than one node:'
+    for n, sg in enumerate(subgraphs, start=1):
+        if sg.order() > 1:
+            print '\tcomponent {0}: {1} nodes {2} edges'.format(n, sg.order(), sg.size())
+
+    # determine the best partitioning of g
+    partitions = com.best_partition(g)
+
+    # build a dictionary of classification from the partitioning result
+    # this is effectively a hard clustering answer to the problem
+    com_ids = set(partitions.values())
+    print 'There were {0} communities'.format(len(com_ids))
+    print 'Communities with more than one node:'
+
+    communities = {}
+    for ci in com_ids:
+        communities[ci] = dict((n, 1.0) for n, cj in partitions.iteritems() if cj == ci)
+        if len(communities[ci]) > 1:
+            print '\tcommunity {0}: {1} nodes'.format(ci, len(communities[ci]))
+
+    if soft:
+        # iterate over the nodes in the graph, if an edge connects nodes in disjoint
+        # partitions, then make both nodes members of both partitions.
+        for n1 in g.nodes_iter():
+            for n2 in nx.all_neighbors(g, n1):
+                if partitions[n1] != partitions[n2]:
+                    # we add them at half weight just for discrimination
+                    communities[partitions[n1]][n2] = 0.5
+                    communities[partitions[n2]][n1] = 0.5
+
+    return communities
+
+
 def print_info(g):
     """
     Print order and size of graph g
@@ -72,6 +116,19 @@ def plot_graph(part, g):
     plt.show()
 
 
+def write_output(communities, filename, ofmt='mcl'):
+    if ofmt == 'mcl':
+        write_mcl(communities, filename)
+    elif ofmt == 'graphml':
+        # convert communities to a graph
+        cg = nx.DiGraph()
+        for k, v in communities.iteritems():
+            cg.add_node(k)
+            for vi in v:
+                cg.add_edge(k, vi)
+    else:
+        raise RuntimeError('Unsupported format type: {0}'.format(ofmt))
+
 if __name__ == '__main__':
 
     import argparse
@@ -79,81 +136,62 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Decompose a graph into its communities')
     parser.add_argument('--no-isolates', action='store_true', default=False, help='Remove isolated nodes')
     parser.add_argument('--otype', choices=['hard', 'soft', 'induced'], default='soft', help='Output type')
+    parser.add_argument('--ofmt', choices=['mcl', 'graphml'], default='mcl', help='Specify output format [mcl]')
     parser.add_argument('input', nargs=1, help='Input graph (graphml format)')
     parser.add_argument('output', nargs=1, help='Output file')
     args = parser.parse_args()
+
+    if args.otype == 'induced':
+        raise RuntimeError('induced option no longer supported')
 
     g = nx.read_graphml(args.input[0])
     print 'Initial statistics'
     print_info(g)
 
-    # remove isolated nodes
-    if args.no_isolates:
-        singletons = [n for n, degree in g.degree().items() if degree < 1]
-        print 'Removed {0} isolated nodes from graph'.format(len(singletons))
-        g.remove_nodes_from(singletons)
-        print_info(g)
+    communities = cluster(g, args.no_isolates, args.otype == 'soft')
 
-    subgraphs = list(nx.connected_component_subgraphs(g))
-    print 'The graph comprises {0} connected components'.format(len(subgraphs))
-    print 'Components with more than one node:'
-    for n, sg in enumerate(subgraphs, start=1):
-        if sg.order() > 1:
-            print '\tcomponent {0}: {1} nodes {2} edges'.format(n, sg.order(), sg.size())
-
-    # determine the best partitioning of g
-    partitions = com.best_partition(g)
-
-    # build a dictionary of classification from the partitioning result
-    # this is effectively a hard clustering answer to the problem
-    com_ids = set(partitions.values())
-    print 'There were {0} communities'.format(len(com_ids))
-    print 'Communities with more than one node:'
-    communities = {}
-    for ci in com_ids:
-        communities[ci] = dict((n, 1.0) for n, cj in partitions.iteritems() if cj == ci)
-        if len(communities[ci]) > 1:
-            print '\tcommunity {0}: {1} nodes'.format(ci, len(communities[ci]))
+    write_output(communities, args.output[0], args.ofmt)
 
     # Write out communities as a hard clustering solution
-    if args.otype == 'hard':
-        write_mcl(communities, args.output[0])
+    #if args.otype == 'hard':
+    #        write_mcl(communities, args.output[0])
 
-    elif args.otype == 'induced':
+    #elif args.otype == 'induced':
         # Find nodes which connect to multiple communities.
         # Add their membership to each and use this as a soft
         # clustering solution.
-        induced = com.induced_graph(partitions, g)
-        sub_ind = nx.connected_component_subgraphs(induced)
-        groups = {}
-        n = 1
-        for sg in sub_ind:
-            # skip communities of one node
-            if sg.size() <= 2:
-                continue
+        # induced = com.induced_graph(partitions, g)
+        # sub_ind = nx.connected_component_subgraphs(induced)
+        # groups = {}
+        # n = 1
+        # for sg in sub_ind:
+        #
+        #     # skip communities of one node
+        #     if sg.size() <= 2:
+        #         continue
+        #
+        #     cut, parts = nx.stoer_wagner(sg)
+        #     for p in parts:
+        #         if n not in groups:
+        #             groups[n] = {}
+        #         for pi in p:
+        #                 dt = dict((nid, 1.0) for nid, cj in partitions.iteritems() if cj == pi)
+        #                 groups[n].update(dt)
+        #         n += 1
+        #
+        # write_mcl(groups, args.output[0])
 
-            cut, parts = nx.stoer_wagner(sg)
-            for p in parts:
-                if n not in groups:
-                    groups[n] = {}
-                for pi in p:
-                        dt = dict((nid, 1.0) for nid, cj in partitions.iteritems() if cj == pi)
-                        groups[n].update(dt)
-                n += 1
+    #elif args.otype == 'soft':
+    #    # iterate over the nodes in the graph, if an edge connects nodes in disjoint
+    #    # partitions, then make both nodes members of both partitions.
+    #    for n1 in g.nodes_iter():
+    #        for n2 in nx.all_neighbors(g, n1):
+    #            if partitions[n1] != partitions[n2]:
+    #                # we add them at half weight just for discrimination
+    #                communities[partitions[n1]][n2] = 0.5
+    #                communities[partitions[n2]][n1] = 0.5
 
-        write_mcl(groups, args.output[0])
+    #    write_mcl(communities, args.output[0])
 
-    elif args.otype == 'soft':
-        # iterate over the nodes in the graph, if an edge connects nodes in disparate
-        # partitions, then make both nodes members of both partitions.
-        for n1 in g.nodes_iter():
-            for n2 in nx.all_neighbors(g, n1):
-                if partitions[n1] != partitions[n2]:
-                    # we add them at have weight just for discrimination
-                    communities[partitions[n1]][n2] = 0.5
-                    communities[partitions[n2]][n1] = 0.5
-
-        write_mcl(communities, args.output[0])
-
-    else:
-        raise RuntimeError('Unsupported output type')
+    #else:
+    #    raise RuntimeError('Unsupported output type')
