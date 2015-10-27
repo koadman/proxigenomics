@@ -30,9 +30,9 @@ wrap.add('num_samples', config['reference']['samples'])
 wrap.add('wgs_xfold', config['wgs_xfold'])
 
 
-@wrap.add_target('make_wgs2ctg')
+@wrap.add_target('make_readmap')
 @name_targets
-def make_wgs2ctg(outdir, c):
+def make_readmap(outdir, c):
     com = c['community']
     mu = c['lognorm_rel_abundance_mu']
     sigma = c['lognorm_rel_abundance_sigma']
