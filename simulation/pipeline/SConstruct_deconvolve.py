@@ -23,8 +23,8 @@ genomes = appconfig.find_files(config['community']['folder'], config['community'
 commPaths = [os.path.dirname(pn) for pn in genomes]
 wrap.add('community', commPaths)
 
-wrap.add('lognorm_rel_abundance_mu', config['reference']['lognorm_rel_abundance_mu'])
-wrap.add('lognorm_rel_abundance_sigma', config['reference']['lognorm_rel_abundance_sigma'])
+wrap.add('lognorm_rel_abundance_mu', [config['reference']['lognorm_rel_abundance_mu']], create_dir=False)
+wrap.add('lognorm_rel_abundance_sigma', [config['reference']['lognorm_rel_abundance_sigma']], create_dir=False)
 wrap.add('num_samples', config['reference']['samples'])
 
 wrap.add('wgs_xfold', config['wgs_xfold'])
