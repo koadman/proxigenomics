@@ -41,7 +41,7 @@ if __name__ == '__main__':
     all_R2 = open('{0}2.fq'.format(args.output_base), 'w')
 
     # generate N simulated communities
-    for n in range(1,args.num_samples):
+    for n in range(0,args.num_samples):
 
         # generate a lognormal relative abundance profile
         profile = {}
