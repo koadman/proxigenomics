@@ -42,7 +42,7 @@ def make_readmap(outdir, c):
         # TODO find a better way to obtain the path to WGS reads
         query = appconfig.get_wgs_reads_by_sample(
                     os.path.join(os.path.abspath(config['wgs_folder']),
-                    com, str(c['num_samples']), str(c['wgs_xfold'])), str(c['num_samples']),
+                    com, str(c['num_samples']), str(c['wgs_xfold'])), i,
                     config)
 
         subject = os.path.join(os.path.abspath(config['wgs_folder']),
