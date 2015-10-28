@@ -59,9 +59,10 @@ for i in range(num_samples):
 ##
 # write out a file with SNVs and sample count for Bayesian PNMF
 #
+num_sites = len(variant_sites)
 snv_filename = "snv_file.data.R"
 snv_file = open(snv_filename, "w")
-snv_file.write("U<-" + str(len(variant_sites)) + "\n")  # number of sites
+snv_file.write("U<-" + str(num_sites) + "\n")  # number of sites
 snv_file.write("T<-" + str(num_samples) + "\n")  # number of time points
 snv_file.write("S<-" + str(num_strains) + "\n")  # number of time points
 nota = "nota <- c("
@@ -93,15 +94,36 @@ os.system(bpnmf_cmd)
 ##
 # summarize the tip partials and create a BEAST XML
 #
+beast_filename = "beast.xml"
 bpnmf_file = open(bpnmf_filename)
-tip_partials = dict()
+beast_file = open(beast_filename, "w")
+
+# init 3D array of tip partials
+s = 0
 for line in bpnmf_file:
     d = line.split(",")
-    
-    for i in range(len(alphabet)):
-        begin = num_samples + 1 + num_sites * i
-        end = begin + num_sites
-        for j in range(begin,end):
-            tip_partials[ alphabet[i] ] += float(d[j])
+    tip_partials = [[0 for x in range(num_sites)] for x in range(len(alphabet))]
+    begin = num_samples + 1 + num_sites * i
+    end = begin + num_sites
+    for j in range(begin,end):
+        for i in range(len(alphabet)):
+            tip_partials[i][j] += float(d[j])
 
+    # normalize to a tip partial distribution
+    for j in range(begin,end):
+        m = max(tip_partials[i][j] for i in range(len(alphabet)))
+        for i in range(len(alphabet)):
+            tip_partials[i][j] /= m
+
+    # write to xml
+    for i in range(len(alphabet)):
+        beast_file.write("<TipPartials id=\"" + str(s) + "\" char=\""+ str(alphabet[i]) + "\">")
+        beast_file.write(",".join(tip_partials[j]))
+
+
+beast_file.close()
+
+##
+# run BEAST
+#
 
