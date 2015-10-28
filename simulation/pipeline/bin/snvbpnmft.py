@@ -98,7 +98,7 @@ tip_partials = dict()
 for line in bpnmf_file:
     d = line.split(",")
     
-    for i in len(alphabet):
+    for i in range(len(alphabet)):
         begin = num_samples + 1 + num_sites * i
         end = begin + num_sites
         for j in range(begin,end):
