@@ -1,5 +1,5 @@
 #!/bin/bash
-
+unset module
 #
 # Deconvolute and build tree 
 #
@@ -22,12 +22,12 @@ then
 
 	# get full path of script
 	CMD=`readlink -f $0`
-
-    qsub -sync yes -V -v ARGS="$@" $CMD 
+    export ARGS="$@"
+    qsub -sync yes -V -v BINDIR=$BINDIR $CMD 
 	echo "Finished"
 
 else # EXECUTION MODE
-	echo "Running"
+	echo "Running $SNVBPNMFT $ARGS"
 
 	# run the algorithm
 	$SNVBPNMFT $ARGS

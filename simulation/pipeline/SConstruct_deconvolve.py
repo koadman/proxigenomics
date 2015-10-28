@@ -64,8 +64,6 @@ def make_readmap(outdir, c):
 @name_targets
 def make_deconvolve(outdir, c):
     com = c['community']
-    mu = c['lognorm_rel_abundance_mu']
-    sigma = c['lognorm_rel_abundance_sigma']
 
     subject = os.path.join(os.path.abspath(config['wgs_folder']),
                 com, str(c['num_samples']), str(c['wgs_xfold']), config['wgs_asmdir'],
@@ -77,7 +75,7 @@ def make_deconvolve(outdir, c):
         # TODO find a better way to obtain the path to WGS reads
         bam = appconfig.get_bam_by_sample(
                     os.path.join(os.path.abspath(config['map_folder']),
-                    com, str(c['wgs_xfold'])), str(c['num_samples']),
+                    com, str(c['num_samples']),str(c['wgs_xfold'])), i,
                     config)
         bam_files = bam_files + [bam]
 
@@ -85,8 +83,8 @@ def make_deconvolve(outdir, c):
     source = [subject] + [bam_files]
 
     action = exec_env.resolve_action({
-        'pbs': 'bin/pbsrun_DECONVOLVE.sh $SOURCES.abspath $TARGET.abspath',
-        'sge': 'bin/sgerun_DECONVOLVE.sh $SOURCES.abspath $TARGET.abspath'
+        'pbs': 'bin/pbsrun_DECONVOLVE.sh 4 $SOURCES.abspath $TARGET.abspath',
+        'sge': 'bin/sgerun_DECONVOLVE.sh 4 $SOURCES.abspath $TARGET.abspath'
     })
     return 'tree',env.Command(target, source, action)
 
