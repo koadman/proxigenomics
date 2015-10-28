@@ -37,6 +37,7 @@ def make_readmap(outdir, c):
     mu = c['lognorm_rel_abundance_mu']
     sigma = c['lognorm_rel_abundance_sigma']
 
+    result = ('0','0')
     for i in range(0,c['num_samples']):
         # TODO find a better way to obtain the path to WGS reads
         query = appconfig.get_wgs_reads_by_sample(
@@ -55,9 +56,9 @@ def make_readmap(outdir, c):
             'pbs': 'bin/pbsrun_BWA.sh $SOURCES.abspath $TARGET.abspath',
             'sge': 'bin/sgerun_BWA.sh $SOURCES.abspath $TARGET.abspath'
         })
-        env.Command(target, source, action)
 
-    return 'output', 0
+        result = env.Command(target, source, action)
+    return 'bams',result
 
 @wrap.add_target('make_deconvolve')
 @name_targets
@@ -67,29 +68,28 @@ def make_deconvolve(outdir, c):
     sigma = c['lognorm_rel_abundance_sigma']
 
     subject = os.path.join(os.path.abspath(config['wgs_folder']),
-                com, mu, sigma, str(c['num_samples']), str(c['wgs_xfold']), config['wgs_asmdir'],
+                com, str(mu), str(sigma), str(c['num_samples']), str(c['wgs_xfold']), config['wgs_asmdir'],
                 '{0[wgs_base]}.contigs.fasta'.format(config))
 
 
-    query_sequences = ""
+    bam_files = ""
     for i in range(0,c['num_samples']):
         # TODO find a better way to obtain the path to WGS reads
-        query = appconfig.get_wgs_reads_by_sample(
+        bam = appconfig.get_bam_by_sample(
                     os.path.join(os.path.abspath(config['wgs_folder']),
-                    com, mu, sigma, str(c['wgs_xfold'])), str(c['num_samples']),
+                    com, str(mu), str(sigma), str(c['wgs_xfold'])), str(c['num_samples']),
                     config)
-        query_sequences = query_sequences + " " + query
+        bam_files = bam_files + " " + bam
 
-    target = os.path.join(outdir, config['wgs2ctg'])
-    source = [subject] + query_sequences
+    target = os.path.join(outdir, config['wgs2ctg'], "strains.tre")
+    source = [subject] + [bam_files]
 
     action = exec_env.resolve_action({
         'pbs': 'bin/pbsrun_DECONVOLVE.sh $SOURCES.abspath $TARGET.abspath',
         'sge': 'bin/sgerun_DECONVOLVE.sh $SOURCES.abspath $TARGET.abspath'
     })
-    env.Command(target, source, action)
+    return 'tree',env.Command(target, source, action)
 
-    return 'output', 0
 
 
 wrap.add_controls(Environment())

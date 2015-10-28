@@ -167,7 +167,7 @@ def get_bam_by_sample(path, sample, config):
     :param config: application config object
     :return: list of read files (R1, R2)
     """
-    return os.path.join(path, '{0}.{2}.bam'.format(config['wgs_base'], n, sample))
+    return os.path.join(path, '{0}.{1}.bam'.format(config['wgs_base'], sample))
 
 class ExecutionEnvironment:
 
