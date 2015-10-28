@@ -72,14 +72,14 @@ def make_deconvolve(outdir, c):
                 '{0[wgs_base]}.contigs.fasta'.format(config))
 
 
-    bam_files = ""
+    bam_files = []
     for i in range(0,c['num_samples']):
         # TODO find a better way to obtain the path to WGS reads
         bam = appconfig.get_bam_by_sample(
                     os.path.join(os.path.abspath(config['wgs_folder']),
                     com, str(c['wgs_xfold'])), str(c['num_samples']),
                     config)
-        bam_files = bam_files + " " + bam
+        bam_files = bam_files + [bam]
 
     target = os.path.join(outdir, config['wgs2ctg'], "strains.tre")
     source = [subject] + [bam_files]
