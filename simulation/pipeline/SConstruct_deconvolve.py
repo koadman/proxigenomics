@@ -49,7 +49,7 @@ def make_readmap(outdir, c):
                     com, str(mu), str(sigma), str(c['num_samples']), str(c['wgs_xfold']), config['wgs_asmdir'],
                     '{0[wgs_base]}.contigs.fasta'.format(config))
 
-        target = os.path.join(outdir, config['wgs2ctg'])
+        target = get_bam_by_sample(outdir, i, config)
         source = [subject] + query
 
         action = exec_env.resolve_action({
