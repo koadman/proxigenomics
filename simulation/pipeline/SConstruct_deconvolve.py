@@ -76,7 +76,7 @@ def make_deconvolve(outdir, c):
     for i in range(0,c['num_samples']):
         # TODO find a better way to obtain the path to WGS reads
         bam = appconfig.get_bam_by_sample(
-                    os.path.join(os.path.abspath(config['wgs_folder']),
+                    os.path.join(os.path.abspath(config['map_folder']),
                     com, str(c['wgs_xfold'])), str(c['num_samples']),
                     config)
         bam_files = bam_files + [bam]
