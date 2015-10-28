@@ -42,11 +42,11 @@ def make_readmap(outdir, c):
         # TODO find a better way to obtain the path to WGS reads
         query = appconfig.get_wgs_reads_by_sample(
                     os.path.join(os.path.abspath(config['wgs_folder']),
-                    com, str(mu), str(sigma), str(c['wgs_xfold'])), str(c['num_samples']),
+                    com, str(c['wgs_xfold'])), str(c['num_samples']),
                     config)
 
         subject = os.path.join(os.path.abspath(config['wgs_folder']),
-                    com, str(mu), str(sigma), str(c['num_samples']), str(c['wgs_xfold']), config['wgs_asmdir'],
+                    com, str(c['num_samples']), str(c['wgs_xfold']), config['wgs_asmdir'],
                     '{0[wgs_base]}.contigs.fasta'.format(config))
 
         target = appconfig.get_bam_by_sample(outdir, i, config)
@@ -68,7 +68,7 @@ def make_deconvolve(outdir, c):
     sigma = c['lognorm_rel_abundance_sigma']
 
     subject = os.path.join(os.path.abspath(config['wgs_folder']),
-                com, str(mu), str(sigma), str(c['num_samples']), str(c['wgs_xfold']), config['wgs_asmdir'],
+                com, str(c['num_samples']), str(c['wgs_xfold']), config['wgs_asmdir'],
                 '{0[wgs_base]}.contigs.fasta'.format(config))
 
 
@@ -77,7 +77,7 @@ def make_deconvolve(outdir, c):
         # TODO find a better way to obtain the path to WGS reads
         bam = appconfig.get_bam_by_sample(
                     os.path.join(os.path.abspath(config['wgs_folder']),
-                    com, str(mu), str(sigma), str(c['wgs_xfold'])), str(c['num_samples']),
+                    com, str(c['wgs_xfold'])), str(c['num_samples']),
                     config)
         bam_files = bam_files + " " + bam
 
