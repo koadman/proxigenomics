@@ -274,7 +274,7 @@ if ($start <= 2) {
 	
 } 
 if ($end == 2){
-	map_libs_and_polish($OUTBASE, \%RAW_LIBS, ".contigs");
+#	map_libs_and_polish($OUTBASE, \%RAW_LIBS, ".contigs");
 	print STDERR "[a5] Done building contigs. Results at $OUTBASE.contigs.fasta\n";
 	exit;
 }
