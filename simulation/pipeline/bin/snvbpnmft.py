@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from __future__ import division
 #
 # wrapper script to: 
 # (1) compute SNVs using lofreq*
@@ -17,7 +18,7 @@ alphabet = ['A','C','G','T']
 if len(sys.argv)<5:
     print "Usage: snvbpnmft.py <number of strains> <reference fasta> <sample 1 bam> <sample 2 bam> .. [sample N bam]";
     sys.exit(-1)
-num_strains = sys.argv[1]
+num_strains = int(sys.argv[1])
 ref_fa = sys.argv[2]
 num_samples = len(sys.argv) - 4
 
@@ -45,7 +46,6 @@ for i in range(num_samples):
             continue    # didnt pass filters
         locus = d[0] + "\t" + d[1]  # chrom & site
         m = re.search('DP=(.+);AF=(.+);SB', d[7])
-        print "Hunting in " + d[7]
         vac = int(float(m.group(1)) * float(m.group(2)))
         if not locus in depths[alphabet[0]]:
             for a in alphabet:
@@ -98,29 +98,40 @@ beast_filename = "beast.xml"
 bpnmf_file = open(bpnmf_filename)
 beast_file = open(beast_filename, "w")
 
-# init 3D array of tip partials
-s = 0
+# init 2D array of tip partials
+tip_partials = [[[0 for x in range(num_sites)] for s in range(num_strains)] for x in range(len(alphabet))]
+
+ll = -2 # skip the first line (csv header)
 for line in bpnmf_file:
+    if line.startswith("#"):
+        continue 
+    ll += 1
+    if ll < 0:
+        continue
     d = line.split(",")
-    tip_partials = [[0 for x in range(num_sites)] for x in range(len(alphabet))]
-    begin = num_samples + 1 + num_sites * i
-    end = begin + num_sites
-    for j in range(begin,end):
-        for i in range(len(alphabet)):
-            tip_partials[i][j] += float(d[j])
+    for i in range(len(alphabet)):
+        for s in range(num_strains):
+            begin = num_samples + 1 + num_sites * num_strains * i + num_sites * s
+            end = begin + num_sites
+            for j in range(begin,end):
+                tip_partials[i][s][j-begin] += float(d[j])
 
     # normalize to a tip partial distribution
-    for j in range(begin,end):
-        m = max(tip_partials[i][j] for i in range(len(alphabet)))
-        for i in range(len(alphabet)):
-            tip_partials[i][j] /= m
+    for s in range(num_strains):
+        for j in range(num_sites):
+            m = 0
+            for i in range(len(alphabet)):
+                m = tip_partials[i][s][j] if tip_partials[i][s][j] > m else m 
+            for i in range(len(alphabet)):
+                tip_partials[i][s][j] = tip_partials[i][s][j] / m
 
-    # write to xml
+# write to xml
+for s in range(num_strains):
     for i in range(len(alphabet)):
-        beast_file.write("<TipPartials id=\"" + str(s) + "\" char=\""+ str(alphabet[i]) + "\">")
-        beast_file.write(",".join(tip_partials[j]))
-
-
+        beast_file.write("<TipPartials id=\"" + str(s) + "\" char=\""+ str(alphabet[i]) + "\">\n")
+        beast_file.write(",".join(map(str,tip_partials[i][s])))
+        beast_file.write("\n</TipPartials>\n")
+   
 beast_file.close()
 
 ##
