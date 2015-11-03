@@ -413,4 +413,8 @@ beast_file.close()
 ##
 # run BEAST
 #
+beast = "java -Xmx1000m -jar external/beast.jar -overwrite " 
+beast_cmd = beast + " -overwrite " + beast_filename
+print beast_cmd
+os.system(beast_cmd)
 
