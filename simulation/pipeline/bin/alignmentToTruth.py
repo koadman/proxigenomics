@@ -2,9 +2,12 @@
 from Bio import SeqIO
 from collections import OrderedDict
 
-import re
-import argparse
+import Psl
 import truthtable as tt
+
+import numpy as np
+import argparse
+import re
 
 
 # CIGAR matcher for aligning regions
@@ -211,7 +214,35 @@ def parse_last(last_file):
     return align_repo
 
 
-psl_dataline = re.compile(r'^[0-9]+\t')
+def parse_psl2(psl_file):
+
+    rejected = 0
+    with open(psl_file, 'r') as h_in:
+
+        alignment_repo = OrderedDict()
+
+        for aln in Psl.parse(h_in):
+
+            if aln.coverage < args.mincov or aln.percent_id < args.minid:
+                rejected += 1
+                continue
+
+            if aln.q_name not in alignment_repo:
+                alignment_repo[aln.q_name] = OrderedDict({aln.t_name: np.zeros(aln.q_size, dtype=np.uint8)})
+
+            if aln.t_name not in alignment_repo[aln.q_name]:
+                alignment_repo[aln.q_name][aln.t_name] = np.zeros(aln.q_size, dtype=np.uint8)
+
+            alignment_repo[aln.q_name][aln.t_name][aln.q_start:aln.q_end+1] = 1
+
+        np.set_printoptions(suppress=False)
+        for ctg in alignment_repo:
+            v = np.vstack(alignment_repo[ctg].values())
+            print ctg, np.sum(v, axis=1)/float(np.sum(v))
+
+    print 'Rejected {0} alignments under identity and coverage threshold'.format(rejected)
+
+    return {}
 
 
 def parse_psl(psl_file):
@@ -223,46 +254,30 @@ def parse_psl(psl_file):
     """
     all_hits = 0
     rejected = 0
-    align_repo = OrderedDict()
+    alignment_repo = OrderedDict()
+
     with open(psl_file, 'r') as h_in:
-        for l in h_in:
-            all_hits += 1
-            # skip header fields
-            if not psl_dataline.match(l):
-                continue
+
+        for aln in Psl.parse(h_in):
 
             all_hits += 1
-
-            fields = l.rsplit()
-
-            qname = fields[9]
-            rname = fields[13]
-            alen = int(fields[12]) - int(fields[11]) + 1
-            qlen = int(fields[10])
-
-            # Taken from BLAT perl script for calculating percentage identity
-            matches = int(fields[0])
-            mismatches = int(fields[1])
-            repmatches = int(fields[2])
-            q_num_insert = int(fields[4])
-            perid = (1.0 - float(mismatches + q_num_insert) / float(matches + mismatches + repmatches)) * 100.0
 
             # ignore alignment records which fall below mincov or minid
             # wrt the length of the alignment vs query sequence.
-            if float(alen)/float(qlen) < args.mincov or perid < args.minid:
+            if aln.coverage < args.mincov or aln.percent_id < args.minid:
                 rejected += 1
                 continue
 
-            aln = Alignment(qname, rname, alen, qlen, perid)
-            if aln in align_repo:
-                align_repo[aln].add_bases(alen)
+            ai = Alignment(aln.q_name, aln.t_name, aln.length, aln.q_size, aln.percent_id)
+            if ai in alignment_repo:
+                alignment_repo[ai].add_bases(aln.length)
             else:
-                align_repo[aln] = aln
+                alignment_repo[ai] = ai
 
         print 'Rejected {0}/{1} alignments due to constraints on ID {2} and Coverage {3}'.format(
             rejected, all_hits, args.minid, args.mincov)
 
-    return align_repo
+    return alignment_repo
 
 if __name__ == '__main__':
 
@@ -275,7 +290,7 @@ if __name__ == '__main__':
                         help='Minimum length in bp')
     parser.add_argument('--mincov', type=float, required=False, default=0.5,
                         help='Minimum coverage of query by alignment')
-    parser.add_argument('--afmt', choices=['bwa', 'last', 'psl'], default='last', help='Alignment file format')
+    parser.add_argument('--afmt', choices=['bwa', 'last', 'psl', 'test'], default='last', help='Alignment file format')
     parser.add_argument('--qf', metavar='FASTA', help='Query fasta sequences')
     parser.add_argument('--ofmt', choices=['flat', 'yaml'], default='yaml', help='Output format')
     parser.add_argument('alignment_file', metavar='ALIGNMENT_FILE', nargs=1,
@@ -301,6 +316,9 @@ if __name__ == '__main__':
 
     elif args.afmt == 'psl':
         align_repo = parse_psl(args.alignment_file[0])
+
+    elif args.afmt == 'test':
+        align_repo = parse_psl2(args.alignment_file[0])
 
     if args.ofmt == 'flat':
         print 'Soft results always enabled for flat output format'
