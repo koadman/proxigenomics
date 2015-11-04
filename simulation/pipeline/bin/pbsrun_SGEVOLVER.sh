@@ -13,13 +13,12 @@
 if [ -z "$PBS_ENVIRONMENT" ]
 then
 	BINDIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
-	source $HICPIPE/bin/bash_init.sh
+	source $BINDIR/bash_init.sh
 fi
 
-PATH=$PATH:$HICPIPE/bin:$HICPIPE/bin/sgevolver
-SGBIN=$HICPIPE/bin/sgevolver/simujobrun.pl
-SGPARMS=$HICPIPE/bin/sgevolver/prepParams.py
-
+PATH=$PATH:$BINDIR:$BINDIR/sgevolver
+SGBIN=$BINDIR/sgevolver/simujobrun.pl
+SGPARMS=$BINDIR/sgevolver/prepParams.py
 
 if [ -z "$PBS_ENVIRONMENT" ] # SUBMIT MODE
 then
