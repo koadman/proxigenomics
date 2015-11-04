@@ -40,12 +40,7 @@ The scons and nestly packages must be installed. For example on ubuntu:
     sudo pip install nestly
 
 ####Running the pipeline
-It is necessary to first set the environment variable HICPIPE to the location of the simulation source tree.
-If that is the current working directory:
-
-    export HICPIPE=`pwd`
-
-Then, the following commands will run the pipeline.
+The following commands will run the pipeline.
 
 1. scons -j N -f SConstruct_evo.py  
 2. scons -j N -f SConstruct_wgs.py  
