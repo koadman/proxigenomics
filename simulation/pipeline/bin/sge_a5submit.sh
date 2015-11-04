@@ -26,7 +26,7 @@ export ITHREE_GIT=$HOME/git/ithree
 
 # Path to the a5 executable
 # This might need to be set!
-A5EXE=$ITHREE_GIT/software/a5_miseq_linux/bin/a5_pipeline.pl
+A5EXE=$PROXIHOME/simulation/pipeline/external/a5_miseq_linux_20140604/bin/a5_pipeline.pl
 
 #
 # Check if invocation was via PBS queue.
