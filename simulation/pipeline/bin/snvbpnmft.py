@@ -18,7 +18,7 @@ alphabet = ['A','C','G','T']
 if len(sys.argv)<5:
     print "Usage: snvbpnmft.py <output directory> <number of strains> <reference fasta> <sample 1 bam> <sample 2 bam> .. [sample N bam]";
     sys.exit(-1)
-out_dir = int(sys.argv[1])
+out_dir = sys.argv[1]
 num_strains = int(sys.argv[2])
 ref_fa = sys.argv[3]
 num_samples = len(sys.argv) - 5
@@ -310,7 +310,7 @@ beast_file.write( """
 	</operators>
 
 	<!-- Define MCMC                                                             -->
-	<mcmc id="mcmc" chainLength="2000000" autoOptimize="true" operatorAnalysis="aln.ops">
+	<mcmc id="mcmc" chainLength="2000000" autoOptimize="true" operatorAnalysis=""" + "\"" + os.path.join(out_dir,"aln.ops") + "\">" + """
 		<posterior id="posterior">
 			<prior id="prior">
 				<gammaPrior shape="0.05" scale="10.0" offset="0.0">
@@ -371,7 +371,7 @@ beast_file.write( """
 		</log>
 
 		<!-- write log to file                                                       -->
-		<log id="fileLog" logEvery="1000" fileName="aln.log" overwrite="false">
+		<log id="fileLog" logEvery="1000" fileName=""" + "\"" + os.path.join(out_dir,"aln.log") + "\"" + """ overwrite="false">
 			<posterior idref="posterior"/>
 			<prior idref="prior"/>
 			<likelihood idref="likelihood"/>
@@ -391,7 +391,7 @@ beast_file.write( """
 		</log>
 
 		<!-- write tree log to file                                                  -->
-		<logTree id="treeFileLog" logEvery="1000" nexusFormat="true" fileName="aln.trees" sortTranslationTable="true">
+		<logTree id="treeFileLog" logEvery="1000" nexusFormat="true" fileName=""" + "\"" + os.path.join(out_dir,"aln.trees") + "\"" + """ sortTranslationTable="true">
 			<treeModel idref="treeModel"/>
 			<trait name="rate" tag="rate">
 				<strictClockBranchRates idref="branchRates"/>
@@ -412,14 +412,14 @@ beast_file.close()
 ##
 # run BEAST
 #
-beast = "java -Xmx1000m -jar external/beast.jar -overwrite " 
+beast = "java -Xmx1000m -jar external/beast.jar " 
 beast_cmd = beast + " -overwrite " + beast_filename
 print beast_cmd
 os.system(beast_cmd)
 
 aln_trees = os.path.join(out_dir, "aln.trees")
 out_tree = os.path.join(out_dir, "strains.tre")
-treeanno_cmd = "java -jar external/treeannotator.jar -burnin 1000 -heights mean " + aln_trees + out_tree
+treeanno_cmd = "java -jar external/treeannotator.jar -burnin 1000 -heights mean " + aln_trees + " " + out_tree
 print treeanno_cmd
 os.system(treeanno_cmd)
 
