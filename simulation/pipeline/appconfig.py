@@ -158,11 +158,11 @@ def get_wgs_reads_by_sample(path, sample, config):
     :param config: application config object
     :return: list of read files (R1, R2)
     """
-    return [os.path.join(path, '{0}.{2}.r{1}.fq'.format(config['wgs_base'], n, sample)) for n in range(1, 3)]
+    return [os.path.join(path, '{0}.{2}.r{1}.fq.gz'.format(config['wgs_base'], n, sample)) for n in range(1, 3)]
 
 def get_bam_by_sample(path, sample, config):
     """
-    Return the pair of generated WGS files for a given community
+    Return the bam file for a given sample
     :param path: containing path of WGS reads
     :param config: application config object
     :return: list of read files (R1, R2)
