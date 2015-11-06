@@ -33,7 +33,7 @@ variant_sites = list()
 #
 for i in range(num_samples):
     cur_vcf = str(i) + ".vcf"
-    lofreq_cmd = lofreq + " call " + "--no-default-filter -f " + ref_fa + " -o " + cur_vcf + " " + sys.argv[i+3] 
+    lofreq_cmd = lofreq + " call " + "--no-default-filter -C 2 -f " + ref_fa + " -o " + cur_vcf + " " + sys.argv[i+3] 
     print lofreq_cmd
     os.system(lofreq_cmd)
     vcf_file = open(cur_vcf)
@@ -148,12 +148,12 @@ beast_file.write( """
 
 # write to xml
 for s in range(num_strains):
-	beast_file.write("\t\t<partiallyresolvedsequence>\n");
+    beast_file.write("\t\t<partiallyresolvedsequence>\n")
     for i in range(len(alphabet)):
         beast_file.write("\t\t\t<parameter value=\"")
         beast_file.write(" ".join(map(str,tip_partials[i][s])))
         beast_file.write("\"/>\n")
-    beast_file.write("\t\t\t<taxon idref=\"" + str(s) + "\">\n\t\t</partiallyresolvedsequence>\n");
+    beast_file.write("\t\t\t<taxon idref=\"" + str(s) + "\">\n\t\t</partiallyresolvedsequence>\n")
 
 beast_file.write( """
 	</partiallyresolvedpatterns>
