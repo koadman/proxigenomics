@@ -16,11 +16,12 @@ alphabet = ['A','C','G','T']
 
 # parse the command-line
 if len(sys.argv)<5:
-    print "Usage: snvbpnmft.py <number of strains> <reference fasta> <sample 1 bam> <sample 2 bam> .. [sample N bam]";
+    print "Usage: snvbpnmft.py <output directory> <number of strains> <reference fasta> <sample 1 bam> <sample 2 bam> .. [sample N bam]";
     sys.exit(-1)
-num_strains = int(sys.argv[1])
-ref_fa = sys.argv[2]
-num_samples = len(sys.argv) - 4
+out_dir = int(sys.argv[1])
+num_strains = int(sys.argv[2])
+ref_fa = sys.argv[3]
+num_samples = len(sys.argv) - 5
 
 depths = dict()
 for a in alphabet:
@@ -32,8 +33,8 @@ variant_sites = list()
 # parse the VCF and store calls in snvs dict
 #
 for i in range(num_samples):
-    cur_vcf = str(i) + ".vcf"
-    lofreq_cmd = lofreq + " call " + "--no-default-filter -f " + ref_fa + " -o " + cur_vcf + " " + sys.argv[i+3] 
+    cur_vcf = os.path.join(out_dir, str(i) + ".vcf")
+    lofreq_cmd = lofreq + " call " + "--no-default-filter -f " + ref_fa + " -o " + cur_vcf + " " + sys.argv[i+4] 
     print lofreq_cmd
     os.system(lofreq_cmd)
     vcf_file = open(cur_vcf)
@@ -60,7 +61,7 @@ for i in range(num_samples):
 # write out a file with SNVs and sample count for Bayesian PNMF
 #
 num_sites = len(variant_sites)
-snv_filename = "snv_file.data.R"
+snv_filename = os.path.join(out_dir, "snv_file.data.R")
 snv_file = open(snv_filename, "w")
 snv_file.write("U<-" + str(num_sites) + "\n")  # number of sites
 snv_file.write("T<-" + str(num_samples) + "\n")  # number of time points
@@ -87,14 +88,14 @@ snv_file.close()
 ##
 # run the Poisson NMF
 #
-bpnmf_filename = "decon.csv"
+bpnmf_filename = os.path.join(out_dir, "decon.csv")
 bpnmf_cmd = "genotypes_acgt variational data file=" + snv_filename + " output file=" + bpnmf_filename
 os.system(bpnmf_cmd)
 
 ##
 # summarize the tip partials and create a BEAST XML
 #
-beast_filename = "beast.xml"
+beast_filename = os.path.join(out_dir, "beast.xml")
 bpnmf_file = open(bpnmf_filename)
 beast_file = open(beast_filename, "w")
 
@@ -416,7 +417,9 @@ beast_cmd = beast + " -overwrite " + beast_filename
 print beast_cmd
 os.system(beast_cmd)
 
-treeanno_cmd = "java -jar treeannotator.jar -burnin 1000 -heights mean aln.trees out.tre"
+aln_trees = os.path.join(out_dir, "aln.trees")
+out_tree = os.path.join(out_dir, "strains.tre")
+treeanno_cmd = "java -jar external/treeannotator.jar -burnin 1000 -heights mean " + aln_trees + out_tree
 print treeanno_cmd
 os.system(treeanno_cmd)
 

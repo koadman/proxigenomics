@@ -83,8 +83,8 @@ def make_deconvolve(outdir, c):
     source = [subject] + [bam_files]
 
     action = exec_env.resolve_action({
-        'pbs': 'bin/pbsrun_DECONVOLVE.sh 4 $SOURCES.abspath $TARGET.abspath',
-        'sge': 'bin/sgerun_DECONVOLVE.sh 4 $SOURCES.abspath $TARGET.abspath'
+        'pbs': 'bin/pbsrun_DECONVOLVE.sh ' + outdir + ' 4 $SOURCES.abspath $TARGET.abspath',
+        'sge': 'bin/sgerun_DECONVOLVE.sh ' + outdir + ' 4 $SOURCES.abspath $TARGET.abspath'
     })
     return 'tree',env.Command(target, source, action)
 
