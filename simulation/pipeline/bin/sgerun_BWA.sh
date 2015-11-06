@@ -56,9 +56,8 @@ else # EXECUTION MODE
     BASE=${OUTPUT%.bam}
 
 	# Map reads. The second query file can be empty
-	$BWA mem -t $NSLOTS $SUBJECT $QUERY1 $QUERY2 > ${BASE}.sam
+	$BWA mem -t $NSLOTS $SUBJECT $QUERY1 $QUERY2 | $SAMTOOLS view -S -b - | $SAMTOOLS sort - $BASE
 
-    $SAMTOOLS view -@ $NSLOTS -bS ${BASE}.sam | $SAMTOOLS sort -@ $NSLOTS - $BASE
     $SAMTOOLS index $OUTPUT
     $SAMTOOLS idxstats $OUTPUT > ${BASE}.idxstats
     $SAMTOOLS flagstat $OUTPUT > ${BASE}.flagstat
