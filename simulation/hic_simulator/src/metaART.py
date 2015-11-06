@@ -53,8 +53,10 @@ if __name__ == '__main__':
         for seq_id in seq_index:
             profile[seq_id] /= ra_sum
 
-        with open('{0}.{1}.r1.fq'.format(args.output_base,n), 'w') as output_R1, \
-                open('{0}.{1}.r2.fq'.format(args.output_base,n), 'w') as output_R2:
+        output_R1_name = '{0}.{1}.r1.fq'.format(args.output_base,n)
+        output_R2_name = '{0}.{1}.r2.fq'.format(args.output_base,n)
+        with open(output_R1_name, 'w') as output_R1, \
+                open(output_R2_name, 'w') as output_R2:
             try:
                 for seq_id in profile:
                     coverage = float(profile[seq_id] * args.max_coverage)
@@ -102,6 +104,8 @@ if __name__ == '__main__':
                         output_R2.write(tmp_h.read())
                         os.remove(tmp_h.name)
 
+                    os.system("gzip " + output_R1_name)
+                    os.system("gzip " + output_R2_name)
                     os.remove(TMP_INPUT)
             finally:
                 pass
