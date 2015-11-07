@@ -79,7 +79,7 @@ def make_deconvolve(outdir, c):
                     config)
         bam_files = bam_files + [bam]
 
-    target = os.path.join(outdir, config['wgs2ctg'], "strains.tre")
+    target = os.path.join(outdir, "strains.tre")
     source = [subject] + [bam_files]
 
     action = exec_env.resolve_action({
