@@ -89,8 +89,9 @@ snv_file.close()
 # run the Poisson NMF
 #
 bpnmf_filename = os.path.join(out_dir, "decon.csv")
-bpnmf_cmd = "genotypes_acgt variational data file=" + snv_filename + " output file=" + bpnmf_filename
+bpnmf_cmd = "genotypes_acgt variational output_samples=100 data file=" + snv_filename + " output file=" + bpnmf_filename
 os.system(bpnmf_cmd)
+os.remove(snv_filename)
 
 ##
 # summarize the tip partials and create a BEAST XML
@@ -408,6 +409,7 @@ beast_file.write( """
 """);
 
 beast_file.close()
+os.remove(bpnmf_filename)
 
 ##
 # run BEAST
