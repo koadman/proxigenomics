@@ -163,7 +163,7 @@ beast_file.write( """
 	<!-- throughout the time spanned by the genealogy.                           -->
 	<constantSize id="constant" units="years">
 		<populationSize>
-			<parameter id="constant.popSize" value="0.5" lower="0.0"/>
+			<parameter id="constant.popSize" value="0.4" lower="0.0"/>
 		</populationSize>
 	</constantSize>
 
@@ -200,12 +200,12 @@ beast_file.write( """
 	<!-- The strict clock (Uniform rates across branches)                        -->
 	<strictClockBranchRates id="branchRates">
 		<rate>
-			<parameter id="clock.rate" value="1.0" lower="0.0"/>
+			<parameter id="clock.rate" value="1.0"/>
 		</rate>
 	</strictClockBranchRates>
 
-	<!-- The general time reversible (GTR) substitution model                    -->
-	<gtrModel id="gtr">
+	<!-- The HKY substitution model (Hasegawa, Kishino & Yano, 1985)             -->
+	<HKYModel id="hky">
 		<frequencies>
 			<frequencyModel dataType="nucleotide">
 				<frequencies>
@@ -213,38 +213,20 @@ beast_file.write( """
 				</frequencies>
 			</frequencyModel>
 		</frequencies>
-		<rateAC>
-			<parameter id="ac" value="1.0" lower="0.0"/>
-		</rateAC>
-		<rateAG>
-			<parameter id="ag" value="1.0" lower="0.0"/>
-		</rateAG>
-		<rateAT>
-			<parameter id="at" value="1.0" lower="0.0"/>
-		</rateAT>
-		<rateCG>
-			<parameter id="cg" value="1.0" lower="0.0"/>
-		</rateCG>
-		<rateGT>
-			<parameter id="gt" value="1.0" lower="0.0"/>
-		</rateGT>
-	</gtrModel>
+		<kappa>
+			<parameter id="kappa" value="2.0" lower="0.0"/>
+		</kappa>
+	</HKYModel>
 
 	<!-- site model                                                              -->
 	<siteModel id="siteModel">
 		<substitutionModel>
-			<gtrModel idref="gtr"/>
+			<HKYModel idref="hky"/>
 		</substitutionModel>
-		<gammaShape gammaCategories="4">
-			<parameter id="alpha" value="0.5" lower="0.0"/>
-		</gammaShape>
-		<proportionInvariant>
-			<parameter id="pInv" value="0.5" lower="0.0" upper="1.0"/>
-		</proportionInvariant>
 	</siteModel>
 
 	<!-- Likelihood for tree given sequence data                                 -->
-	<treeLikelihood id="treeLikelihood" useAmbiguities="true">
+	<treeLikelihood id="treeLikelihood" useAmbiguities="false">
 		<patterns idref="patterns"/>
 		<treeModel idref="treeModel"/>
 		<siteModel idref="siteModel"/>
@@ -254,33 +236,12 @@ beast_file.write( """
 	<!-- Define operators                                                        -->
 	<operators id="operators" optimizationSchedule="default">
 		<scaleOperator scaleFactor="0.75" weight="0.1">
-			<parameter idref="ac"/>
-		</scaleOperator>
-		<scaleOperator scaleFactor="0.75" weight="0.1">
-			<parameter idref="ag"/>
-		</scaleOperator>
-		<scaleOperator scaleFactor="0.75" weight="0.1">
-			<parameter idref="at"/>
-		</scaleOperator>
-		<scaleOperator scaleFactor="0.75" weight="0.1">
-			<parameter idref="cg"/>
-		</scaleOperator>
-		<scaleOperator scaleFactor="0.75" weight="0.1">
-			<parameter idref="gt"/>
+			<parameter idref="kappa"/>
 		</scaleOperator>
 		<deltaExchange delta="0.01" weight="0.1">
 			<parameter idref="frequencies"/>
 		</deltaExchange>
-		<scaleOperator scaleFactor="0.75" weight="0.1">
-			<parameter idref="alpha"/>
-		</scaleOperator>
-		<scaleOperator scaleFactor="0.75" weight="0.1">
-			<parameter idref="pInv"/>
-		</scaleOperator>
-		<scaleOperator scaleFactor="0.75" weight="3">
-			<parameter idref="clock.rate"/>
-		</scaleOperator>
-		<subtreeSlide size="0.05" gaussian="true" weight="15">
+		<subtreeSlide size="0.04" gaussian="true" weight="15">
 			<treeModel idref="treeModel"/>
 		</subtreeSlide>
 		<narrowExchange weight="15">
@@ -303,7 +264,6 @@ beast_file.write( """
 		</scaleOperator>
 		<upDownOperator scaleFactor="0.75" weight="3">
 			<up>
-				<parameter idref="clock.rate"/>
 			</up>
 			<down>
 				<parameter idref="treeModel.allInternalNodeHeights"/>
@@ -315,40 +275,19 @@ beast_file.write( """
 	<mcmc id="mcmc" chainLength="2000000" autoOptimize="true" operatorAnalysis=""" + "\"" + os.path.join(out_dir,"aln.ops") + "\">" + """
 		<posterior id="posterior">
 			<prior id="prior">
-				<gammaPrior shape="0.05" scale="10.0" offset="0.0">
-					<parameter idref="ac"/>
-				</gammaPrior>
-				<gammaPrior shape="0.05" scale="20.0" offset="0.0">
-					<parameter idref="ag"/>
-				</gammaPrior>
-				<gammaPrior shape="0.05" scale="10.0" offset="0.0">
-					<parameter idref="at"/>
-				</gammaPrior>
-				<gammaPrior shape="0.05" scale="10.0" offset="0.0">
-					<parameter idref="cg"/>
-				</gammaPrior>
-				<gammaPrior shape="0.05" scale="10.0" offset="0.0">
-					<parameter idref="gt"/>
-				</gammaPrior>
+				<logNormalPrior mean="1.0" stdev="1.25" offset="0.0" meanInRealSpace="false">
+					<parameter idref="kappa"/>
+				</logNormalPrior>
 				<uniformPrior lower="0.0" upper="1.0">
 					<parameter idref="frequencies"/>
 				</uniformPrior>
-				<exponentialPrior mean="0.5" offset="0.0">
-					<parameter idref="alpha"/>
-				</exponentialPrior>
-				<uniformPrior lower="0.0" upper="1.0">
-					<parameter idref="pInv"/>
-				</uniformPrior>
-				<uniformPrior lower="0.999" upper="1.001">
-					<parameter idref="clock.rate"/>
+				<uniformPrior lower="0.0" upper="10.0">
+					<parameter idref="treeModel.rootHeight"/>
 				</uniformPrior>
 				<oneOnXPrior>
 					<parameter idref="constant.popSize"/>
 				</oneOnXPrior>
-                <uniformPrior lower="0" upper="10">
-                    <parameter idref="treeModel.rootHeight"/>
-                </uniformPrior>
-                <coalescentLikelihood idref="coalescent"/>
+				<coalescentLikelihood idref="coalescent"/>
 			</prior>
 			<likelihood id="likelihood">
 				<treeLikelihood idref="treeLikelihood"/>
@@ -382,14 +321,8 @@ beast_file.write( """
 			<likelihood idref="likelihood"/>
 			<parameter idref="treeModel.rootHeight"/>
 			<parameter idref="constant.popSize"/>
-			<parameter idref="ac"/>
-			<parameter idref="ag"/>
-			<parameter idref="at"/>
-			<parameter idref="cg"/>
-			<parameter idref="gt"/>
+			<parameter idref="kappa"/>
 			<parameter idref="frequencies"/>
-			<parameter idref="alpha"/>
-			<parameter idref="pInv"/>
 			<parameter idref="clock.rate"/>
 			<treeLikelihood idref="treeLikelihood"/>
 			<coalescentLikelihood idref="coalescent"/>
