@@ -8,6 +8,7 @@ unset module
 #$ -o logs/
 #$ -cwd
 #$ -N DECONVOLVEJOB
+#$ -V
 
 if [ -z "$JOB_ID" ]
 then
