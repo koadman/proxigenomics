@@ -123,7 +123,8 @@ for line in bpnmf_file:
         for j in range(num_sites):
             m = 0
             for i in range(len(alphabet)):
-                m = tip_partials[i][s][j] if tip_partials[i][s][j] > m else m 
+#                m = tip_partials[i][s][j] if tip_partials[i][s][j] > m else m 
+                m = m + tip_partials[i][s][j]
             for i in range(len(alphabet)):
                 tip_partials[i][s][j] = tip_partials[i][s][j] / m
 
@@ -344,7 +345,10 @@ beast_file.write( """
 				<oneOnXPrior>
 					<parameter idref="constant.popSize"/>
 				</oneOnXPrior>
-				<coalescentLikelihood idref="coalescent"/>
+                <uniformPrior lower="0" upper="10">
+                    <parameter idref="treeModel.rootHeight"/>
+                </uniformPrior>
+                <coalescentLikelihood idref="coalescent"/>
 			</prior>
 			<likelihood id="likelihood">
 				<treeLikelihood idref="treeLikelihood"/>
