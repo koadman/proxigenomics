@@ -36,6 +36,11 @@ def make_readmap(outdir, c):
     com = c['community']
     mu = c['lognorm_rel_abundance_mu']
     sigma = c['lognorm_rel_abundance_sigma']
+    seqFolder = os.path.join(config['reference']['folder'])
+    seq_dat = os.path.join(seqFolder, "ancestral.dat")
+    seq_fa = os.path.join(seqFolder, "ancestral.fasta")
+    os.system("echo \">ancestor\" > " + seq_fa) 
+    os.system("cat " + seq_dat + " >> " + seq_fa) 
 
     result = ('0','0')
     for i in range(0,c['num_samples']):
@@ -45,12 +50,8 @@ def make_readmap(outdir, c):
                     com, str(c['num_samples']), str(c['wgs_xfold'])), i,
                     config)
 
-        subject = os.path.join(os.path.abspath(config['wgs_folder']),
-                    com, str(c['num_samples']), str(c['wgs_xfold']), config['wgs_asmdir'],
-                    '{0[wgs_base]}.contigs.fasta'.format(config))
-
         target = appconfig.get_bam_by_sample(outdir, i, config)
-        source = [subject] + query
+        source = [seq_fa] + query
 
         action = exec_env.resolve_action({
             'pbs': 'bin/pbsrun_BWA.sh $SOURCES.abspath $TARGET.abspath',
