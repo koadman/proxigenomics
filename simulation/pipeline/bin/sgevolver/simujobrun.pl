@@ -33,7 +33,6 @@ close OUTRAW;
 close INFASTA;
 
 # fix the sequence length to the complete ancestral genome
-# $simujobparams::seq_length = $ancestor_length;
 if ($simujobparams::seq_length > $ancestor_length/1.5) {
     die "Requested evolved sequence length too long in comparison to input sequence"
 }
@@ -51,9 +50,6 @@ my $xmfa_alignment = "";
 # an array of files that need to be deleted when cleaning up
 my @delete_files = ();
 
-# check whether we're debugging...
-my $debug = 0;
-$debug = 1 if @ARGV > 2 && $ARGV[2] eq "debug";
 
 # ROADMAP:
 # 1) simulate evolution according to parameters
@@ -120,24 +116,13 @@ die "Failure in sgEvolver" if( $rval != 0 );
 die "Failure in sgEvolver" unless -e "$simujobparams::evolved_seqs_name";
 die "Failure in sgEvolver" unless -e "$simujobparams::evolved_seqs_fname";
 
-#my $break_cl = $simujobparams::tools_dir."breakSimulatedGenomeOnAncestralContigs $ARGV[0] evolved_seqs.fas evolved.dat"; 
-#$rval = executeCommand( $break_cl, "break.out", "break.err" );
-#die "Failure in breakSimulatedGenomeOnAncestralContigs" if( $rval != 0 );
-
 
 		# delete seq-gen related files
 push( @delete_files, $simujobparams::seqgen_out_name );
-push( @delete_files, $simujobparams::ancestral_seq_name );
+#push( @delete_files, $simujobparams::ancestral_seq_name );
 push( @delete_files, $simujobparams::donor_seq_name );
-
-deleteFiles( @delete_files );
-
-
-
 		# delete evolved sequence data
 push( @delete_files, $simujobparams::evolved_seqs_name );
-#push( @delete_files, $simujobparams::evolved_seqs_fname );
-
 deleteFiles( @delete_files );
 exit(0);
 
