@@ -52,6 +52,7 @@ if __name__ == '__main__':
 
         for seq_id in seq_index:
             profile[seq_id] /= ra_sum
+        print "Sample " + str(n) + " rel abundances " + ", ".join(map(str, profile))
 
         output_R1_name = '{0}.{1}.r1.fq'.format(args.output_base,n)
         output_R2_name = '{0}.{1}.r2.fq'.format(args.output_base,n)
