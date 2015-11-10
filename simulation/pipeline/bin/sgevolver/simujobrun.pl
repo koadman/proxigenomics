@@ -139,12 +139,10 @@ sub executeCommand {
 }
 
 sub deleteFiles {
-  if( $debug != 1 ){
     foreach(@_){
       `rm -f $_`;
       print COMLINES "rm -f $_\n";
     }
-  }
 }
 
 
