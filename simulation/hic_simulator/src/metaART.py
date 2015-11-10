@@ -8,8 +8,8 @@ import sys
 import numpy
 from numpy import random
 
-TMP_INPUT = 'seq.tmp'
-TMP_OUTPUT = 'reads.tmp'
+TMP_INPUT = 'seq.'+str(numpy.random.randint(0,999999999))+'.tmp'
+TMP_OUTPUT = 'reads.'+str(numpy.random.randint(0,999999999))+'.tmp'
 R1_FILE = '{0}1.fq'.format(TMP_OUTPUT)
 R2_FILE = '{0}2.fq'.format(TMP_OUTPUT)
 
@@ -104,9 +104,16 @@ if __name__ == '__main__':
                     with open(R2_FILE, 'r') as tmp_h:
                         output_R2.write(tmp_h.read())
                         os.remove(tmp_h.name)
-
-                    os.system("gzip " + output_R1_name)
-                    os.system("gzip " + output_R2_name)
                     os.remove(TMP_INPUT)
+
             finally:
                 pass
+            output_R1.close()
+            output_R2.close()
+            os.system("gzip " + output_R1_name)
+            os.system("gzip " + output_R2_name)
+
+    all_R1.close()
+    all_R2.close()
+    os.system("gzip " + all_R1.name)
+    os.system("gzip " + all_R2.name)
