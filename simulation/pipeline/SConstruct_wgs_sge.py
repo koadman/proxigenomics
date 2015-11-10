@@ -66,10 +66,10 @@ def index_ctg(outdir, c):
     seq_dat = os.path.join(seqFolder, "ancestral.dat")
     seq_fa = os.path.join(seqFolder, "ancestral.fasta")
     os.system("echo \">ancestor\" > " + seq_fa) 
-    os.system("tail -n 1 " + seq_dat + " | wrap >> " + seq_fa) 
-    source = seq_fa
-    target = source + '.bwt'
-    action = 'bin/sgerun_INDEX.sh $SOURCE.abspath'.format(c)
+    os.system("tail -n 1 " + seq_dat + " | fold >> " + seq_fa) 
+    source = seq_dat
+    target = seq_fa + '.bwt'
+    action = 'bin/sgerun_INDEX.sh ' + seq_fa
 
     return env.Command(target, source, action)
 
