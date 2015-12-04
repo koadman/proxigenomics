@@ -10,6 +10,7 @@
 #$ -N INDEXJOB
 
 BWA=$PWD/external/a5_miseq_linux_20140604/bin/bwa
+SAMTOOLS=$PWD/external/a5_miseq_linux_20140604/bin/samtools
 
 if [ -z "$JOB_ID" ] # SUBMIT MODE
 then
@@ -28,4 +29,5 @@ else # EXECUTION MODE
 	
 	# create indexes
 	$BWA index $FASTA
+    $SAMTOOLS faidx $FASTA
 fi

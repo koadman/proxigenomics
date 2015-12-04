@@ -36,13 +36,10 @@ def make_readmap(outdir, c):
     com = c['community']
     mu = c['lognorm_rel_abundance_mu']
     sigma = c['lognorm_rel_abundance_sigma']
-    seqFolder = os.path.join(config['reference']['folder'])
-    seq_dat = os.path.join(seqFolder, "ancestral.dat")
-    seq_fa = os.path.join(seqFolder, "ancestral.fasta")
-    os.system("echo \">ancestor\" > " + seq_fa) 
-    os.system("cat " + seq_dat + " >> " + seq_fa) 
-
     result = ('0','0')
+    seqFolder = os.path.join(config['community']['folder'], c['community'])
+    seq_fa = os.path.join(seqFolder, "ancestral.fasta")
+
     for i in range(0,c['num_samples']):
         # TODO find a better way to obtain the path to WGS reads
         query = appconfig.get_wgs_reads_by_sample(
@@ -71,6 +68,8 @@ def make_deconvolve(outdir, c):
                 '{0[wgs_base]}.contigs.fasta'.format(config))
 
 
+    seqFolder = os.path.join(config['community']['folder'], c['community'])
+    seq_fa = os.path.join(seqFolder, "ancestral.fasta")
     bam_files = []
     for i in range(0,c['num_samples']):
         # TODO find a better way to obtain the path to WGS reads
@@ -81,7 +80,7 @@ def make_deconvolve(outdir, c):
         bam_files = bam_files + [bam]
 
     target = os.path.join(outdir, "strains.tre")
-    source = [subject] + [bam_files]
+    source = [seq_fa] + [bam_files]
 
     action = exec_env.resolve_action({
         'pbs': 'bin/pbsrun_DECONVOLVE.sh ' + outdir + ' 4 $SOURCES.abspath $TARGET.abspath',

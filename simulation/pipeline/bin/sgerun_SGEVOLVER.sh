@@ -1,5 +1,5 @@
 #!/bin/bash
-
+unset module
 #
 # Create a simulated community
 #

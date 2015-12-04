@@ -149,7 +149,7 @@ def get_wgs_reads(path, config):
     :param config: application config object
     :return: list of read files (R1, R2)
     """
-    return [os.path.join(path, '{0}{1}.fq'.format(config['wgs_base'], n)) for n in range(1, 3)]
+    return [os.path.join(path, '{0}{1}.fq.gz'.format(config['wgs_base'], n)) for n in range(1, 3)]
 
 def get_wgs_reads_by_sample(path, sample, config):
     """
