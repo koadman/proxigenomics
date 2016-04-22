@@ -10,6 +10,9 @@ nest = Nest()
 wrap = SConsWrap(nest, config['hic_folder'])
 env = Environment(ENV=os.environ)
 
+# Used for resolving what type of execution environment will be used.
+exec_env = appconfig.ExecutionEnvironment(ARGUMENTS, supported_env=['pbs', 'sge'])
+
 # Constants
 wrap.add('seed', [config['seed']], create_dir=False)
 wrap.add('refseq', [config['community']['seq']], create_dir=False)
@@ -33,9 +36,14 @@ wrap.add('hic_n_frag', config['hic_n_frag'])
 def generate_hic(outdir, c):
     source = '{1[community][folder]}/{0[community]}/{0[refseq]}'.format(c, config)
     target = '{od}/{0[hic_base]}.fasta'.format(c, od=outdir)
-    action = 'bin/pbsrun_HiC.sh ' \
-             '{0[seed]} {0[hic_n_frag]} {0[hic_read_length]} {0[hic_inter_prob]} ' \
-             '{0[comm_table]} $SOURCE.abspath $TARGET.abspath'.format(c)
+    action = exec_env.resolve_action({
+        'pbs': 'bin/pbsrun_HiC.sh ' \
+            '{0[seed]} {0[hic_n_frag]} {0[hic_read_length]} {0[hic_inter_prob]} ' \
+            '{0[comm_table]} $SOURCE.abspath $TARGET.abspath'.format(c),
+        'sge': 'bin/sgerun_HiC.sh ' \
+            '{0[seed]} {0[hic_n_frag]} {0[hic_read_length]} {0[hic_inter_prob]} ' \
+            '{0[comm_table]} $SOURCE.abspath $TARGET.abspath'.format(c)
+    })
     return env.Command(target, source, action)
 
 wrap.add_controls(Environment())
