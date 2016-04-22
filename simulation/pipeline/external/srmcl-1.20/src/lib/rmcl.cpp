@@ -501,7 +501,7 @@ void rmcl(int* nvtxs, idxtype* xadj, idxtype* adjncy, idxtype
 	numiter=0;
 	M=M0;
 		printf("M0\n");
-		printMatrix(M); 
+		//printMatrix(M); 
 	do
 	{
 		if ( numiter > 0 )
@@ -533,7 +533,7 @@ void rmcl(int* nvtxs, idxtype* xadj, idxtype* adjncy, idxtype
 			fflush(stdout);
 		} 
 		printf("iteration %d\n",numiter);
-		printMatrix(M); 
+		//printMatrix(M); 
 //	}while( !isConverged(prevAttractors,M->attractors,*nvtxs) &&
 //	numiter < maxiter );
 	}while(diff>(0.001)*((double)M->nvtxs) && numiter<maxiter);  //converge
