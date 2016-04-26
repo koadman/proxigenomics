@@ -20,15 +20,39 @@ METAQUAST=external/quast/metaquast.py
 
 if [ -z "$JOB_ID" ] # SUBMIT MODE
 then
+    # QUAST default minimum length
+    MINLEN="500" 
+    WAITOPT="-sync no"
+
+    while getopts "wm:" opt
+	do
+		case $opt in
+            w)
+                WAITOPT="-sync yes"
+                ;;
+            m)
+                MINLEN=$OPTARG
+                ;;
+			\?)
+				echo "Invalid option: -$OPTARG"
+				;;
+		esac
+	done
+
+	shift $(( OPTIND-1 ))
+
 	if [ $# -ne 3 ]
 	then
-		echo "Usage: <REFSEQ> <CONTIGS> <OUTPUT REPORT PATH>"
+		echo "Usage: [options] <REFSEQ> <CONTIGS> <OUTPUT REPORT PATH>"
+        echo ""
+        echo "-w          Wait for job to complete"
+        echo "-m LENGTH   Minimum contig length"
 		exit 1
 	fi
 
 	echo "Submitting run"
 	#trap 'rollback_rm_file $4; exit $?' INT TERM EXIT
-	qsub -sync yes -V -pe smp 4 -v REF=$1,CTG=$2,OUTPUT=$3 $0
+	qsub $WAITOPT -V -pe smp 4 -v MINLEN=$MINLEN,REF=$1,CTG=$2,OUTPUT=$3 $0
 	#trap - INT TERM EXIT
 	echo "Finished"
 
@@ -51,5 +75,6 @@ else # EXECUTION MODE
 	# get the resulting files (they are named by their ids)
 	REF_FILES=`find $TOPDIR/refs -type f -name "*.fasta" | sort | tr '\n' ',' | sed 's/,$//'`
 
-	$METAQUAST -t $NSLOTS -R $REF_FILES -o $TOPDIR $CTG
+	$METAQUAST --min-contig $MINLEN -t $NSLOTS -R $REF_FILES -o $TOPDIR $CTG
 fi
+

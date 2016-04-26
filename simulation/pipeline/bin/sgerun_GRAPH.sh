@@ -15,7 +15,8 @@ then
 	source $BINDIR/bash_init.sh
 fi
 
-BAMTOEDGES=bin/bamToEdges.py
+PROXIHOME=~/git/proxigenomics/simulation/pipeline
+BAMTOEDGES=$PROXIHOME/bin/bamToEdges.py
 
 if [ -z "$JOB_ID" ] # SUBMIT MODE
 then

@@ -4,6 +4,7 @@ import numpy as np
 import networkx as nx
 import argparse
 import zlib
+import sys
 
 def kolmogorov(s):
     """
@@ -23,9 +24,9 @@ def kolmogorov(s):
 
 
 def find_nonzero_eigenvalues_magnitudes(g, edge_weight='weight'):
-    print '  Calculating normalized laplacian ...'
+    #print '  Calculating normalized laplacian ...'
     L = nx.normalized_laplacian_matrix(g, weight=edge_weight)
-    print '  Calculating eigenvalues of laplacian ...'
+    #print '  Calculating eigenvalues of laplacian ...'
     ev_i = np.absolute(np.linalg.eigvals(L.A.astype(np.float64)))
     nz_ix = ev_i != 0
     if np.sum(nz_ix) <= 0:
@@ -80,9 +81,9 @@ parser.add_argument('-m', '--method', choices=['kolmo', 'eigh', 'eigp', 'eigip']
 parser.add_argument('input', help='GraphML format graph file to analyse')
 args = parser.parse_args()
 
-print '  Reading graph {0}'.format(args.input)
+#print '  Reading graph {0}'.format(args.input)
 g = nx.read_graphml(args.input)
-print '  Graph contained {0} nodes and {1} edges'.format(g.order(), g.size())
+#print '  Graph contained {0} nodes and {1} edges'.format(g.order(), g.size())
 
 # set weight parameters for edges.
 # this is necessary if we want the default to be weighted but still provide
@@ -90,40 +91,43 @@ print '  Graph contained {0} nodes and {1} edges'.format(g.order(), g.size())
 weight = None if args.weight.lower() == 'none' else args.weight
 
 if args.method == 'kolmo':
-    print '  Determining adjacency matrix ...'
+#    print '  Determining adjacency matrix ...'
     g_adj = nx.adjacency_matrix(g)
     g_adj = g_adj.todense()
 
     # convert the adjacency matrix (which might be weighted) into a binary string.
     # where 0 no connection, 1 connection with weight > 0.
-    print '  Converting adjacency matrix to binary string representation ...'
+#    print '  Converting adjacency matrix to binary string representation ...'
     g_str = ''.join(map(str, g_adj.flatten().astype(bool).astype(int).tolist()[0]))
 
     try:
         k = kolmogorov(g_str)
     except RuntimeError as er:
-        print er
+        sys.stderr.write('{0}\n'.format(er))
         k = None
-    print 'Kolmogorov complexity estimate: {0}'.format(k)
+    print args.input,'Kolmogorov-complexity: {0} {1} {2}'.format(g.order(), g.size(), k)
 
 elif args.method == 'eigh':
     try:
         H = eigen_entropy(g, args.scale, weight)
     except RuntimeError as er:
-        print er
+        sys.stderr.write('{0}\n'.format(er))
         H = None
-    print 'Eigen value entropy: {0}'.format(H)
+    print args.input,'eigenvalue entropy: {0} {1} {2}'.format(g.order(), g.size(), H)
 
 elif args.method == 'eigp':
     try:
         P = eigen_product(g, args.scale, weight)
     except RuntimeError as er:
+        sys.stderr.write('{0}\n'.format(er))
         P = None
-    print 'Eigen value entropy: {0}'.format(P)
+    print args.input,'eigenvalue-product: {0} {1} {2}'.format(g.order(), g.size(), P)
 
 elif args.method == 'eigip':
     try:
         IP = inverse_eigen_product(g, args.scale, weight)
     except RuntimeError as er:
+        sys.stderr.write('{0}\n'.format(er))
         IP = None
-    print 'Eigen value entropy: {0}'.format(IP)
+    print args.input,'eigenvalue-inverse-product: {0} {1} {2}'.format(g.order(), g.size(), IP)
+

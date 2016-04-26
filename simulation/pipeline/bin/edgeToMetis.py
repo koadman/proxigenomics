@@ -121,6 +121,10 @@ try:
     # convert this dict of dicts into a graph object
     G = networkx.from_dict_of_dicts(ndict)
 
+    # add length attributes to nodes
+    for n in filteredIDs:
+        G.node[n]['length'] = int(nodeTable[nodeTable.ID == n].LENGTH.values[0])
+
     if args.format == 'metis':
         write_metis(G, args.output[0], args.node_map)
     elif args.format == 'graphml':

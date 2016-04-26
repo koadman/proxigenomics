@@ -273,7 +273,7 @@ def ocluster(g, debug=False):
     for vi in desc_relevance:
         if vi not in C.hubs:
             # adding a new hub and adjacents
-            print '{0} is a new hub'.format(vi)
+            #print '{0} is a new hub'.format(vi)
             C.hubs.add_node(vi, hub=True, analyzed=False)
             C.add_novel_adjacent(vi, g[vi])
             n_hub += 1
@@ -284,7 +284,7 @@ def ocluster(g, debug=False):
             cover_set = set(C.hubs.nodes())
             if not vi_adj < cover_set:
                 # set contained some extra (IE not a subset of cover_set)
-                print '{0} covered another {1} adjacent'.format(vi, len(vi_adj - cover_set))
+                #print '{0} covered another {1} adjacent'.format(vi, len(vi_adj - cover_set))
                 # status is now a hub, add adjacents to it.
                 C.hubs.node[vi]['hub'] = True
                 C.add_novel_adjacent(vi, vi_adj)
@@ -312,7 +312,7 @@ def ocluster(g, debug=False):
         if deg_dict[vi] <= 0:
             continue
 
-        print '\tFor hub {0} with degree {1}'.format(vi, deg_dict[vi])
+        #print '\tFor hub {0} with degree {1}'.format(vi, deg_dict[vi])
 
         linked[vi] = set()
         v_adj = set(C.hubs[vi])
@@ -358,6 +358,7 @@ if __name__ == '__main__':
     parser.add_argument('-f', '--fmt', dest='format', choices=['graphml', 'mcl'], default='mcl', help='Output format')
     parser.add_argument('--debug', action='store_true', default=False, help='Enable debugging')
     parser.add_argument('--no-isolates', action='store_true', default=False, help='Ignore isolates in output')
+    parser.add_argument('-b', '--threshold', type=float, help='Edge weight threshold to apply before clustering')
     parser.add_argument('graph', nargs=1, help='Input graphml file')
     parser.add_argument('output', nargs=1, help='Output base file name')
     args = parser.parse_args()
@@ -365,6 +366,19 @@ if __name__ == '__main__':
     # read the graph
     g = nx.read_graphml(args.graph[0])
 
+    if args.threshold:
+        thres_g = g.copy()
+        # thresholding, current normalises first because we've got raw weights
+        for u,v,d in g.edges_iter(data=True):
+            thres_g[u][v]['weight'] = float(d['weight']) / (g.node[u]['length'] * g.node[v]['length'] / 65536.0)
+            if thres_g[u][v]['weight'] < args.threshold:
+                thres_g.remove_edge(u, v)
+        with open('test.mcl', 'w') as out_h:
+            for u,v,d in thres_g.edges_iter(data=True):
+                out_h.write('{0} {1} {2}\n'.format(u, v, d['weight']))
+        print 'Thresholding reduced graph edge count from {0} to {1}'.format(g.size(), thres_g.size())
+        g = thres_g
+   
     # create cover of g
     cover = ocluster(g, args.debug)
     print cover

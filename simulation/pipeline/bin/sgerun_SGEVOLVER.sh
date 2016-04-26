@@ -4,8 +4,6 @@
 # Create a simulated community
 #
 
-#PBS -q smallq
-#PBS -l select=1:ncpus=2:mem=32gb
 #$ -e logs/
 #$ -o logs/
 #$ -cwd
@@ -14,12 +12,14 @@
 if [ -z "$JOB_ID" ]
 then
 	BINDIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
-	source $HICPIPE/bin/bash_init.sh
+	source $BINDIR/bash_init.sh
 fi
 
-PATH=$PATH:$HICPIPE/bin:$HICPIPE/bin/sgevolver
-SGBIN=$HICPIPE/bin/sgevolver/simujobrun.pl
-SGPARMS=$HICPIPE/bin/sgevolver/prepParams.py
+echo "BINDIR=$BINDIR"
+
+PATH=$PATH:$BINDIR:$BINDIR/sgevolver
+SGBIN=$PWD/bin/sgevolver/simujobrun.pl
+SGPARMS=$PWD/bin/sgevolver/prepParams.py
 
 
 if [ -z "$JOB_ID" ] # SUBMIT MODE
@@ -58,7 +58,6 @@ else # EXECUTION MODE
 
     # create runtime parameter file
     $SGPARMS --tree `basename $TREE` --seq `basename $INPUT_SEQ` --seq-len $LENGTH --tree-scale $TR_SCALE --sg-scale $SG_SCALE
-
 
     $SGBIN $INPUT_SEQ $SEED
 

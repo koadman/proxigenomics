@@ -116,6 +116,17 @@ def split_name(query_name):
     """
     return query_name[:-3], query_name[-3:]
 
+
+cig_matcher = re.compile(r'([0-9]+)M')
+def count_matches(cigar):
+    """
+    Sum the length of aligned regions listed in CIGAR pattern
+    :param cigar: SAMtools CIGAR string
+    :return: total number of aligned bases
+    """
+    return sum([int(seg_len) for seg_len in cig_matcher.findall(cigar)])
+
+
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='Create edge and node tables from a HiC bam file')
@@ -162,6 +173,12 @@ if __name__ == '__main__':
                 if mr.reference_id == -1:
                     continue
 
+                # apply the constraints on alignment coverage and percent identity
+                perid = dict(mr.cigartuples)[0]/float(mr.query_length) * 100.0
+                cov = mr.query_alignment_length/float(mr.query_length)
+                if cov < args.mincov or perid < args.minid:
+                    continue
+
                 # assumed naming convention of HiC simulated reads.
                 #read = mr.query_name[:-3]
                 #rdir = mr.query_name[-3:]
@@ -174,7 +191,7 @@ if __name__ == '__main__':
                     raise RuntimeError('Reads in alignment file do not conform to expected convention '
                                         '[a-zA-Z]+[0-9]+(fwd|ref)')
 
-                # contig this alignment line refers to directly
+                # contig that this alignment line refers to directly
                 contig_set.add(bam_file.getrname(mr.reference_id))
 
                 # if requested, add also alternate alignment contigs for linkage map
@@ -187,6 +204,9 @@ if __name__ == '__main__':
                         for hit in hit_list:
                             hrec = hit.split(',')
                             if len(hrec) != 4:
+                                continue
+                            perid = count_matches(hrec[2])/float(mr.query_length) * 100.0
+                            if perid < args.minid:
                                 continue
                             contig_set.add(hrec[0])
                     except KeyError:

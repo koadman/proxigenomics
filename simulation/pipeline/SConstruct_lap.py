@@ -73,7 +73,7 @@ def generate_wgs(outdir, c):
 def sumprob(outdir, c):
 
     sources = [str(c['reads2ref']['lap_ref']), str(c['reads2ctg']['lap_ctg'])]
-    targets = [os.path.join(outdir, 'lap_ref.sum'), os.path.join(outdir, 'lap_ctg.sum')]
+    targets = [os.path.join(outdir, 'lap_ref.prob.refsum'), os.path.join(outdir, 'lap_ctg.prob.ctgsum')]
 
     action = exec_env.resolve_action({
         'pbs': 'bin/pbsrun_LAPSUM.sh $SOURCES.abspath $TARGETS.abspath'.format(c, od=outdir),

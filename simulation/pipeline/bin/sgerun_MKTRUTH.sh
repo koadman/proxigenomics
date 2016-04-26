@@ -15,7 +15,8 @@ then
 	source $BINDIR/bash_init.sh
 fi
 
-MKTRUTH=bin/alignmentToTruth.py
+PROXIHOME=~/git/proxigenomics/simulation/pipeline
+MKTRUTH=$PROXIHOME/bin/alignmentToTruth.py
 
 if [ -z "$JOB_ID" ] # SUBMIT MODE
 then

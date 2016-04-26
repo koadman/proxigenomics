@@ -51,13 +51,13 @@ then
 	trap 'rollback_rm_files ${TARGET[@]}; exit $?' INT TERM EXIT
 
 	CMD=`readlink -f $0`
-	qsub -sync yes -V -b n -v SEED=$1,INSERT_LEN=$2,INSERT_SD=$3,READ_LEN=$4,X_FOLD=$5,COMM_TABLE=$6,REF_SEQ=$7,BASE_NAME=$8,OUT_DIR=$9 $CMD
+	qsub -sync no -V -b n -v SEED=$1,INSERT_LEN=$2,INSERT_SD=$3,READ_LEN=$4,X_FOLD=$5,COMM_TABLE=$6,REF_SEQ=$7,BASE_NAME=$8,OUT_DIR=$9 $CMD
 
 	trap - INT TERM EXIT
 	echo "Finished"
 
 else # EXECUTION MODE
-	echo "Running $MA_PATH --log logs/$PBS_JOBID.ma.log --art-path $ART_PATH -S $SEED -m $INSERT_LEN -s $INSERT_SD -l $READ_LEN -M $X_FOLD -t $COMM_TABLE $REF_SEQ     $OUT_DIR/wgs"
+	echo "Running $MA_PATH --log logs/$PBS_JOBID.ma.log --art-path $ART_PATH -S $SEED -m $INSERT_LEN -s $INSERT_SD -l $READ_LEN -M $X_FOLD -t $COMM_TABLE -n $BASE_NAME $REF_SEQ $OUT_DIR/wgs"
 
-    $MA_PATH --log logs/$PBS_JOBID.ma.log --art-path $ART_PATH -S $SEED -m $INSERT_LEN -s $INSERT_SD -l $READ_LEN -M $X_FOLD -t $COMM_TABLE $REF_SEQ $OUT_DIR/wgs
+    $MA_PATH --log logs/$PBS_JOBID.ma.log --art-path $ART_PATH -S $SEED -m $INSERT_LEN -s $INSERT_SD -l $READ_LEN -M $X_FOLD -t $COMM_TABLE -n $BASE_NAME $REF_SEQ $OUT_DIR 
 fi

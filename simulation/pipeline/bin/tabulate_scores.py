@@ -25,6 +25,8 @@ parser.add_argument('--suffix', nargs='*', default=['.vm', '.f1', '.bc'],
                     help='One or more filename suffixes to target in recursive search [(.vm, .f1, .bc)]')
 parser.add_argument('-y', '--yaml-vals', action="store_true", default=False,
                     help='Scores are stored in YAML format files')
+parser.add_argument('--min-depth', type=int, help='Minimum depth of hierarchy to begin search')
+parser.add_argument('--max-depth', type=int, help='Maximum depth of hierarchy to end search')
 parser.add_argument('-p', '--path', metavar='DIR', required=True, help='Input path to scan')
 parser.add_argument('-o', '--output', metavar='FILE', required=True, help='Output table')
 args = parser.parse_args()
@@ -51,6 +53,11 @@ for path, dirs, files in os.walk(args.path):
 
             # variational elements
             factors = path.split(os.path.sep)
+
+            if args.min_depth and len(factors) < args.min_depth:
+                continue
+            if args.max_depth and len(factors) > args.max_depth:
+                continue
 
             # leading columns are just indexed
             if lead_cols is None:
@@ -80,5 +87,12 @@ for path, dirs, files in os.walk(args.path):
             score_cols = sorted(score_vals.keys())
         score_table.append(factors + [score_vals.get(sc, 'NA') for sc in score_cols])
 
-df = pandas.DataFrame(score_table, columns=lead_cols + score_cols)
-df.to_csv(args.output)
+try:
+    df = pandas.DataFrame(score_table, columns=lead_cols + score_cols)
+    df.to_csv(args.output)
+except Exception as ex:
+    print lead_cols
+    print score_cols
+    traceback.print_exc(ex)
+    print ex
+

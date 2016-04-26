@@ -260,7 +260,9 @@ if __name__ == '__main__':
     import sys
 
     parser = argparse.ArgumentParser(description='Calculate extended bcubed metric')
-    parser.add_argument('--weighted', dest='weight_csv', metavar='WEIGHT_CSV', help='Calculate a weighted bcubed')
+    parser.add_argument('--drop-small', dest='small_thres', metavar='THRES_PROPORTION', type=float, help='Filter clusters which fall belong minimum proportion ')
+    #parser.add_argument('--weighted', dest='weight_csv', metavar='WEIGHT_CSV', help='Calculate a weighted bcubed')
+    parser.add_argument('--weighted', default=False, action='store_true', help='Use weighted terms')
     parser.add_argument('-o', '--output', help='Output file')
     parser.add_argument('truth', metavar='TRUTH', nargs=1, help='Truth table (yaml format)')
     parser.add_argument('pred', metavar='PREDICTION', nargs=1, help='Prediction table (mcl format)')
@@ -274,12 +276,17 @@ if __name__ == '__main__':
 
         print 'Truth Statistics'
         truth.print_tally()
+        if args.weighted:
+            weights = truth.weights()
+
         truth = truth.soft(True)
 
         # read clustering and convert to basic soft table
         clustering = tt.read_mcl(args.pred[0])
         if len(clustering) == 0:
             raise RuntimeWarning('Clustering contains no assignments: {0}'.format(args.pred[0]))
+        if args.small_thres:
+            clustering.filter_class(args.small_thres)
 
         print 'Clustering Statistics'
         clustering.print_tally()
@@ -296,23 +303,24 @@ if __name__ == '__main__':
         args.output = open(args.output, 'w')
 
     # Read weights from CSV.
-    weights = None
-    if args.weight_csv is not None:
-        weights = {}
-        with open(args.weight_csv, 'r') as h_in:
-            for line in h_in:
-                fields = line.strip().split()
-                if len(fields) != 2:
-                    raise IOError('weight csv did not contain 2 columns')
-                if fields[0] in weights:
-                    raise IOError('weight csv contains duplicate keys')
-                try:
-                    weights[fields[0]] = float(fields[1])
-                except ValueError as er:
-                    sys.stderr.write('Warning: caught conversion error for node weights. [{0}]\n'.format(er.message))
-
+    #weights = None
+    #if args.weight_csv is not None:
+    #    weights = {}
+    #    with open(args.weight_csv, 'r') as h_in:
+    #        for line in h_in:
+    #            fields = line.strip().split()
+    #            if len(fields) != 2:
+    #                raise IOError('weight csv did not contain 2 columns')
+    #            if fields[0] in weights:
+    #                raise IOError('weight csv contains duplicate keys')
+    #            try:
+    #                weights[fields[0]] = float(fields[1])
+    #            except ValueError as er:
+    #                sys.stderr.write('Warning: caught conversion error for node weights. [{0}]\n'.format(er.message))
+    if args.weighted:
         pipeline_utils.write_to_stream(args.output, weighted_extended_bcubed(weights, truth, clustering))
 
     else:
     #unweighted bcubed
         pipeline_utils.write_to_stream(args.output, extended_bcubed(truth, clustering))
+

@@ -19,6 +19,7 @@ export ITHREE_GIT=$HOME/git/ithree
 #
 # PBS configuration choices can go here.
 #
+#$ -V
 #$ -e logs/
 #$ -o logs/
 #$ -N A5JOB
@@ -26,7 +27,7 @@ export ITHREE_GIT=$HOME/git/ithree
 
 # Path to the a5 executable
 # This might need to be set!
-A5EXE=$PROXIHOME/simulation/pipeline/external/a5_miseq_linux_20140604/bin/a5_pipeline.pl
+A5EXE=$PROXIHOME/simulation/pipeline/external/a5/bin/a5_pipeline.pl
 
 #
 # Check if invocation was via PBS queue.
@@ -142,7 +143,7 @@ then
 	
 		# Queue submission
 		CMD=`readlink -f $0`
-		qsub -q $QUEUE -pe smp $NCPU $WAITOPT -v NCPU=$NCPU,TAG=$TAG,OVERWRITE=$OVERWRITE,OPTIONS=$METAGENOME,READ1=$R1,READ2=$R2,OUTDIR=$3 $CMD
+		qsub -l h=fat-centos -q $QUEUE -pe smp $NCPU $WAITOPT -v NCPU=$NCPU,TAG=$TAG,OVERWRITE=$OVERWRITE,OPTIONS=$METAGENOME,READ1=$R1,READ2=$R2,OUTDIR=$3 $CMD
 		
 	# Set up paths for libfile submission
 	else

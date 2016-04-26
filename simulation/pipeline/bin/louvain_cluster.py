@@ -126,6 +126,7 @@ def write_output(communities, filename, ofmt='mcl'):
             cg.add_node(k)
             for vi in v:
                 cg.add_edge(k, vi)
+        nx.write_graphml(cg, filename)
     else:
         raise RuntimeError('Unsupported format type: {0}'.format(ofmt))
 
@@ -137,6 +138,7 @@ if __name__ == '__main__':
     parser.add_argument('--no-isolates', action='store_true', default=False, help='Remove isolated nodes')
     parser.add_argument('--otype', choices=['hard', 'soft', 'induced'], default='soft', help='Output type')
     parser.add_argument('--ofmt', choices=['mcl', 'graphml'], default='mcl', help='Specify output format [mcl]')
+    parser.add_argument('-b', '--threshold', type=float, help='Edge weight threshold to apply before clustering')
     parser.add_argument('input', nargs=1, help='Input graph (graphml format)')
     parser.add_argument('output', nargs=1, help='Output file')
     args = parser.parse_args()
@@ -147,6 +149,19 @@ if __name__ == '__main__':
     g = nx.read_graphml(args.input[0])
     print 'Initial statistics'
     print_info(g)
+
+    if args.threshold:
+        thres_g = g.copy()
+        # thresholding, current normalises first because we've got raw weights
+        for u,v,d in g.edges_iter(data=True):
+            thres_g[u][v]['weight'] = float(d['weight']) / (float(g.node[u]['length'] * g.node[v]['length']) / 65536.0)
+            if thres_g[u][v]['weight'] < args.threshold:
+                thres_g.remove_edge(u, v)
+        with open('test.mcl', 'w') as out_h:
+            for u,v,d in thres_g.edges_iter(data=True):
+                out_h.write('{0} {1} {2}\n'.format(u, v, d['weight']))
+        print 'Thresholding reduced graph edge count from {0} to {1}'.format(g.size(), thres_g.size())
+        g = thres_g
 
     communities = cluster(g, args.no_isolates, args.otype == 'soft')
 

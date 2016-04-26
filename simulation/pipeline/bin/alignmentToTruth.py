@@ -161,17 +161,21 @@ def parse_sam(sam_file):
     """
     align_repo = OrderedDict()
     with open(sam_file, 'r') as h_in:
+        num_sec = 0
         for l in h_in:
             # skip header fields
             if l.startswith('@'):
                 continue
+
             fields = l.rsplit()
+            # test if secondary bit set (0x256)            if (int(fields[1]) & (1 << 8)) != 0:                num_sec += 1                continue
 
             aln = Alignment(fields[0], fields[2], count_aligned(fields[5]), seq_length[fields[0]])
             if aln in align_repo:
-                align_repo[aln].add_cigar(fields[5])
+                align_repo[aln].add_bases(count_aligned(fields[5]))
             else:
                 align_repo[aln] = aln
+        print 'removed {0} secondary alignments'.format(num_sec)
     return align_repo
 
 

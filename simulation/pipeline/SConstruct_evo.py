@@ -12,6 +12,9 @@ nest = Nest()
 wrap = SConsWrap(nest, config['community']['folder'])
 env = Environment(ENV=os.environ)
 
+# Used for resolving what type of execution environment will be used.
+exec_env = appconfig.ExecutionEnvironment(ARGUMENTS, supported_env=['pbs', 'sge'])
+
 # Constants
 wrap.add('seed', [config['seed']], create_dir=False)
 wrap.add('genomes', [config['community']['seq']], create_dir=False)
@@ -42,17 +45,26 @@ def generate_set(outdir, c):
     seq = os.path.join(seqFolder, '{0[basis_seq]}'.format(c))
     sources = [tree, seq]
     target = '{od}/{0[genomes]}'.format(c, od=outdir)
-    action = 'bin/pbsrun_SGEVOLVER.sh ' \
-             '{0[seed]} {0[branch_length]} {0[sg_scale]} {0[seq_len]} $SOURCES.abspath $TARGET.abspath'.format(c)
+
+    action = exec_env.resolve_action({
+        'pbs': 'bin/pbsrun_SGEVOLVER.sh {0[seed]} {0[branch_length]} {0[sg_scale]} {0[seq_len]} $SOURCES.abspath $TARGET.abspath'.format(c),
+        'sge': 'bin/sgerun_SGEVOLVER.sh {0[seed]} {0[branch_length]} {0[sg_scale]} {0[seq_len]} $SOURCES.abspath $TARGET.abspath'.format(c)
+    })
+
     return 'hr', env.Command(target, sources, action)
 
 
-@wrap.add_target('reconstruct')
-def reconstruct(outdir, c):
-    base = 'reconstruct'
-    source = '{od}/{0[genomes]}'.format(c, od=outdir)
-    target = '{od}/{base}/ani/perc_ids.tab'.format(od=outdir,base=base)
-    action = 'bin/pbsrun_MKTREE.sh $SOURCE.abspath {od}/{base}'.format(c, od=outdir, base=base)
-    return 'recon', env.Command(target, source, action)
+#@wrap.add_target('reconstruct')
+#def reconstruct(outdir, c):
+#    base = 'reconstruct'
+#    source = '{od}/{0[genomes]}'.format(c, od=outdir)
+#    target = '{od}/{base}/ani/perc_ids.tab'.format(od=outdir,base=base)
+#
+#    action = exec_env.resolve_action({
+#        'pbs': 'bin/pbsrun_MKTREE.sh $SOURCE.abspath {od}/{base}'.format(c, od=outdir, base=base),
+#        'sge': 'bin/sgerun_MKTREE.sh $SOURCE.abspath {od}/{base}'.format(c, od=outdir, base=base)
+#    })
+#
+#    return 'recon', env.Command(target, source, action)
 
 wrap.add_controls(Environment())

@@ -15,7 +15,7 @@ then
 	source $BINDIR/bash_init.sh
 fi
 
-CMD=bin/srmcl
+CMD=external/srmcl
 
 if [ -z "$JOB_ID" ] # SUBMIT MODE
 then

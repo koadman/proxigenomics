@@ -16,7 +16,7 @@ with open(args.tsv, 'r') as h_input:
 
     for n, line in enumerate(h_input):
 
-        if line.startswith('tree'):
+        if  line.startswith('tree'):
             cn = line.strip().split('\t')
             if len(cn) == 0:
                 raise IOError('No fields for line {0}'.format(line))
@@ -52,3 +52,4 @@ with open(args.tsv, 'r') as h_input:
             if n < len(sorted_cols)-1:
                 sys.stdout.write('\t')
         sys.stdout.write('\n')
+
