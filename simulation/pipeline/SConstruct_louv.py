@@ -17,7 +17,7 @@ env = Environment(ENV=os.environ)
 exec_env = appconfig.ExecutionEnvironment(ARGUMENTS, supported_env=['pbs', 'sge', 'local'])
 
 # don't include root as we don't want it embedded in this nest hierarchy
-hic_paths = appconfig.get_precedents(config['map_folder'], config['hic2ctg'], prepend_root=False)
+hic_paths = appconfig.get_precedents(config['map_folder'], config['hic2ctg'], prepend_root=False, tips_only=True)
 wrap.add('hic_path', hic_paths)
 
 @wrap.add_target('make_graph')

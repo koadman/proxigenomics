@@ -7,6 +7,7 @@ import truthtable as tt
 
 import numpy as np
 import argparse
+import sys
 import re
 
 
@@ -56,7 +57,6 @@ class Alignment:
                 self.query_name, self.ref_name, self.coverage,
                 self.query_length, self.align_length)
 
-
     def __eq__(self, other):
         if not isinstance(other, self.__class__):
             return False
@@ -75,8 +75,8 @@ class Alignment:
     def coverage(self):
         return float(self.align_length) / float(self.query_length)
 
-
-#def ordereddict_rep(dumper, data):
+#
+# def ordereddict_rep(dumper, data):
 #    return dumper.represent_mapping(u'tag:yaml.org,2002:map', data.items(), flow_style=False)
 
 
@@ -109,9 +109,9 @@ def write_truth(simple, minlen, mincov, alignment_list, file_name):
     seq2: [ctg111, ctg1]
     seq3: [ctg99]
 
+    :param simple: write simple hard tt
     :param minlen: minimum query length
     :param mincov: minimum alignment coverage
-    :param minid: minimum percentage identity
     :param alignment_list: alignment list
     :param file_name: output file name
     """
@@ -153,28 +153,37 @@ def write_alignments(minlen, mincov, minid, alignment_list, file_name):
                 h_out.write('{0} null  \n'.format(aln.query_name))
 
 
-def parse_sam(sam_file):
+def parse_sam(concat_sam_file):
     """
     Parse the SAM file for alignment lengths, where each
     query can accumulate total length there are multiple
     record against the same reference.
 
-    :param sam_file:
+    :param concat_sam_file:
     :return: dictionary of Alignments objects
     """
     align_repo = OrderedDict()
-    with open(sam_file, 'r') as h_in:
+    with open(concat_sam_file, 'r') as h_in:
+        num_sec = 0
         for l in h_in:
             # skip header fields
             if l.startswith('@'):
                 continue
             fields = l.rsplit()
-
-            aln = Alignment(fields[0], fields[2], count_aligned(fields[5]), seq_length[fields[0]])
+            # test if secondary bit set (0x256)
+            if (int(fields[1]) & (1 << 8)) != 0:
+                num_sec += 1
+                continue
+            # count aligned bases from cigar matches
+            aln_len = count_aligned(fields[5])
+            aln = Alignment(fields[0], fields[2], aln_len, seq_length[fields[0]])
             if aln in align_repo:
-                align_repo[aln].add_cigar(fields[5])
+                align_repo[aln].add_bases(aln_len)
             else:
                 align_repo[aln] = aln
+
+        print 'Found {0} secondary alignments, which were skipped'.format(num_sec)
+
     return align_repo
 
 
@@ -214,35 +223,111 @@ def parse_last(last_file):
     return align_repo
 
 
-def parse_psl2(psl_file):
+def contiguous_mask(mask):
+    """
+    Calculate the contiguous regions of the mask for where coverage exists, report their start and stop points.
+    :param mask: the coverage mask.
+    :return: list of stop/start locations, end inclusive
+    """
+    dmask = np.diff(mask)
+    idx, = dmask.nonzero()
+    idx += 1
 
-    rejected = 0
+    if mask[0]:
+        idx = np.r_[0, idx]
+    if mask[-1]:
+        idx = np.r_[idx, mask.size]
+
+    idx.shape = (-1, 2)
+
+    # ends are inclusive.
+    idx[:, 1] -= 1
+
+    return idx
+
+
+def interval_overlap(a, b):
+    """
+    Test if two intervals overlap.
+    :param a: interval a
+    :param b0: start of interval b
+    :param b1: end of interval b
+    :return: True if there is overlap between a and b
+    """
+    return a[0] <= b[1] and b[0] <= a[1]
+
+
+def interval_overlap_with_gap(a, b, max_ol):
+    """
+    Test if two intervals overlap, allowing for a maximum overlapping of max_ol.
+    :param a: interval a
+    :param b: interval b
+    :param max_ol: maximum allowed overlap
+    :return: True if there is a sufficient overlap
+    """
+    if not interval_overlap(a, b):
+        return False
+    if a[0] < b[0] and a[1] - b[0] < max_ol:
+        return False
+    if b[0] < a[0] and b[1] - a[0] < max_ol:
+        return False
+    return True
+
+
+def parse_psl2(psl_file):
+    """
+    Calculate a truth table by considering the accumulated coverage of query sequences onto
+    the references. The coverage is treated as a binary mask and the total extent a contig
+    covers each reference determines the degree of ownership.
+
+    Writes out a full truth table to user specified output path.
+
+    Note: ideally the PSL file should be sorted for descending alignment score.
+
+    :param psl_file:
+    :return: None -- this method presently breaks the logical flow of this script.
+    """
     with open(psl_file, 'r') as h_in:
 
-        alignment_repo = OrderedDict()
+        all_hits = 0
+        rejected = 0
+
+        aln_masks = {}
 
         for aln in Psl.parse(h_in):
 
-            if aln.coverage < args.mincov or aln.percent_id < args.minid:
+            all_hits += 1
+
+            if aln.percent_id < 90:
                 rejected += 1
                 continue
 
-            if aln.q_name not in alignment_repo:
-                alignment_repo[aln.q_name] = OrderedDict({aln.t_name: np.zeros(aln.q_size, dtype=np.uint8)})
+            if aln.q_name not in aln_masks:
+                aln_masks[aln.q_name] = {}
 
-            if aln.t_name not in alignment_repo[aln.q_name]:
-                alignment_repo[aln.q_name][aln.t_name] = np.zeros(aln.q_size, dtype=np.uint8)
+            if aln.t_name not in aln_masks[aln.q_name]:
+                aln_masks[aln.q_name][aln.t_name] = np.zeros(int(aln.q_size))
 
-            alignment_repo[aln.q_name][aln.t_name][aln.q_start:aln.q_end+1] = 1
+            per_id = 0.01 * aln.percent_id
+            mask_slice = aln_masks[aln.q_name][aln.t_name][aln.q_start:aln.q_end+1] #= aln.percent_id/100.
+            mask_slice[np.where(mask_slice < per_id)] = per_id
 
-        np.set_printoptions(suppress=False)
-        for ctg in alignment_repo:
-            v = np.vstack(alignment_repo[ctg].values())
-            print ctg, np.sum(v, axis=1)/float(np.sum(v))
+        truth = {}
+        weights = {}
+        for n, ti in enumerate(aln_masks):
+            masks = np.vstack(aln_masks[ti].values())
+            names = np.array(aln_masks[ti].keys())
+            covers = np.mean(masks, 1)
+            idx = np.where(covers > 0.96)
+            if idx[0].shape[0] > 0:
+                truth[ti] = {}
+                for i in np.nditer(idx):
+                    truth[ti][str(names[i])] = float(covers[i])
+            weights[ti] = masks.shape[1]
+        t = tt.TruthTable()
+        t.update(truth, weights)
 
-    print 'Rejected {0} alignments under identity and coverage threshold'.format(rejected)
-
-    return {}
+        t.write(args.output_file[0])
 
 
 def parse_psl(psl_file):
@@ -284,6 +369,8 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Determine the location of query sequences on the reference')
     parser.add_argument('--simple', default=False, action='store_true',
                         help='Record simple truth table')
+    parser.add_argument('--max-overlap', type=int, required=False, default=3,
+                        help='Maximum bp overlap between alignment on the same query to the same subject [3]')
     parser.add_argument('--minid', type=float, required=False, default=95.0,
                         help='Minimum percentage identity for alignment')
     parser.add_argument('--minlen', type=int, required=False, default=1000,
@@ -294,10 +381,9 @@ if __name__ == '__main__':
     parser.add_argument('--qf', metavar='FASTA', help='Query fasta sequences')
     parser.add_argument('--ofmt', choices=['flat', 'yaml'], default='yaml', help='Output format')
     parser.add_argument('alignment_file', metavar='ALIGNMENT_FILE', nargs=1,
-                        help='SAM file or LAST table with query sequences aligned to reference')
+                        help='concat SAM, PSL or LAST table with query sequences aligned to reference')
     parser.add_argument('output_file', metavar='OUTPUT', nargs=1, help='Output file name')
     args = parser.parse_args()
-
 
     align_repo = None
     seq_length = None
@@ -308,7 +394,6 @@ if __name__ == '__main__':
             raise Exception('BWA alignment format also requires query fasta to be supplied')
         # Calculate the length of query sequences
         seq_length = {rec.id: len(rec) for rec in SeqIO.parse(args.qf, 'fasta')}
-
         align_repo = parse_sam(args.alignment_file[0])
 
     elif args.afmt == 'last':
@@ -318,7 +403,8 @@ if __name__ == '__main__':
         align_repo = parse_psl(args.alignment_file[0])
 
     elif args.afmt == 'test':
-        align_repo = parse_psl2(args.alignment_file[0])
+        parse_psl2(args.alignment_file[0])
+        sys.exit(0)
 
     if args.ofmt == 'flat':
         print 'Soft results always enabled for flat output format'

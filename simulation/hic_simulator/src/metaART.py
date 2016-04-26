@@ -27,7 +27,7 @@ if __name__ == '__main__':
     parser.add_argument('--log', default='metaART.log', type=argparse.FileType('w'), help='Log file name')
     parser.add_argument('fasta', metavar='MULTIFASTA',
                         help='Input multi-fasta of all sequences')
-    parser.add_argument('output_base', metavar='OUTPUT BASE',
+    parser.add_argument('output_base', metavar='OUTPUT_BASE',
                         help='Output file name')
     args = parser.parse_args()
 

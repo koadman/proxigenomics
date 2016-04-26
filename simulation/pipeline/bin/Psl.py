@@ -56,7 +56,7 @@ class Alignment:
         '''
         Length of the alignment
         '''
-        return self.q_end - self.q_start + 1
+        return self.q_end - self.q_start
 
     @property
     def coverage(self):

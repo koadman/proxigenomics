@@ -7,7 +7,7 @@
 #$ -e logs/
 #$ -o logs/
 #$ -cwd
-#$ -N LAPJOB
+#$ -N LAPSUMJOB
 
 if [ -z "$JOB_ID" ]
 then
@@ -15,7 +15,7 @@ then
 	source $BINDIR/bash_init.sh
 fi
 
-export BT2_HOME=$ITHREE_GIT/software/bowtie2-2.2.2/
+export BT2_HOME=$ITHREE_GIT/software/bowtie2-2.2.6
 LAP_SUM=$HOME/git/lap_release_1.1/aligner/sum_prob.py
 
 if [ -z "$JOB_ID" ] # SUBMIT MODE

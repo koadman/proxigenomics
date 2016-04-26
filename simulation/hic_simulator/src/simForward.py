@@ -288,21 +288,6 @@ class Replicon:
 
         return ss
 
-
-    # def subseq(self, pos1, pos2, fwd):
-    #     """Create a subsequence from replicon where positions are strand relative.
-    #     Those with fwd=False will be reverse complemented.
-    #     """
-    #     # Likely to have a off-by-one error in this code.
-    #     if fwd:
-    #         ss = self.sequence[pos1:pos2]
-    #         ss.description = str(pos1) + "..." + str(pos2) + ":" + str(fwd)
-    #     else:
-    #         ss = self.sequence[pos2:pos1]
-    #         ss.description = str(pos2) + "..." + str(pos1) + ":" + str(fwd)
-    #         ss = ss.reverse_complement(id=True, description=True)
-    #     return ss
-
     def random_cut_site(self, cutter_name):
         """
         Draw a cut-site at random, following a uniform distribution.

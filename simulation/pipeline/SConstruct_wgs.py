@@ -31,6 +31,7 @@ wrap.add('comm_table', tablePaths, label_func=os.path.basename)
 
 wrap.add('wgs_xfold', config['wgs_xfold'])
 
+
 @wrap.add_target('generate_wgs')
 @name_targets
 def generate_wgs(outdir, c):
