@@ -49,6 +49,12 @@ The following commands will run the pipeline.
 
 As a hierarchy of dependences exists, the total pool of tasks are not independent and this limits the degree of parallelism obtainable at any point in the simulation.
 
+####Execution Target
+The execution target can be altered at runtime by specifying local, pbs or sge.
+```
+scons -j N -f SConstruct_evo.py exec_type=sge
+```
+
 ####Parameter defintion
 Parameters used in sweeps are modified within the configuration file `config.yaml`. Modifying nests high in the tree can result in a large cascading calculation. Any output files generated will not be deleted if their parameter sets are deleted.
 
