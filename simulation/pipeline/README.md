@@ -17,11 +17,13 @@ HPC simulation pipeline for Hi-C experiments.
 
 On all systems, we recommend using [Pip](https://pip.pypa.io/en/stable/installing/) for installation and dependency management.
 
-For example, on a system requiring root privileges and configured for ```sudo```, try the following. It might prove easier to install each module separately if you encounter errors due to other system requirements. Consider updating pip itself if you receive a warning that it is out of date. E.g. ```pip install -U pip```
+For example, on a system requiring root privileges and configured for ```sudo```, try the following. 
 
 ```
 sudo pip install -U biopython scipy numpy pandas networkx community pysam PyYAML scons
 ```
+
+It might prove easier to install each module separately if you encounter errors due to other system requirements. Consider updating pip itself if you receive a warning that it is out of date. E.g. ```pip install -U pip```
 
 ####Intro
 The basis for the pipeline is a reference sequence in raw format (ASCII nucleotides only, no header), a phylogenetic tree in newick format and an abundance profile table. This information is organised in a reference folder Eg `ref_data` and specified in the configuraiton file `config.yaml`. sgEvolver is used to generate simulated communities of a given diversity as specified by the supplied phylogenetic relationship.
