@@ -12,3 +12,6 @@ Being a single repository, you will need to clone the whole thing.
 ```
 git clone https://github.com/koadman/proxigenomics.git
 ```
+
+###Future Work
+We are working on a far more user-friendly and system-agnostic replacement, to be released shortly.
