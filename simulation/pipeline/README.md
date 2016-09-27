@@ -3,6 +3,7 @@ HPC simulation pipeline for Hi-C experiments.
 
 ###Runtime Requirements
 - Linux_x86_64 system (due to external binaries)
+- Perl5
 - Python 2.7
 - Python modules
     - biopython
