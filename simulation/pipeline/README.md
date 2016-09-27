@@ -1,13 +1,13 @@
 ###Pipeline for simulating Hi-C experiments.
 HPC simulation pipeline for Hi-C experiments.
 
-###Runtime Requirements
+####Prerequisites and Dependencies
 
 **Due to external binaries**
-- Linux_x86_64 system
-- Perl5
 
-####Prerequisites
+- Operating System: Linux x86_64
+- Perl 5
+- Python 2.7
 
 Perl5, Python 2.7 are required and we reccommend pip to makes installing Python modules very easy. At this point, scons might be simpler to install using your distribution package management rather than pip. Perl5 and Python are frequently installed with any Linux distribution flavour by default, however the pipeline requires Python 2.7 and not the more recent Python 3+.
 
@@ -23,20 +23,18 @@ For yum based package management (Redhat, Centos, Scientific):
 sudo yum install perl5 python27 scons pip
 ```
 
-####Python
+**Python Modules**
 
-- Python v2.7
-- Modules:
-    - biopython
-    - nestly
-    - networkx
-    - numpy
-    - pandas
-    - python-louvain
-    - pysam
-    - PyYAML
-    - scipy
-    - scons
+- biopython
+- nestly
+- networkx
+- numpy
+- pandas
+- python-louvain
+- pysam
+- PyYAML
+- scipy
+- scons
 
 On all systems, we recommend using [Pip](https://pip.pypa.io/en/stable/installing/) for installation and dependency management.
 
