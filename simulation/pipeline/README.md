@@ -72,19 +72,22 @@ The scons and nestly packages must be installed. For example on ubuntu:
 ####Running the pipeline
 The following successive commands (1-4) will run the complete pipeline on a single processor.
 
-**Community generation**
- 1. scons -f SConstruct_evo.py
-**Whole-genome (metagenome) shotgun read generation and assembly**
- 2. scons -f SConstruct_wgs.py
-**HiC read-pair generation**
- 3. scons -f SConstruct_hic.py
-*WGS and HiC read-mapping*
- 4. scons -f SConstruct_map.py   
+1. **Community generation**
+  - ```scons -f SConstruct_evo.py```
+1. **Whole-genome (metagenome) shotgun read generation and assembly**
+  - ```scons -f SConstruct_wgs.py```
+1. **HiC read-pair generation**
+  - ```scons -f SConstruct_hic.py```
+1. **WGS and HiC read-mapping**
+  - ```scons -f SConstruct_map.py```
 
 **Concurrency**
+
 Like ```make```, ```scons``` is capable of concurrent execution by way of the ```-j (integer)``` argument. Therefore, to speed-up any stage of the workflow, specify more processors to scons. 
 
 E.g. ```scons -j 4 -f SConstruct_evo.py``` would use four processors for the community generation stage.
+
+**Hierarchical Dependence**
 
 As a hierarchy of dependences exists, the total pool of tasks are not independent and this limits the degree of parallelism obtainable at any point in the simulation. More simply, the four stages must be run successively.
 
