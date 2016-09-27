@@ -9,7 +9,7 @@ HPC simulation pipeline for Hi-C experiments.
 
 **Python**
 - Python v2.7
-- Python modules
+- Modules
     - biopython
     - nestly
     - networkx
