@@ -6,13 +6,14 @@ HPC simulation pipeline for Hi-C experiments.
 - Python 2.7
 - Python modules
     - biopython
-    - scipy
+    - nestly
+    - networkx
     - numpy
     - pandas
-    - networkx
-    - community
+    - python-louvain
     - pysam
     - PyYAML
+    - scipy
     - scons
 
 On all systems, we recommend using [Pip](https://pip.pypa.io/en/stable/installing/) for installation and dependency management.
