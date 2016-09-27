@@ -7,7 +7,24 @@ HPC simulation pipeline for Hi-C experiments.
 - Linux_x86_64 system
 - Perl5
 
-**Python**
+####Prerequisites
+
+Perl5, Python 2.7 are required and we reccommend pip to makes installing Python modules very easy. At this point, scons might be simpler to install using your distribution package management rather than pip. Perl5 and Python are frequently installed with any Linux distribution flavour by default, however the pipeline requires Python 2.7 and not the more recent Python 3+.
+
+For with apt-get based package management (Ubuntu, Debian):
+
+```bash
+sudo apt-get install perl5 python2.7 scons pip
+```
+
+For yum based package management (Redhat, Centos, Scientific):
+
+```bash
+sudo yum install perl5 python27 scons pip
+```
+
+####Python
+
 - Python v2.7
 - Modules:
     - biopython
@@ -28,6 +45,7 @@ For example, on a system requiring root privileges and configured for ```sudo```
 ```bash
 sudo pip install -U biopython nestly networkx numpy pandas python-louvain pysam PyYAML scipy scons
 ```
+
 
 It might prove easier to install each module separately if you encounter errors due to other system requirements. Consider updating pip itself if you receive a warning that it is out of date. E.g. ```pip install -U pip```
 
@@ -61,13 +79,6 @@ The pipeline is built on top of Nestly and utilises the SCons wrapper. Scons is 
 Generation of each stage has been made separate to avoid excessively complicated make files in the work flow.
 
 The stages can be run as follows, where the -j option controls concurrency.
-
-####Prerequisites
-
-The scons and nestly packages must be installed. For example on ubuntu:
-
-    sudo apt-get install scons
-    sudo pip install nestly
 
 ####Running the pipeline
 The following successive commands (1-4) will run the complete pipeline on a single processor.
