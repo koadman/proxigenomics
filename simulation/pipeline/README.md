@@ -5,6 +5,7 @@ HPC simulation pipeline for Hi-C experiments.
 Due to external binaries
 - Linux_x86_64 system
 - Perl5
+
 ###Python
 - Python v2.7
 - Python modules
