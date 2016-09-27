@@ -25,8 +25,8 @@ On all systems, we recommend using [Pip](https://pip.pypa.io/en/stable/installin
 
 For example, on a system requiring root privileges and configured for ```sudo```, try the following. 
 
-```
-sudo pip install -U biopython scipy numpy pandas networkx community pysam PyYAML scons
+```bash
+sudo pip install -U biopython nestly networkx numpy pandas python-louvain pysam PyYAML scipy scons
 ```
 
 It might prove easier to install each module separately if you encounter errors due to other system requirements. Consider updating pip itself if you receive a warning that it is out of date. E.g. ```pip install -U pip```
