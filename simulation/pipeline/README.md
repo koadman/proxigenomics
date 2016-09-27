@@ -72,12 +72,17 @@ The scons and nestly packages must be installed. For example on ubuntu:
 ####Running the pipeline
 The following successive commands (1-4) will run the complete pipeline on a single processor.
 
-1. scons -f SConstruct_evo.py   *(Community generation)*
-2. scons -f SConstruct_wgs.py   *(Whole-genome (metagenome) shotgun read generation and assembly)*
-3. scons -f SConstruct_hic.py   *(HiC read-pair generation)*
-4. scons -f SConstruct_map.py   *(WGS and HiC read-mapping)*
+**Community generation**
+ 1. scons -f SConstruct_evo.py
+**Whole-genome (metagenome) shotgun read generation and assembly**
+ 2. scons -f SConstruct_wgs.py
+**HiC read-pair generation**
+ 3. scons -f SConstruct_hic.py
+*WGS and HiC read-mapping*
+ 4. scons -f SConstruct_map.py   
 
-**Note**: like ```make```, ```scons``` is capable of concurrent execution by way of the ```-j (integer)``` argument. Therefore, to speed-up any stage of the workflow, specify more processors to scons. 
+**Concurrency**
+Like ```make```, ```scons``` is capable of concurrent execution by way of the ```-j (integer)``` argument. Therefore, to speed-up any stage of the workflow, specify more processors to scons. 
 
 E.g. ```scons -j 4 -f SConstruct_evo.py``` would use four processors for the community generation stage.
 
@@ -118,5 +123,3 @@ For each stage generated data and results are stored in folder hierarchies.
 - `wgs_data` contains WGS reads and assemblies  
 - `hic_data` contains HiC reads  
 - `map_data` contains all further results.  
-
-Matt.
