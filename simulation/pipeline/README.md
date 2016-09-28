@@ -34,14 +34,20 @@ sudo yum install perl5 python27 scons pip
 - pysam
 - PyYAML
 - scipy
-- scons
+- SCons
 
 On all systems, we recommend using [Pip](https://pip.pypa.io/en/stable/installing/) for installation and dependency management.
 
 For example, on a system requiring root privileges and configured for ```sudo```, try the following. 
 
 ```bash
-sudo pip install -U biopython nestly networkx numpy pandas python-louvain pysam PyYAML scipy scons
+sudo pip install -U biopython nestly networkx numpy pandas python-louvain pysam PyYAML scipy SCons
+```
+
+If installing SCons through Pip and you encounter an error, it may be necessary to install it as an Egg.
+
+```bash
+sudo pip install --egg SCons
 ```
 
 
